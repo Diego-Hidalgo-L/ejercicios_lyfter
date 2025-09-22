@@ -1,0 +1,196 @@
+[
+    {
+        "name": {
+            "english": "Pikachu"
+        },
+        "lvl": 45,
+        "type": [
+            "Electric"
+        ],
+        "base": {
+            "HP": 35,
+            "Attack": 55,
+            "Defense": 40,
+            "Sp. Attack": 50,
+            "Sp. Defense": 50,
+            "Speed": 90
+        }
+    },
+    {
+        "name": {
+            "english": "Charmander"
+        },
+        "lvl": 32,
+        "type": [
+            "Fire"
+        ],
+        "base": {
+            "HP": 39,
+            "Attack": 52,
+            "Defense": 43,
+            "Sp. Attack": 60,
+            "Sp. Defense": 50,
+            "Speed": 65
+        }
+    },
+    {
+        "name": {
+            "english": "Squirtle"
+        },
+        "lvl": 28,
+        "type": [
+            "Water"
+        ],
+        "base": {
+            "HP": 44,
+            "Attack": 48,
+            "Defense": 65,
+            "Sp. Attack": 50,
+            "Sp. Defense": 64,
+            "Speed": 43
+        }
+    },
+    {
+        "name": {
+            "english": "Rayquaza"
+        },
+        "lvl": 88,
+        "type": [
+            "Dragon",
+            "Flying"
+        ],
+        "base": {
+            "HP": 105,
+            "Attack": 150,
+            "Defense": 90,
+            "Sp. Attack": 150,
+            "Sp. Defense": 90,
+            "Speed": 95
+        }
+    },
+    {
+        "name": {
+            "english": "Mewtwo"
+        },
+        "lvl": 95,
+        "type": [
+            "Psychic"
+        ],
+        "base": {
+            "HP": 106,
+            "Attack": 110,
+            "Defense": 90,
+            "Sp. Attack": 154,
+            "Sp. Defense": 90,
+            "Speed": 130
+        }
+    },
+    {
+        "name": {
+            "english": "Latias"
+        },
+        "lvl": 72,
+        "type": [
+            "Dragon",
+            "Psychic"
+        ],
+        "base": {
+            "HP": 80,
+            "Attack": 80,
+            "Defense": 90,
+            "Sp. Attack": 110,
+            "Sp. Defense": 130,
+            "Speed": 110
+        }
+    },
+    {
+        "name": {
+            "english": "Entei"
+        },
+        "lvl": 67,
+        "type": [
+            "Fire"
+        ],
+        "base": {
+            "HP": 115,
+            "Attack": 115,
+            "Defense": 85,
+            "Sp. Attack": 90,
+            "Sp. Defense": 75,
+            "Speed": 100
+        }
+    },
+    {
+        "name": {
+            "english": "Gengar"
+        },
+        "lvl": 81,
+        "type": [
+            "Ghost",
+            "Poison"
+        ],
+        "base": {
+            "HP": 60,
+            "Attack": 65,
+            "Defense": 60,
+            "Sp. Attack": 130,
+            "Sp. Defense": 75,
+            "Speed": 110
+        }
+    },
+    {
+        "name": {
+            "english": "Machamp"
+        },
+        "lvl": 54,
+        "type": [
+            "Fighting"
+        ],
+        "base": {
+            "HP": 90,
+            "Attack": 130,
+            "Defense": 80,
+            "Sp. Attack": 65,
+            "Sp. Defense": 85,
+            "Speed": 55
+        }
+    },
+    {
+        "name": {
+            "english": "Onix"
+        },
+        "lvl": 39,
+        "type": [
+            "Rock",
+            "Ground"
+        ],
+        "base": {
+            "HP": 35,
+            "Attack": 45,
+            "Defense": 160,
+            "Sp. Attack": 30,
+            "Sp. Defense": 45,
+            "Speed": 70
+        }
+    },
+    {
+        "name": {
+            "english": "Raichu"
+        },
+        "lvl": 13,
+        "type": [
+            "Electric"
+        ],
+        "base": {}
+    },
+    {
+        "name": {
+            "english": "Raichu"
+        },
+        "lvl": 13,
+        "type": [
+            "Electric"
+        ],
+        "base": {}
+    }
+]
