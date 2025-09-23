@@ -1,0 +1,191 @@
+2. Cree un algoritmo para que describa su rutina diaria.
+    * Utilice condiciones simples, condiciones compuestas y ciclos.
+
+Respuesta:
+
+1. Inicio.
+2. Despertarme con la alarma de mi celular.
+a. Si estoy muy cansado y tengo tiempo:
+i. Mientras que no logre levantarme con energ�a apagar la alarma definitivamente:
+1. Darle �snooze� a la alarma:
+b. Sino:
+i. Apagar la alarma.
+3. Si estoy solo en la casa:
+a. Poner m�sica:
+i. Encender el parlante.
+ii. Si tengo ganas de escuchar algo alegre:
+1. Poner playlist �Mornings�.
+iii. Sino, si tengo ganas de escuchar m�sica pesada:
+1. Poner playlist �Rickson Gracie�.
+4. Tender la cama:
+a. Quitar todas las almohadas de la cama y ponerlas a un lado.
+b. Sacudir y acomodar la funda del colch�n:
+i. Mientras que la funda del colch�n est� arrugada:
+1. Acomodarla.
+c. Colocar la s�bana sobre la funda:
+i. Mientras que la s�bana est� arrugada:
+1. Acomodarla.
+ii. Hacer un doblez en el borde superior de la s�bana.
+iii. Meter los bordes laterales de la s�bana por debajo del colch�n.
+d. Tomar las dos almohadas para dormir y colocarlas al tope del colch�n, sobre el doblez de la s�bana:
+i. Mientras que las fundas de las almohadas est�n arrugadas:
+1. Acomodarlas:
+e. Colocar el edred�n sobre la s�bana y sobre las almohadas:
+i. Mientras que el edred�n est� arrugado:
+1. Acomodarlo.
+f. Colocar las almohadas decorativas.
+i. Mientras que las almohadas est�n arrugadas:
+1. Acomodarlas.
+5. Meditar durante 20 minutos:
+a. Tomar una de las almohadas decorativas.
+b. Colocarla sobre el piso.
+c. Sentarme en posici�n de loto sobre la almohada.
+d. Si puse m�sica y quiero escuchar una meditaci�n guiada:
+i. Desbloquear mi celular.
+ii. Abrir la aplicaci�n de Spotify o Headspace.
+iii. Buscar la sesi�n de meditaci�n guiada que m�s me guste.
+iv. Darle play.
+v. Al final de la sesi�n:
+1. Apagar el parlante.
+e. Si no puse m�sica y quiero escuchar una meditaci�n guiada:
+i. Tomar mis aud�fonos y pon�rmelos.
+ii. Conectarlos al celular.
+iii. Desbloquear mi celular.
+iv. Abrir la aplicaci�n de Spotify o Headspace.
+v. Buscar la sesi�n de meditaci�n guiada que m�s me guste.
+vi. Darle play.
+vii. Al final de la sesi�n:
+1. Quitarme los aud�fonos y guardarlos.
+f. Si puse m�sica y quiero meditar por mi propia cuenta:
+i. Desbloquear mi celular.
+ii. Abrir la aplicaci�n de Spotify.
+iii. Ponerle pausa a la canci�n.
+iv. Apagar el parlante.
+v. Abrir la aplicaci�n de Reloj.
+vi. Poner un timer de 20 minutos.
+1. Al final de la sesi�n:
+a. Apagar la alarma del timer.
+g. Sino, si no puse m�sica y quiero meditar por mi propia cuenta:
+i. Desbloquear mi celular.
+ii. Abrir la aplicaci�n de Reloj.
+iii. Poner un timer de 20 minutos.
+1. Al final de la sesi�n:
+a. Apagar la alarma del timer.
+h. Decir una oraci�n r�pida de agradecimiento.
+i. Estirar.
+j. Ponerme de pie.
+k. Volver a poner la almohada decorativa sobre la cama.
+6. Si es lunes, o martes:
+a. Hacer ejercicio durante 1 hora.
+b. Seguir avanzando en los pasos y solo despu�s del paso 12:
+i. Avanzar en el curso de Lyfter durante 4 horas.
+ii. Almorzar:
+1. Sacar la carne, el arroz y los frijoles de la refri.
+2. Sacar un sart�n del mueble de la cocina.
+3. Poner el sart�n sobre el disco de la cocina.
+4. Poner el disco en 7.
+5. Mientras que el sart�n no est� suficientemente caliente:
+a. Acercar la mano encima del sart�n para probar su temperatura cada 2 minutos.
+6. Poner un poco de aceite en el sart�n.
+7. Poner un filete de carne en el sart�n.
+8. Volver a guardar la carne en la refri.
+9. Por cada lado de la carne:
+a. Cocinar durante 3 minutos.
+10. Apagar el disco.
+11. Sacar un plato y dos cucharas grandes.
+12. Servir dos cucharadas de arroz y dos de frijoles en el plato.
+13. Meter el plato en el microondas y calentarlo durante 1 minuto y medio.
+14. Sacar el plato y servir la carne en el plato.
+15. Comer.
+16. Lavar los platos sucios (paso 11).
+iii. Trabajar en proyectos de audiovisual hasta las 5pm.
+7. Ba�arme:
+a. Quitarme la ropa.
+b. Abrir el tubo de agua.
+c. Entrar a la ducha.
+d. Lavarme el pelo
+i. Echarme shampoo en las manos.
+ii. Mientras que el pelo est� sucio:
+1. Restregar el shampoo en el pelo con las manos.
+iii. Quitar shampoo:
+1. Mientras que el pelo tenga shampoo:
+a. Enjuagar el pelo.
+e. Lavarse el cuerpo:
+i. Tomar el jab�n:
+ii. Por cada parte del cuerpo y mientras cada parte est� sucia:
+1. Enjabonarse.
+iii. Quitar jab�n:
+1. Por cada parte del cuerpo y mientras cada parte tenga jab�n.
+a. Enjuagarse.
+f. Cerrar el tubo de agua.
+g. Secarse:
+i. Tomar el pa�o seco.
+ii. Mientras que el cuerpo est� mojado:
+1. Secarse con el pa�o.
+8. Ponerme ropa.
+9. Tender el pa�o en la lavander�a.
+10. Desayunar:
+a. Sacar 3 huevos, cebolla, hongos y espinaca del refri.
+b. Tomar un cuchillo y una tabla para picar.
+c. Por cada vegetal:
+i. Poner la cantidad deseada sobre la tabla de picar:
+1. Mientras que el vegetal est� muy grande:
+a. Picarlo en peque�as partes.
+d. Guardar el resto de vegetales.
+e. Sacar un sart�n del mueble de la cocina.
+f. Poner el sart�n sobre el disco de la cocina.
+g. Poner el disco en 7.
+h. Mientras que el sart�n no est� suficientemente caliente:
+i. Acercar la mano encima del sart�n para probar su temperatura cada 2 minutos.
+i. Poner un poco de aceite en el sart�n.
+j. Sacar una esp�tula.
+k. Echar los vegetales picados en el sart�n.
+i. Mientras que los vegetales est�n crudos:
+1. Mover con la esp�tula.
+l. Echar los 3 huevos en el sart�n:
+i. Por cada huevo:
+1. Romperlo suavemente.
+2. Echarlo en el sart�n con los vegetales.
+m. Echarle sal.
+n. Mientras que los huevos est�n crudos:
+i. Mover con la esp�tula.
+o. Apagar el disco.
+p. Tomar un plato.
+q. Servir los huevos en el plato.
+r. Sacar un vaso del mueble de cocina.
+s. Sacar juego de naranjo del refri.
+t. Servirse jugo de naranja.
+u. Comer.
+11. Lavar los platos sucios.
+a. Llevar todos los platos al fregadero.
+b. Tomar una esponja.
+c. Por cada plato sucio:
+i. Llenar la esponja con jab�n.
+ii. Tomar el plato sucio.
+iii. Mientras que el plato est� sucio:
+1. Restregar con la esponja.
+iv. Mientras que el plato tenga jab�n:
+1. Enjuagar.
+v. Colocarlo en el escurridor de platos.
+12. Lavarme los dientes.
+a. Tomar el cepillo de dientes.
+b. Tomar la pasta de dientes.
+c. Aplicar pasta de dientes al cepillo.
+d. Por cada secci�n de la boca y mientras que cada secci�n est� sucia:
+i. Cepillar con t�cnica correcta.
+e. Enjuagarse la boca.
+13. Si es mi�rcoles, o jueves, o viernes:
+a. Manejar hasta el negocio de mi familia.
+b. Trabajar en el negocio de mi familia durante 9 horas.
+c. Manejar de vuelta a la casa.
+d. Hacer ejercicio durante 1 hora.
+e. Ba�arme (paso 7).
+14. Leer durante 1 hora.
+15. Cenar (repetir paso 6.b.ii)
+16. Alistarme para dormir:
+a. Ponerme pijama.
+b. Lavarme los dientes (paso 12).
+c. Acostarme.
+17. Dormir 8 horas.
+18. Fin.
+

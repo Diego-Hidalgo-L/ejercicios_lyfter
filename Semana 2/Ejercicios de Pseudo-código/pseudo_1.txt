@@ -1,0 +1,19 @@
+1 Cree un pseudoc�digo que le pida un precio de producto al usuario, calcule su descuento y muestre el precio final tomando en cuenta que:
+    i. Si el precio es menor a 100, el descuento es del 2%.
+    ii. Si el precio es mayor o igual a 100, el descuento es del 10%.
+
+Respuesta:
+      
+1. Inicio.
+2. Definir precio_de_producto.
+3. Mostrar �Ingrese el precio del producto�.
+4. Pedir precio_de_producto. 
+5. Si (precio_de_producto >= 100) entonces:
+    a. descuento = precio_de_producto * 0.10.
+6. Sino:
+    a. descuento = precio_de_producto * 0.02.
+7. FinSi.
+8. precio_final = precio_de_producto � descuento.
+9. Mostrar �El precio final es de:�.
+10. Mostrar precio_final.
+11. Fin.

@@ -1,0 +1,17 @@
+3  Cree un algoritmo que le pida un n�mero al usuario, y realice una suma de cada n�mero del 1 hasta ese n�mero ingresado. Luego, muestre el resultado de la suma.
+
+Respuesta:
+
+1. Inicio.
+2. Definir n�mero.
+3. contador = 1.
+4. suma = 0.
+5. Mostrar �Ingrese un n�mero�
+6. Pedir n�mero.
+7. Mientras que (contador <= n�mero) entonces:
+    a. suma = suma + contador.
+    b. contador = contador  + 1.
+8. FinMientras.
+9. Mostrar �La suma es de:�
+10. Mostrar suma.
+11. Fin.

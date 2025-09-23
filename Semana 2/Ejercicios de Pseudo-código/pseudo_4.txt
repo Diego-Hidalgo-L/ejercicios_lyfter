@@ -1,0 +1,19 @@
+4  Cree un algoritmo que le pida 2 n�meros al usuario, los guarde en dos variables distintas (primero y segundo) y los ordene de menor a mayor en dichas variables.
+
+Respuesta:
+
+1. Inicio.
+2. Definir primero.
+3. Definir segundo.
+4. Mostrar �Ingrese el primer n�mero�.
+5. Pedir primero.
+6. Mostrar �Ingrese el segundo n�mero�.
+7. Pedir segundo.
+8. Si (primero < segundo) entonces:
+    a. Mostrar primero.
+    b. Mostrar segundo.
+9. Sino:
+    a. Mostrar segundo.
+    b. Mostrar primero.
+10. FinSi.
+11. Fin.

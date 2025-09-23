@@ -1,0 +1,23 @@
+2  Cree un pseudo-c�digo que le pida un tiempo en segundos al usuario y calcule si es menor o mayor a 10 minutos.
+    a. Si es menor, muestre cuantos segundos faltar�an para llegar a 10 minutos.
+    b. Si es mayor, muestre �Mayor�.
+    c. Si es exactamente igual, muestre �Igual�.
+
+Respuesta:
+
+1. Inicio.
+2. Definir tiempo_en_segundos.
+3. Mostrar �Ingrese su tiempo en segundos�
+4. Pedir tiempo_en_segundos.
+5. Si (tiempo_en_segundos < 600) entonces:
+    a. tiempo_faltante = 600 - tiempo_en_segundos.
+    b. Mostrar �Esto es cu�ntos segundos faltan para llegar a 10 minutos:�.
+    c. Mostrar tiempo_faltante.
+6. Sino:
+    a. Si (tiempo_en_segundos > 600) entonces:
+    b. Mostrar �Mayor�.
+    c. Sino:
+    d. Mostrar �Igual�.
+    e. FinSi.
+7. FinSi.
+8. Fin.
