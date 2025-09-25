@@ -1,0 +1,43 @@
+commit 85f2ffe5d2b933b4c44ad4d570092198ef6addd5 (origin/main, main)
+Author: Diego Hidalgo <luisdiegohidalgo@gmail.com>
+Date:   Mon Sep 22 11:43:38 2025 -0600
+
+    first commit
+
+## Este fue el primer commit que se hizo para crear el repositorio.
+
+
+commit d0fca9a52d53d62636e364f4a636486660a6f961
+Author: Diego Hidalgo <luisdiegohidalgo@gmail.com>
+Date:   Mon Sep 22 15:17:40 2025 -0600
+
+    Agrego todos los ejercicios anteriores a la semana 9 al Repositorio de Tareas
+
+## En este commit agregué todos los archivos de todas las tareas que hice de la semana 1 a la 8, como parte del ejercicio  1 de la semana 9.
+
+
+commit 9e623431191e6829bdbc402132efd3ec4af20003
+Author: Diego Hidalgo <luisdiegohidalgo@gmail.com>
+Date:   Mon Sep 22 15:33:33 2025 -0600
+
+    Agrego dos archivos para eliminarlos después
+
+## En este commit agregué dos archivos ('exceptions_1A.py' & 'exceptions_1B.py') solamente para eliminarlos después para la tarea.
+
+
+commit a2ab1f63737828d73138698f1ad4bacf8341fc0b
+Author: Diego Hidalgo <luisdiegohidalgo@gmail.com>
+Date:   Mon Sep 22 15:36:07 2025 -0600
+
+    Elimino los archivos que agregué antes
+
+## Elimino los dos archivos ('exceptions_1A.py' & 'exceptions_1B.py') del branch, ya que no los necesito.
+
+
+commit 2753b0f0df2f362f899f96b282a819579a166bc6 (HEAD -> past-exercises, origin/past-exercises)
+Author: Diego Hidalgo <luisdiegohidalgo@gmail.com>
+Date:   Mon Sep 22 15:38:17 2025 -0600
+
+    Renombro exceptions_1C.py a solamente exceptions_1.py en Semana 7
+
+## En la carpeta de Semana 7 renombro el archivo exceptions_1C.py a solamente exceptions_1.py, ya que no tengo ningún otro archivo exceptions_1

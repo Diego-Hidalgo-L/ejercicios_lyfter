@@ -1,0 +1,19 @@
+1. Cree un algoritmo para ver un video en YouTube. Sea lo m�s espec�fico posible.
+
+Respuesta:
+
+1. Inicio.
+2. Si tengo computadora: 
+a. Tomar la computadora.
+b. Abrir el navegador de preferencia.
+c. Escribir www.youtube.com en la barra del navegador.
+3. Sino, si tengo smartphone, o tablet, o smart TV: 
+a. Tomar cualquiera de estos dispositivos que tenga disponible.
+4. Escribir el nombre del video que desea ver en la barra de b�squeda de YouTube.
+5. Mientras que no encuentre la opci�n que m�s le guste: 
+a. Navegar entre las opciones que aparecen.
+6. Seleccionar la opci�n que m�s le guste.
+7. Mientras que no aparezca la opci�n de �Skip� para saltarse el anuncio: 
+a. Esperar a poder darle �Skip� al anuncio.
+8. Ver el video hasta que termine.
+9. Fin.

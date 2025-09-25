@@ -1,0 +1,30 @@
+6  Cree un algoritmo que le pregunte al usuario por el sexo de 6 personas, ingresando 1 si es mujer o 2 si es hombre, y muestre al final el porcentaje de mujeres y hombres.
+
+Respuesta:
+
+1. Inicio.
+2. Definir sexo.
+3. cantidad_total = 6
+4. cantidad_de_mujeres = 0.
+5. cantidad_de_hombres = 0.
+6. contador = 1.
+7. Mientras que (contador <= cantidad_total) entonces:
+    a. Mostrar �Ingrese 1 si el sexo de la persona es mujer y 2 si es hombre el sexo de la persona n�mero:�.
+    b. Mostrar contador.
+    c. Pedir sexo.
+    d. Si (sexo == 1) entonces:
+        i. cantidad_de_mujeres = cantidad_de_mujeres + 1.
+        ii. porcentaje_de_mujeres = (cantidad_de_mujeres / cantidad_total) * 100.
+    e. Sino:
+        i. Si (sexo == 2) entonces:
+        ii. cantidad_de_hombres = cantidad_de_hombres + 1.
+        iii. porcentaje_de_hombres = (cantidad_de_hombres / cantidad_total) * 100.
+        iv. FinSi.
+    f. FinSi.
+    g. contador = contador + 1.
+8. FinMientras.
+9. Mostrar �El porcentaje de mujeres es de:�.
+10. Mostrar porcentaje_de_mujeres.
+11. Mostrar �El promedio de hombres es de:�.
+12. Mostrar porcentaje_de_hombres.
+13. Fin.
