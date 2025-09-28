@@ -36,12 +36,46 @@ def create_dict_entry(student_name, student_section, spanish_score, english_scor
     return dict_entry
 
 
+def input_dict_entry_to_students_list(students_list, dict_entry):
+    students_list.append(dict_entry)
+    print("\nStudent information entered successfully!")
+
+
+def ask_if_another_student():
+    while True:
+        try:
+            another_student = input("Do you want to enter another student's information? Yes or No: ")
+            another_student = another_student.upper()
+
+            if another_student == "YES" or another_student == "NO":
+                print("\n")
+                return another_student
+            else:
+                raise ValueError
+        except ValueError:
+            print("Invalid answer. Please answer Yes or No.")
+
+
+def create_students_list():
+    students_list = []
+
+    while True:
+        student_name, student_section = input_student_info()
+        spanish_score, english_score, social_score, science_score = input_scores()
+        individual_avg = calculate_individual_avg(spanish_score, english_score, social_score, science_score)
+        dict_entry = create_dict_entry(student_name, student_section, spanish_score, english_score, social_score, science_score, individual_avg)
+        input_dict_entry_to_students_list(students_list, dict_entry)
+        
+        another_student = ask_if_another_student()
+        if another_student == "NO":
+            break
+
+    return students_list
+
+
 def main():
-    student_name, student_section = input_student_info()
-    spanish_score, english_score, social_score, science_score = input_scores()
-    individual_avg = calculate_individual_avg(spanish_score, english_score, social_score, science_score)
-    dict_entry = create_dict_entry(student_name, student_section, spanish_score, english_score, social_score, science_score, individual_avg)
-    print(dict_entry)
+    students_list = create_students_list()
+    print(students_list)
 
 
 main()
