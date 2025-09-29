@@ -40,6 +40,14 @@ def route_menu_choice(menu_choice):
     # 3) Append la información de ese nuevo estudiante a la lista;
     # 4) Reescribir el archivo CSV y guardarlo.
 
+import csv
+
+def read_csv_file_and_extract_students_list(file_path):
+    with open(file_path, 'r') as file:
+        reader = csv.DictReader(file)
+        print(reader)
+
+
 def input_student_info():
     student_name = input("Please enter the student's full name: ") # Tiene que hacerse mayuscula solo.
     student_section = input("Please enter the student's section: ")
@@ -142,7 +150,7 @@ def act2_print_all_students_info(students_list):
         print(f"English: {student['English']}")
         print(f"Social Studies: {student['Social Studies']}")
         print(f"Science: {student['Science']}")
-        print(f"Overall average: {student['Average']}")
+        print(f"Average: {student['Average']}")
         print("------------------------")
 
 # # # # # End of ACTION 2 # # # # #
@@ -173,9 +181,9 @@ def act4_calculate_all_students_avg(students_list):
         ind_avg = student['Average']
         sum_of_avgs += ind_avg
     
-    overall_avg = sum_of_avgs / len(students_list)
+    all_students_avg = sum_of_avgs / len(students_list)
 
-    print (f"The overall average score among all students is: {overall_avg}\n")
+    print (f"The overall average score among all students is: {all_students_avg}\n")
 
 # # # # # End of ACTION 4 # # # # #
 
