@@ -1,6 +1,5 @@
 
-
-from students_info import students_list
+from semana_10.proyecto_semana_10.students_info import students_list
 
 def print_all_students_info(students_list):
     for student in students_list:
