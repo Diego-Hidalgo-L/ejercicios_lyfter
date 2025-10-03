@@ -11,7 +11,7 @@ Menu options:
     4. See the average score among all the students.
     5. Export all current data into CSV file.
     6. Import all current data from previously exported CSV file.
-    
+
 Please enter the correct option for the action you wish to take: """)
     print("\n")
     return menu_choice

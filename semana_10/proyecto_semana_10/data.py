@@ -9,12 +9,10 @@ def read_csv_file_and_extract_students_list(path):
     students_list = []
     with open(path, 'r') as file:
         reader = csv.DictReader(file)
-        print(reader)
-        # for row in reader:
-            # students_list.append(row)
+        for row in reader:
+            students_list.append(row)
     
-    
-    # print(students_list)
+    print(students_list)
 
 
 
