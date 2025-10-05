@@ -9,9 +9,9 @@ Menu options:
     2. Enter a new student's information.
     3. Search for a specific student by full name.
     4. Delete a student from the database.
-        6. View which students have failing grades.
+    6. View which students have failing grades.
     5. View the top 3 students as per their grade average.
-    7. View the average grade among all the students.
+    7. View the grade average among all the students.
 
 Please enter the correct option for the action you wish to take: """)
     print("\n")
@@ -43,10 +43,13 @@ import csv
 
 def read_csv_file_and_extract_students_list(path):
     students_list = []
-    with open(path, 'r') as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            students_list.append(row)
+    try:
+        with open(path, 'r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                students_list.append(row)
+    except FileNotFoundError:
+        print("Error: The file does not exist.")
 
     return students_list
 
@@ -77,14 +80,7 @@ def act1_print_all_students_info(students_list):
 
 # # # # # #   Start of ACTION 2   # # # # #
 
-# Para hacer esto bien, necesito:
-    # 1) Abrir un archivo CSV;
-    # 2) Descargar la lista de estudiantes que ese archivo contiene;
-    # 3) Append la información de ese nuevo estudiante a la lista;
-    # 4) Reescribir el archivo CSV y guardarlo.
-
-
-def input_student_info():
+def input_student_info(): # Aregar error-catchers
     student_name = input("Please enter the student's full name: ")
     student_section = input("Please enter the student's section: ")
     
@@ -113,10 +109,11 @@ def input_grades():
     return spanish_grade, english_grade, social_grade, science_grade
 
 
-def calculate_individual_avg(spanish_grade, english_grade, social_grade, science_grade): # optimize to not be limited to just 4 subjects
+def calculate_individual_avg(spanish_grade, english_grade, social_grade, science_grade): # Optimize to not be limited to just 4 subjects
     individual_avg = (spanish_grade + english_grade + social_grade + science_grade) / 4
+    individual_avg_rounded = round(individual_avg, 2)
 
-    return individual_avg
+    return individual_avg_rounded
 
 
 def create_dict_entry(student_name, student_section, spanish_grade, english_grade, social_grade, science_grade, individual_avg):
@@ -151,10 +148,10 @@ def ask_if_another_student():
 
 def modify_students_list(students_list):
     while True:
-        student_name, student_section = input_student_info()
+        student_name, student_section = input_student_info() # Agregar error-catchers
         spanish_grade, english_grade, social_grade, science_grade = input_grades()
-        individual_avg = calculate_individual_avg(spanish_grade, english_grade, social_grade, science_grade)
-        dict_entry = create_dict_entry(student_name, student_section, spanish_grade, english_grade, social_grade, science_grade, individual_avg)
+        individual_avg_rounded = calculate_individual_avg(spanish_grade, english_grade, social_grade, science_grade)
+        dict_entry = create_dict_entry(student_name, student_section, spanish_grade, english_grade, social_grade, science_grade, individual_avg_rounded)
         input_dict_entry_to_students_list(students_list, dict_entry)
 
         another_student = ask_if_another_student()
@@ -288,7 +285,7 @@ def act6_extract_top_3_avgs(students_list):
     print("The students with the top three average grades are: ")
     for student in top_three:
         print(f"{student['Name']}")
-        print(f"Average: {student['Average']}")
+        print(f"Average: {student.get('Average')}")
         print("----------------")
 
 
@@ -299,12 +296,13 @@ def act6_extract_top_3_avgs(students_list):
 def act7_calculate_all_students_avg(students_list):
     sum_of_avgs = 0
     for student in students_list:
-        ind_avg = float(student['Average']) # Esto se debería mantener como float?
+        ind_avg = float(student.get('Average'))
         sum_of_avgs += ind_avg
     
     all_students_avg = sum_of_avgs / len(students_list)
 
-    print (f"The overall average grade among all students is: {all_students_avg}\n")
+    print (f"The overall average grade among all students is: {all_students_avg:.2f}\n")
+
 
 # # # # # End of ACTION 7 # # # # #
 
