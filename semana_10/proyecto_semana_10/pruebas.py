@@ -1,27 +1,24 @@
 
 
-def create_grades_dict():
-    grades_dict = {'Spanish': 0, 'English': 0, 'Social Studies': 0, 'Science': 0}
-    for subject in grades_dict.keys():
-        grade = float(input(f"Please enter the student's {subject} grade: "))
-        grades_dict[f'{subject}'] = grade
-    
-    return grades_dict
+def input_grades():
+    spanish_grade = float(input("Please enter the student's Spanish grade: "))
+    english_grade = float(input("Please enter the student's English grade: "))
+    social_grade = float(input("Please enter the student's Social Studies grade: "))
+    science_grade = float(input("Please enter the student's Science grade: "))
+
+    return spanish_grade, english_grade, social_grade, science_grade
 
 
-def calculate_avg(grades_dict):
-    total_sum = 0
-    for grade in grades_dict.values():
-        total_sum += grade
+def calculate_individual_avg(spanish_grade, english_grade, social_grade, science_grade): # Optimize to not be limited to just 4 subjects
+    individual_avg = (spanish_grade + english_grade + social_grade + science_grade) / 4
+    individual_avg_rounded = round(individual_avg, 2)
 
-    avg = total_sum / len(grades_dict)
-    return avg
+    print(individual_avg_rounded)
 
 
 def main():
-    grades_dict = create_grades_dict()
-    avg = calculate_avg(grades_dict)
-    print(avg)
+    spanish_grade, english_grade, social_grade, science_grade = input_grades()
+    calculate_individual_avg(spanish_grade, english_grade, social_grade, science_grade)
 
 
 main()

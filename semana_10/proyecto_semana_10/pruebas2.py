@@ -1,24 +1,27 @@
 
 
-student1 = {'Name': 'Luis Diego Hidalgo',
-    'Section': '12A',
-    'Spanish': 97.0,
-    'English': 98.0,
-    'Social Studies': 88.5,
-    'Science': 40.0,
-    'Average': 94.0}
+def create_grades_dict():
+    grades_dict = {'Spanish': 0, 'English': 0, 'Social Studies': 0, 'Science': 0}
+    for subject in grades_dict.keys():
+        grade = float(input(f"Please enter the student's {subject} grade: "))
+        grades_dict[f'{subject}'] = grade
+    
+    return grades_dict
 
 
-student2 = {'Name': 'Mateo Fonseca',
-    'Section': '4B',
-    'Spanish': 90.0,
-    'English': 91.8,
-    'Social Studies': 59.0,
-    'Science': 55.0,
-    'Average': 90.825}
+def calculate_avg(grades_dict):
+    total_sum = 0
+    for grade in grades_dict.values():
+        total_sum += grade
 
-# students = student1 + student2 # NO FUNCIONA
+    avg = total_sum / len(grades_dict)
+    return avg
 
-students = {**student1, **student2}
 
-print(students)
+def main():
+    grades_dict = create_grades_dict()
+    avg = calculate_avg(grades_dict)
+    print(avg)
+
+
+main()

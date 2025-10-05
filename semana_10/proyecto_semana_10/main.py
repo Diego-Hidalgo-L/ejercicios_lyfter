@@ -1,7 +1,7 @@
 
 # # # # # Start of MENU # # # # #
 
-def show_menu():
+def show_menu(): # Write error-catchers
     menu_choice = input("""
 Menu options:
 
@@ -9,11 +9,11 @@ Menu options:
     2. Enter a new student's information.
     3. Search for a specific student by full name.
     4. Delete a student from the database.
-    6. View which students have failing grades.
-    5. View the top 3 students as per their grade average.
+    5. View which students have failing grades.
+    6. View the top 3 students as per their grade average.
     7. View the grade average among all the students.
 
-Please enter the correct option for the action you wish to take: """)
+Please enter the number of the action you wish to take: """)
     print("\n")
     return menu_choice
 
@@ -80,11 +80,39 @@ def act1_print_all_students_info(students_list):
 
 # # # # # #   Start of ACTION 2   # # # # #
 
-def input_student_info(): # Aregar error-catchers
-    student_name = input("Please enter the student's full name: ")
+import re
+
+def is_valid_name(prompt):
+    pattern = r"^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[-' ][A-Za-zÀ-ÖØ-öø-ÿ]+)*$"
+    while True:
+        name = input(prompt).strip().title()
+        if not name:
+            print("\nThis field can't be empty. Please enter the student's name.\n")
+        elif not re.match(pattern, name):
+            print("\nInvalid input. The name can't have any numbers or special characters.\n")
+        else:
+            return name
+
+
+def student_exists(student_name, students_list):
+    for student in students_list:
+        if student_name.lower == student.get('Name').lower:
+            return True
+    return False
+
+
+def input_student_name(students_list):
+    while True:
+        student_name = is_valid_name("Please enter the student's name: ")
+        if student_exists(student_name, students_list):
+            print(f"\n'{student_name}' is already in the database.\n")
+        else:
+            return student_name
+
+
+def input_student_section(): # Write error-catchers
     student_section = input("Please enter the student's section: ")
-    
-    return student_name, student_section
+    return student_section
 
 
 def validate_grade_number(prompt):
@@ -148,7 +176,8 @@ def ask_if_another_student():
 
 def modify_students_list(students_list):
     while True:
-        student_name, student_section = input_student_info() # Agregar error-catchers
+        student_name = student_name = input_student_name(students_list)
+        student_section = input_student_section() # Agregar error-catchers
         spanish_grade, english_grade, social_grade, science_grade = input_grades()
         individual_avg_rounded = calculate_individual_avg(spanish_grade, english_grade, social_grade, science_grade)
         dict_entry = create_dict_entry(student_name, student_section, spanish_grade, english_grade, social_grade, science_grade, individual_avg_rounded)
@@ -168,14 +197,14 @@ def act2_enter_student_into_students_list(students_list):
 # # # # # Start of ACTION 3 # # # # #
 
 def ask_for_student_to_search():
-    student_to_search = input("Enter the name of the student you want to search for: ").strip()
+    student_to_search = input("Enter the name of the student you want to search for: ").strip().title()
 
     return student_to_search
 
 
 def search_student_through_list(student_to_search, students_list):
     for student in students_list:
-        if student_to_search == student.get('Name', ''):
+        if student_to_search == student.get('Name'):
             print(f"\n{student['Name']} - {student['Section']}")
             print(f"Spanish: {student['Spanish']}")
             print(f"English: {student['English']}")
@@ -197,7 +226,7 @@ def act3_search_for_student(students_list):
 # # # # #  Start of ACTION 4 # # # # #
 
 def ask_for_student_to_delete():
-    student_to_delete = input("Enter the name of the student you want to delete: ").strip()
+    student_to_delete = input("Enter the name of the student you want to delete: ").strip().title()
 
     return student_to_delete
 
@@ -239,18 +268,17 @@ def act4_delete_student(students_list):
 def search_for_failing_grades(students_list):
     failing_students_list = []
     for student in students_list:
-        failing_student_dict = {'Name': student.get('Name'), 'Section': student.get('Section')}
+        failing_student_dict = {'Name': student.get('Name'), 'Section': student.get('Section'), 'Average': student.get('Average')}
         for subject, value in student.items():
-            for subject, value in student.items():
-                if subject not in ("Name", "Section", "Average"): 
-                    try:
-                        grade = float(value)
-                        if grade < 60:
-                            failing_student_dict[subject] = grade
-                    except ValueError:
-                        continue
+            if subject not in ("Name", "Section", "Average"): 
+                try:
+                    grade = float(value)
+                    if grade < 60:
+                        failing_student_dict[subject] = grade
+                except ValueError:
+                    continue
         
-        if len(failing_student_dict) > 2:
+        if len(failing_student_dict) > 3:
                 failing_students_list.append(failing_student_dict)
 
     return failing_students_list
@@ -265,8 +293,9 @@ def iterate_through_failing_students_list(failing_students_list):
     for student in failing_students_list:
         print(f"{student['Name']} - {student['Section']}")
         for subject, grade in student.items():
-            if subject not in ("Name", "Section"):
+            if subject not in ("Name", "Section", "Average"):
                 print(f"{subject}: {grade}")
+        print(f"Average: {student.get('Average')}")
         print("--------------------")
 
 
