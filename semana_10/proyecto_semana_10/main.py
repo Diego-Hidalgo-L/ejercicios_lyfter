@@ -5,15 +5,13 @@ def show_menu():
     menu_choice = input("""
 Menu options:
 
-    1. See the complete information of all entered students.            
+    1. View the complete information of all students in the database.            
     2. Enter a new student's information.
     3. Search for a specific student by full name.
-    4. Delete a student's information.
-    5. See the top 3 students as per their grade average.
-    6. See which students have failing grades.
-    7. See the average grade among all the students.
-    8. Export all current data into CSV file.
-    9. Import all current data from previously exported CSV file.
+    4. Delete a student from the database.
+        6. View which students have failing grades.
+    5. View the top 3 students as per their grade average.
+    7. View the average grade among all the students.
 
 Please enter the correct option for the action you wish to take: """)
     print("\n")
@@ -30,9 +28,9 @@ def route_menu_choice(menu_choice, students_list):
     elif menu_choice == '4':
         act4_delete_student(students_list)
     elif menu_choice == '5':
-        act5_extract_top_3_avgs(students_list)
+        act5_show_failing_students(students_list)
     elif menu_choice == '6':
-        act6_show_failing_students(students_list)
+        act6_extract_top_3_avgs(students_list)
     elif menu_choice == '7':
         act7_calculate_all_students_avg(students_list)
 
@@ -142,36 +140,30 @@ def input_dict_entry_to_students_list(students_list, dict_entry):
 
 def ask_if_another_student():
     while True:
-        try:
-            another_student = input("Do you want to enter another student's information? Yes or No: ").upper()
+        another_student = input("Do you want to enter another student's information? Yes or No: ").upper()
 
-            if another_student == "YES" or another_student == "NO":
-                print("\n")
-                return another_student
-            else:
-                raise ValueError
-        except ValueError:
+        if another_student in ("YES", "NO"):
+            print("\n")
+            return another_student
+        else:
             print("\nInvalid answer. Please answer Yes or No.")
 
 
-def create_students_list(students_list): # Esto es necesario todavía?
+def modify_students_list(students_list):
     while True:
         student_name, student_section = input_student_info()
         spanish_grade, english_grade, social_grade, science_grade = input_grades()
         individual_avg = calculate_individual_avg(spanish_grade, english_grade, social_grade, science_grade)
         dict_entry = create_dict_entry(student_name, student_section, spanish_grade, english_grade, social_grade, science_grade, individual_avg)
         input_dict_entry_to_students_list(students_list, dict_entry)
-        
+
         another_student = ask_if_another_student()
         if another_student == "NO":
             break
 
-    return students_list
-
 
 def act2_enter_student_into_students_list(students_list):
-    students_list = create_students_list(students_list)
-    print("Action 2 completed.")
+    modify_students_list(students_list)
 
 
 # # # # # # End of ACTION 2 # # # # #
@@ -247,21 +239,6 @@ def act4_delete_student(students_list):
 
 # # # # # Start of ACTION 5 # # # # #
 
-def act5_extract_top_3_avgs(students_list):
-    sorted_students = sorted(students_list, key=lambda s: s['Average'], reverse=True)
-    top_three = sorted_students[:3]
-
-    print("The students with the top three average grades are: ")
-    for student in top_three:
-        print(f"{student['Name']}")
-        print(f"Average: {student['Average']}")
-        print("----------------")
-
-
-# # # # # End of ACTION 5 # # # # #
-
-# # # # # Start of ACTION 6 # # # # #
-
 def search_for_failing_grades(students_list):
     failing_students_list = []
     for student in students_list:
@@ -296,9 +273,24 @@ def iterate_through_failing_students_list(failing_students_list):
         print("--------------------")
 
 
-def act6_show_failing_students(students_list):
+def act5_show_failing_students(students_list):
     failing_students_list = search_for_failing_grades(students_list)
     iterate_through_failing_students_list(failing_students_list)
+
+# # # # # End of ACTION 5 # # # # #
+
+# # # # # Start of ACTION 6 # # # # #
+
+def act6_extract_top_3_avgs(students_list):
+    sorted_students = sorted(students_list, key=lambda s: s['Average'], reverse=True)
+    top_three = sorted_students[:3]
+
+    print("The students with the top three average grades are: ")
+    for student in top_three:
+        print(f"{student['Name']}")
+        print(f"Average: {student['Average']}")
+        print("----------------")
+
 
 # # # # # End of ACTION 6 # # # # #
 
