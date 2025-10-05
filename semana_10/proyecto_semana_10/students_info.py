@@ -6,15 +6,15 @@ students_list = [
     'Spanish': 97.0,
     'English': 98.0,
     'Social Studies': 88.5,
-    'Science': 92.5,
+    'Science': 40.0,
     'Average': 94.0}
     ,
     {'Name': 'Mateo Fonseca',
     'Section': '4B',
     'Spanish': 90.0,
     'English': 91.8,
-    'Social Studies': 88.0,
-    'Science': 93.5,
+    'Social Studies': 59.0,
+    'Science': 55.0,
     'Average': 90.825}
     ,
     {'Name': 'Karla Lara',
