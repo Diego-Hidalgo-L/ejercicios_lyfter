@@ -12,15 +12,16 @@ Menu options:
     5. View which students have failing grades.
     6. View the top 3 students as per their grade average.
     7. View the grade average among all the students.
+    8. Exit.
 
-Please enter a number (1-7) for the action you wish to take: """)
+Please enter a number (1-8) for the action you wish to take: """)
     print("\n")
     
     while True:
-        if menu_choice.isdigit() and 1 <= int(menu_choice) <= 7:
+        if menu_choice.isdigit() and 1 <= int(menu_choice) <= 8:
             return menu_choice
         else:
-            menu_choice = input("Invalid choice. Please enter a number from 1 to 7: ")
+            menu_choice = input("Invalid choice. Please enter a number from 1 to 8: ")
             print("\n")
 
 
@@ -39,6 +40,8 @@ def route_menu_choice(menu_choice, students_list):
         act6_extract_top_3_avgs(students_list)
     elif menu_choice == '7':
         act7_calculate_all_students_avg(students_list)
+    elif menu_choice == '8':
+        return
 
 
 # # # # # End of MENU # # # # #
@@ -109,7 +112,7 @@ def student_exists(student_name, students_list):
 
 def input_student_name(students_list):
     while True:
-        student_name = is_valid_name("Please enter the student's name: ")
+        student_name = is_valid_name("Please enter the student's full name: ")
         if student_exists(student_name, students_list):
             print(f"\n'{student_name}' is already in the database.\n")
         else:
@@ -350,10 +353,18 @@ def act7_calculate_all_students_avg(students_list):
 # # # # # Start of MAIN # # # # #
 
 def main():
-    students_list = read_csv_file_and_extract_students_list("semana_10/proyecto_semana_10/students_info.csv")
-    menu_choice = show_menu()
-    route_menu_choice(menu_choice, students_list)
-    write_csv_file("semana_10/proyecto_semana_10/students_info.csv", students_list, students_list[0].keys())
+    students_list = read_csv_file_and_extract_students_list("semana_10/proyecto_semana_10/project/students_info.csv")
+
+    while True:
+        menu_choice = show_menu()
+
+        if menu_choice == '8':
+            print("Program ended.\n")
+            break
+        else:
+            route_menu_choice(menu_choice, students_list)
+
+    write_csv_file("semana_10/proyecto_semana_10/project/students_info.csv", students_list, students_list[0].keys())
 
 
 main()
