@@ -20,7 +20,7 @@ def main():
                 print("No data available. Please import or add student data first.\n")
             else:
                 write_csv_file('semana_10/proyecto_semana_10/project/students_info.csv', students_list, students_list[0].keys())
-                print("Data successfully exported.")
+                print("Data successfully exported!")
         else:
             if not students_list:
                 print("No data available. Please import student data from CSV file first.\n")
