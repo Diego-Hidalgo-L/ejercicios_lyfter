@@ -5,25 +5,25 @@ def show_menu():
     menu_choice = input("""
 Menu options:
 
-    1. Import all previous data from the CSV file.
-    2. Export all modified data into the CSV file.
-    2. View the complete information of all students in the database.            
+    1. View the complete information of all students in the database.            
     2. Enter a new student's information.
     3. Search for a specific student by full name.
     4. Delete a student from the database.
     5. View which students have failing grades.
     6. View the top 3 students as per their grade average.
     7. View the grade average among all the students.
-    8. Exit.
+    8. Import all previous data from the CSV file.
+    9. Export all modified data into the CSV file.
+    10.Exit.
 
-Please enter a number (1-8) for the action you wish to take: """)
+Please enter a number (1-10) for the action you wish to take: """)
     print("\n")
     
     while True:
-        if menu_choice.isdigit() and 1 <= int(menu_choice) <= 8:
+        if menu_choice.isdigit() and 1 <= int(menu_choice) <= 10:
             return menu_choice
         else:
-            menu_choice = input("Invalid choice. Please enter a number from 1 to 8: ")
+            menu_choice = input("Invalid choice. Please enter a number from 1 to 10: ")
             print("\n")
 
 
@@ -42,8 +42,6 @@ def route_menu_choice(menu_choice, students_list):
         act6_extract_top_3_avgs(students_list)
     elif menu_choice == '7':
         act7_calculate_all_students_avg(students_list)
-    elif menu_choice == '8':
-        return
 
 
 # # # # # End of MENU # # # # #
@@ -59,6 +57,7 @@ def read_csv_file_and_extract_students_list(path):
             reader = csv.DictReader(file)
             for row in reader:
                 students_list.append(row)
+        print("Data successfully imported.")
     except FileNotFoundError:
         print("Error: The file does not exist.")
 
@@ -355,18 +354,28 @@ def act7_calculate_all_students_avg(students_list):
 # # # # # Start of MAIN # # # # #
 
 def main():
-    students_list = read_csv_file_and_extract_students_list("semana_10/proyecto_semana_10/project/students_info.csv")
+    students_list = []
 
     while True:
         menu_choice = show_menu()
 
-        if menu_choice == '8':
+        if menu_choice == '10':
             print("Program ended.\n")
             break
+        elif menu_choice == '8':
+            students_list = read_csv_file_and_extract_students_list('semana_10/proyecto_semana_10/project/students_info.csv')
+            print("Data successfully imported!")
+        elif menu_choice == '9':
+            if not students_list:
+                print("No data available. Please import or add student data first.\n")
+            else:
+                write_csv_file('semana_10/proyecto_semana_10/project/students_info.csv', students_list, students_list[0].keys())
+                print("Data successfully exported!")
         else:
-            route_menu_choice(menu_choice, students_list)
-
-    write_csv_file("semana_10/proyecto_semana_10/project/students_info.csv", students_list, students_list[0].keys())
+            if not students_list:
+                print("No data available. Please import student data from CSV file first.\n")
+            else:
+                route_menu_choice(menu_choice, students_list)
 
 
 main()

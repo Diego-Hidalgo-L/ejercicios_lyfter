@@ -20,15 +20,18 @@ Menu options:
     5. View which students have failing grades.
     6. View the top 3 students as per their grade average.
     7. View the grade average among all the students.
+    8. Import all previous data from the CSV file.
+    9. Export all modified data into the CSV file.
+    10.Exit.
 
-Please enter a number (1-7) for the action you wish to take: """)
+Please enter a number (1-10) for the action you wish to take: """)
     print("\n")
     
     while True:
-        if menu_choice.isdigit() and 1 <= int(menu_choice) <= 7:
+        if menu_choice.isdigit() and 1 <= int(menu_choice) <= 10:
             return menu_choice
         else:
-            menu_choice = input("Invalid choice. Please enter a number from 1 to 7: ")
+            menu_choice = input("Invalid choice. Please enter a number from 1 to 10: ")
             print("\n")
 
 
