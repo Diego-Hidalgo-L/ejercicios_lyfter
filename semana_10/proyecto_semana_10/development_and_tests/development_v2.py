@@ -30,8 +30,7 @@ Please enter a number (1-10) for the action you wish to take: """)
 def route_menu_choice(menu_choice, students_list):
     if menu_choice == '1':
         act1_print_all_students_info(students_list)
-    elif menu_choice == '2':
-        act2_enter_student_into_students_list(students_list)
+    # act2 is called in main
     elif menu_choice == '3':
         act3_search_for_student(students_list)
     elif menu_choice == '4':
@@ -50,14 +49,18 @@ def route_menu_choice(menu_choice, students_list):
 
 import csv
 
+import csv
+
 def read_csv_file_and_extract_students_list(path):
     students_list = []
     try:
         with open(path, 'r') as file:
             reader = csv.DictReader(file)
             for row in reader:
+                for key, value in row.items():
+                    if value.replace('.', '', 1).isdigit():
+                        row[key] = float(value)
                 students_list.append(row)
-        print("Data successfully imported.")
     except FileNotFoundError:
         print("Error: The file does not exist.")
 
@@ -65,8 +68,8 @@ def read_csv_file_and_extract_students_list(path):
 
 
 def write_csv_file(path, data, headers):
-    with open(path, 'w', encoding='utf-8') as file:
-        writer = csv.DictWriter(file, headers)
+    with open(path, 'w', newline='', encoding='utf-8') as file:
+        writer = csv.DictWriter(file, fieldnames=headers)
         writer.writeheader()
         writer.writerows(data)
 
@@ -104,17 +107,17 @@ def is_valid_name(prompt):
             return name
 
 
-def student_exists(student_name, students_list):
+def student_exists(student_name, student_section, students_list):
     for student in students_list:
-        if student_name.lower == student.get('Name').lower:
+        if student.get('Name','').lower() == student_name.lower() and student.get('Section','').upper() == student_section.upper():
             return True
     return False
 
 
-def input_student_name(students_list):
+def input_student_name(students_list, student_section):
     while True:
-        student_name = is_valid_name("Please enter the student's full name: ")
-        if student_exists(student_name, students_list):
+        student_name = is_valid_name("Please enter the student's name: ")
+        if student_exists(student_name, student_section, students_list):
             print(f"\n'{student_name}' is already in the database.\n")
         else:
             return student_name
@@ -136,10 +139,10 @@ def validate_grade(prompt):
         grade = input(prompt)
         try:
             valid_grade = float(grade)
-            if 1 <= valid_grade <= 100:
+            if 0 <= valid_grade <= 100:
                 return valid_grade
             else:
-                print("\nInvalid answer. Please enter a grade from 1 to 100.")
+                print("\nInvalid answer. Please enter a grade from 0 to 100.")
         except ValueError:
             print("\nInvalid answer. Please enter a valid number.")
 
@@ -192,7 +195,7 @@ def ask_if_another_student():
 
 def modify_students_list(students_list):
     while True:
-        student_name = student_name = input_student_name(students_list)
+        student_name = input_student_name(students_list, student_section)
         student_section = input_student_section()
         spanish_grade, english_grade, social_grade, science_grade = input_grades()
         individual_avg_rounded = calculate_individual_avg(spanish_grade, english_grade, social_grade, science_grade)
@@ -324,7 +327,7 @@ def act5_show_failing_students(students_list):
 # # # # # Start of ACTION 6 # # # # #
 
 def act6_extract_top_3_avgs(students_list):
-    sorted_students = sorted(students_list, key=lambda s: s['Average'], reverse=True)
+    sorted_students = sorted(students_list, key=lambda s: float(s['Average']), reverse=True)
     top_three = sorted_students[:3]
 
     print("The students with the top three average grades are: ")
@@ -364,13 +367,18 @@ def main():
             break
         elif menu_choice == '8':
             students_list = read_csv_file_and_extract_students_list('semana_10/proyecto_semana_10/project/students_info.csv')
-            print("Data successfully imported!")
+            if students_list:
+                print("Data successfully imported!")
+            else:
+                print("No data imported.")
         elif menu_choice == '9':
             if not students_list:
                 print("No data available. Please import or add student data first.\n")
             else:
                 write_csv_file('semana_10/proyecto_semana_10/project/students_info.csv', students_list, students_list[0].keys())
                 print("Data successfully exported!")
+        elif menu_choice == '2':
+            act2_enter_student_into_students_list(students_list)
         else:
             if not students_list:
                 print("No data available. Please import student data from CSV file first.\n")

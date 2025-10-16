@@ -1,18 +1,24 @@
 
-students_list = []
+import csv
 
-def act1_print_all_students_info(students_list):
-    if not students_list:
-        print("There is no student data.\n")
-    else:
-        for student in students_list:
-            print(f"{student['Name']} - {student['Section']}")
-            print(f"Spanish: {student['Spanish']}")
-            print(f"English: {student['English']}")
-            print(f"Social Studies: {student['Social Studies']}")
-            print(f"Science: {student['Science']}")
-            print(f"Average: {student['Average']}")
-            print("------------------------")
+def read_csv_file_and_extract_students_list(path):
+    students_list = []
+    try:
+        with open(path, 'r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                for key, value in row.items():
+                    if value.replace('.', '', 1).isdigit():
+                        row[key] = float(value)
+                students_list.append(row)
+    except FileNotFoundError:
+        print("Error: The file does not exist.")
+
+    return students_list
+
+def main():
+    students_list = read_csv_file_and_extract_students_list('semana_10/proyecto_semana_10/project/students_info.csv')
+    print(students_list)
 
 
-act1_print_all_students_info(students_list)
+main()

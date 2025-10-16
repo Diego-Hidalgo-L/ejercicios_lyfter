@@ -30,17 +30,17 @@ def is_valid_name(prompt):
             return name
 
 
-def student_exists(student_name, students_list):
+def student_exists(student_name, student_section, students_list):
     for student in students_list:
-        if student_name.lower == student.get('Name').lower:
+        if student.get('Name','').lower() == student_name.lower() and student.get('Section','').upper() == student_section.upper():
             return True
     return False
 
 
-def input_student_name(students_list):
+def input_student_name(students_list, student_section):
     while True:
         student_name = is_valid_name("Please enter the student's name: ")
-        if student_exists(student_name, students_list):
+        if student_exists(student_name, student_section, students_list):
             print(f"\n'{student_name}' is already in the database.\n")
         else:
             return student_name
@@ -62,10 +62,10 @@ def validate_grade(prompt):
         grade = input(prompt)
         try:
             valid_grade = float(grade)
-            if 1 <= valid_grade <= 100:
+            if 0 <= valid_grade <= 100:
                 return valid_grade
             else:
-                print("\nInvalid answer. Please enter a grade from 1 to 100.")
+                print("\nInvalid answer. Please enter a grade from 0 to 100.")
         except ValueError:
             print("\nInvalid answer. Please enter a valid number.")
 
@@ -118,7 +118,7 @@ def ask_if_another_student():
 
 def modify_students_list(students_list):
     while True:
-        student_name = student_name = input_student_name(students_list)
+        student_name = input_student_name(students_list, student_section)
         student_section = input_student_section()
         spanish_grade, english_grade, social_grade, science_grade = input_grades()
         individual_avg_rounded = calculate_individual_avg(spanish_grade, english_grade, social_grade, science_grade)
@@ -250,7 +250,7 @@ def act5_show_failing_students(students_list):
 # # # # # Start of ACTION 6 # # # # #
 
 def act6_extract_top_3_avgs(students_list):
-    sorted_students = sorted(students_list, key=lambda s: s['Average'], reverse=True)
+    sorted_students = sorted(students_list, key=lambda s: float(s['Average']), reverse=True)
     top_three = sorted_students[:3]
 
     print("The students with the top three average grades are: ")

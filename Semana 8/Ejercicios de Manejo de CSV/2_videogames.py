@@ -74,7 +74,7 @@ import csv
 
 def write_tsv_file(file_path, data, headers):
     with open(file_path, 'w', newline="", encoding='utf-8') as file:
-        writer = csv.DictWriter(file, headers, dialect=csv.excel_tab)
+        writer = csv.DictWriter(file, fieldnames=headers, dialect=csv.excel_tab)
         writer.writeheader()
         writer.writerows(data)
 

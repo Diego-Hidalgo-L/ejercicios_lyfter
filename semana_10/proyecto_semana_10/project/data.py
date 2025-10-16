@@ -7,6 +7,9 @@ def read_csv_file_and_extract_students_list(path):
         with open(path, 'r') as file:
             reader = csv.DictReader(file)
             for row in reader:
+                for key, value in row.items():
+                    if value.replace('.', '', 1).isdigit():
+                        row[key] = float(value)
                 students_list.append(row)
     except FileNotFoundError:
         print("Error: The file does not exist.")
@@ -15,7 +18,7 @@ def read_csv_file_and_extract_students_list(path):
 
 
 def write_csv_file(path, data, headers):
-    with open(path, 'w', encoding='utf-8') as file:
-        writer = csv.DictWriter(file, headers)
+    with open(path, 'w', newline='', encoding='utf-8') as file:
+        writer = csv.DictWriter(file, fieldnames=headers)
         writer.writeheader()
         writer.writerows(data)

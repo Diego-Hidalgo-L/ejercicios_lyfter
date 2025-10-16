@@ -1,7 +1,6 @@
 
 from actions import (
     act1_print_all_students_info,
-    act2_enter_student_into_students_list,
     act3_search_for_student,
     act4_delete_student,
     act5_show_failing_students,
@@ -38,8 +37,7 @@ Please enter a number (1-10) for the action you wish to take: """)
 def route_menu_choice(menu_choice, students_list):
     if menu_choice == '1':
         act1_print_all_students_info(students_list)
-    elif menu_choice == '2':
-        act2_enter_student_into_students_list(students_list)
+    # act2 is called in main.py
     elif menu_choice == '3':
         act3_search_for_student(students_list)
     elif menu_choice == '4':
