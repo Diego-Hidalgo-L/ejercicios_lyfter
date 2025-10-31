@@ -72,16 +72,16 @@ def create_games_list():
 import csv
 
 
-def write_csv_file(file_path, data, headers):
+def write_tsv_file(file_path, data, headers):
     with open(file_path, 'w', newline="", encoding='utf-8') as file:
-        writer = csv.DictWriter(file, headers, dialect=csv.excel_tab)
+        writer = csv.DictWriter(file, fieldnames=headers, dialect=csv.excel_tab)
         writer.writeheader()
         writer.writerows(data)
 
 
 def main():
     games_list = create_games_list()
-    write_csv_file("videogames.tsv", games_list, games_list[0].keys())
+    write_tsv_file("videogames.tsv", games_list, games_list[0].keys())
 
 
 main()
