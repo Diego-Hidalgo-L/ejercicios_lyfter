@@ -1,3 +1,4 @@
+
 class Person:
     def __init__(self, name):
         self.name = name
@@ -8,12 +9,14 @@ class Bus:
         self.max_passengers = max_passengers
         self.passengers = []
 
+
     def add_passenger(self, passenger):
         if len(self.passengers) < self.max_passengers:
             self.passengers.append(passenger)
             print(f"{passenger.name} has been added to the bus.")
         else:
             print("The bus is full!")
+    
 
     def remove_passenger(self, passenger):
         if passenger in self.passengers:
@@ -21,6 +24,11 @@ class Bus:
             print(f"{passenger.name} has been removed from the bus.")
         else:
             print(f"{passenger.name} was not found on the bus.")
+
+    
+    def list_passengers(self):
+        for p in self.passengers:
+            print(f"- {p.name}")
 
 
 person1 = Person("John")
