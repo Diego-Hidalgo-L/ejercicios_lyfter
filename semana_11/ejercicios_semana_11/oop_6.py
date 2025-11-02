@@ -1,9 +1,9 @@
 
 class Car:
-    def __init__(self, brand, model, speed):
+    def __init__(self, brand, model):
         self.brand = brand
         self.model = model
-        speed = 0
+        self.speed = 0
 
     def accelerate(self, amount):
         self.speed += amount
