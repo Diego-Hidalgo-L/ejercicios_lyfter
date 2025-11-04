@@ -34,7 +34,6 @@ def main():
     bus1.add_passenger(person2)
     bus1.add_passenger(person3)
     bus1.remove_passenger(person1)
-    bus1.list_passengers()
 
 
 main()

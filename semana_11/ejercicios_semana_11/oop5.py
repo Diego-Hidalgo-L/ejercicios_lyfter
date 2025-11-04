@@ -1,8 +1,12 @@
 
 class Rectangle:
     def __init__(self, width, height):
-        self.width = width
-        self.height = height
+        if width <= 0 or height <=0:
+            raise ValueError("Please enter positive values only.")
+        else:
+            self.width = width
+            self.height = height
+
 
     def get_area(self):
         area = self.width * self.height
@@ -16,27 +20,24 @@ class Rectangle:
 def create_rectangle():
     while True:
         try:
-            width = int(input("Enter the rectangle's width: "))
-            height = int(input("Enter the rectangles' height: "))
+            width = int(input("\nEnter the rectangle's width: "))
+            height = int(input("Enter the rectangle's height: "))
 
-            if width <= 0 or height <= 0:
-                print("\nPlease enter positive values only.")
-            else:
-                return Rectangle(width, height)
+            return Rectangle(width, height)
 
-        except ValueError:
-            print("\nInvalid input. Please enter integers only.")
+        except ValueError as e:
+            print(f"\nError: {e}")
 
 
 def main():
     rectangle1 = create_rectangle()
+    # rectangle2 = Rectangle(5, 3)
 
     area = rectangle1.get_area()
-    print("\n")
-    print(f"The rectangle's area is: {area}")
+    print(f"\nThe rectangle's area is: {area}.")
 
     perimeter = rectangle1.get_perimeter()
-    print(f"The rectangle's perimeter is: {perimeter}")
+    print(f"The rectangle's perimeter is: {perimeter}.\n")
 
 
 main()
