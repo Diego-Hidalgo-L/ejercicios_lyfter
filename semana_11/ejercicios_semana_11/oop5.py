@@ -31,7 +31,7 @@ def create_rectangle():
 
 def main():
     rectangle1 = create_rectangle()
-    # rectangle2 = Rectangle(5, 3)
+    # rectangle2 = Rectangle(-5, 3)
 
     area = rectangle1.get_area()
     print(f"\nThe rectangle's area is: {area}.")

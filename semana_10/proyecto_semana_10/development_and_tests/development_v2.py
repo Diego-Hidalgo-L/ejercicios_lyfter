@@ -93,6 +93,17 @@ def act1_print_all_students_info(students_list):
 
 # # # # # #   Start of ACTION 2   # # # # #
 
+def input_student_section():
+    pattern = r"^(1[0-2]|[1-9])[A-Ca-c]$"
+    while True:
+        student_section = input("Please enter the student's section: ").upper()
+
+        if re.match(pattern, student_section):
+            return student_section
+        else:
+            print("\nInvalid section format. Please try again. ")
+
+
 import re
 
 def is_valid_name(prompt):
@@ -121,17 +132,6 @@ def input_student_name(students_list, student_section):
             print(f"\n'{student_name}' is already in the database.\n")
         else:
             return student_name
-
-
-def input_student_section():
-    pattern = r"^(1[0-2]|[1-9])[A-Ca-c]$"
-    while True:
-        student_section = input("Please enter the student's section: ").upper()
-
-        if re.match(pattern, student_section):
-            return student_section
-        else:
-            print("\nInvalid section format. Please try again. ")
 
 
 def validate_grade(prompt):
@@ -195,8 +195,8 @@ def ask_if_another_student():
 
 def modify_students_list(students_list):
     while True:
-        student_name = input_student_name(students_list, student_section)
         student_section = input_student_section()
+        student_name = input_student_name(students_list, student_section)
         spanish_grade, english_grade, social_grade, science_grade = input_grades()
         individual_avg_rounded = calculate_individual_avg(spanish_grade, english_grade, social_grade, science_grade)
         dict_entry = create_dict_entry(student_name, student_section, spanish_grade, english_grade, social_grade, science_grade, individual_avg_rounded)
