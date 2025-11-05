@@ -47,31 +47,77 @@ def route_menu_choice(menu_choice, students_list):
 
 # # # # # Start of DATA # # # # #
 
-import csv
+class Student:
+    def __init__(self, student_name, student_section, spanish_grade, english_grade, social_grade, science_grade, individual_avg):
+        self.student_name = student_name
+        self.student_section = student_section
+        self.spanish_grade = spanish_grade
+        self.english_grade = english_grade
+        self.social_grade = social_grade
+        self.science_grade = science_grade
+        self.individual_avg = individual_avg
+
+    def to_dict(self):
+        return {
+            "Name": self.student_name,
+            "Section": self.student_section,
+            "Spanish": self.spanish_grade,
+            "English": self.english_grade,
+            "Social Studies": self.social_grade,
+            "Science": self.science_grade,
+            "Average": self.individual_avg
+        }
+
+    def __str__(self):
+        return f"{self.student_name}"
+    
+    def __repr__(self):
+        return f"{self.student_name}: {self.student_section}"
+
+
+def convert_student_obj(student_dict):
+    key_map = {
+        "Name": "student_name",
+        "Section": "student_section",
+        "Spanish": "spanish_grade",
+        "English": "english_grade",
+        "Social Studies": "social_grade",
+        "Science": "science_grade",
+        "Average": "individual_avg"
+    }
+
+    for key, value in student_dict.items():
+        if isinstance(value, str) and value.replace('.', '', 1).isdigit():
+            student_dict[key] = float(value)
+
+    mapped_values = {new: student_dict[old] for old, new in key_map.items()}
+    return Student(**mapped_values)
+
 
 import csv
 
-def read_csv_file_and_extract_students_list(path):
-    students_list = []
+def read_csv_file_and_extract_students_list(path, students_obj_list):
     try:
         with open(path, 'r') as file:
             reader = csv.DictReader(file)
-            for row in reader:
-                for key, value in row.items():
-                    if value.replace('.', '', 1).isdigit():
-                        row[key] = float(value)
-                students_list.append(row)
+
+            for student_dict in reader:
+                student_obj = convert_student_obj(student_dict)
+                students_obj_list.append(student_obj)
+    
     except FileNotFoundError:
         print("Error: The file does not exist.")
-
-    return students_list
+    
+    return students_obj_list
 
 
 def write_csv_file(path, data, headers):
     with open(path, 'w', newline='', encoding='utf-8') as file:
         writer = csv.DictWriter(file, fieldnames=headers)
         writer.writeheader()
-        writer.writerows(data)
+
+        rows = [student.to_dict() for student in data]
+        writer.writerows(rows)
 
 
 # # # # # End of DATA # # # # #
@@ -80,18 +126,20 @@ def write_csv_file(path, data, headers):
 
 def act1_print_all_students_info(students_list):
     for student in students_list:
-        print(f"{student['Name']} - {student['Section']}")
-        print(f"Spanish: {student['Spanish']}")
-        print(f"English: {student['English']}")
-        print(f"Social Studies: {student['Social Studies']}")
-        print(f"Science: {student['Science']}")
-        print(f"Average: {student['Average']}")
+        print(f"{student.student_name} - {student.student_section}")
+        print(f"Spanish: {student.spanish_grade}")
+        print(f"English: {student.english_grade}")
+        print(f"Social Studies: {student.social_grade}")
+        print(f"Science: {student.science_grade}")
+        print(f"Average: {student.individual_avg}")
         print("------------------------")
 
 
 # # # # # End of ACTION 1 # # # # #
 
-# # # # # #   Start of ACTION 2   # # # # #
+# # # # # Start of ACTION 2 # # # # #
+
+import re
 
 def input_student_section():
     pattern = r"^(1[0-2]|[1-9])[A-Ca-c]$"
@@ -103,8 +151,6 @@ def input_student_section():
         else:
             print("\nInvalid section format. Please try again. ")
 
-
-import re
 
 def is_valid_name(prompt):
     pattern = r"^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[-' ][A-Za-zÀ-ÖØ-öø-ÿ]+)*$"
@@ -120,7 +166,7 @@ def is_valid_name(prompt):
 
 def student_exists(student_name, student_section, students_list):
     for student in students_list:
-        if student.get('Name','').lower() == student_name.lower() and student.get('Section','').upper() == student_section.upper():
+        if student.student_name.lower() == student_name.lower() and student.get('Section','').upper() == student_section.upper():
             return True
     return False
 
@@ -163,24 +209,18 @@ def calculate_individual_avg(spanish_grade, english_grade, social_grade, science
     return individual_avg_rounded
 
 
-def create_dict_entry(student_name, student_section, spanish_grade, english_grade, social_grade, science_grade, individual_avg):
-    dict_entry = {}
-    
-    dict_entry['Name'] = student_name
-    dict_entry['Section'] = student_section
-    dict_entry['Spanish'] = spanish_grade
-    dict_entry['English'] = english_grade
-    dict_entry['Social Studies'] = social_grade
-    dict_entry['Science'] = science_grade
-    dict_entry['Average'] = individual_avg
-    
-    return dict_entry
+        # Change this from a dictionary into an object #
+
+def create_student_obj(student_name, student_section, spanish_grade, english_grade, social_grade, science_grade, individual_avg):
+    student_obj = Student(student_name, student_section, spanish_grade, english_grade, social_grade, science_grade, individual_avg)
+    return student_obj
 
 
-def input_dict_entry_to_students_list(students_list, dict_entry):
-    students_list.append(dict_entry)
+def input_student_obj_to_students_list(students_list, student_obj):
+    students_list.append(student_obj)
     print("\nStudent information entered successfully!")
 
+        # Change this from a dictionary into an object #
 
 def ask_if_another_student():
     while True:
@@ -198,9 +238,9 @@ def modify_students_list(students_list):
         student_section = input_student_section()
         student_name = input_student_name(students_list, student_section)
         spanish_grade, english_grade, social_grade, science_grade = input_grades()
-        individual_avg_rounded = calculate_individual_avg(spanish_grade, english_grade, social_grade, science_grade)
-        dict_entry = create_dict_entry(student_name, student_section, spanish_grade, english_grade, social_grade, science_grade, individual_avg_rounded)
-        input_dict_entry_to_students_list(students_list, dict_entry)
+        individual_avg = calculate_individual_avg(spanish_grade, english_grade, social_grade, science_grade)
+        student_obj = create_student_obj(student_name, student_section, spanish_grade, english_grade, social_grade, science_grade, individual_avg)
+        input_student_obj_to_students_list(students_list, student_obj)
 
         another_student = ask_if_another_student()
         if another_student == "NO":
@@ -211,7 +251,7 @@ def act2_enter_student_into_students_list(students_list):
     modify_students_list(students_list)
 
 
-# # # # # # End of ACTION 2 # # # # #
+# # # # # End of ACTION 2 # # # # #
 
 # # # # # Start of ACTION 3 # # # # #
 
@@ -223,13 +263,13 @@ def ask_for_student_to_search():
 
 def search_student_through_list(student_to_search, students_list):
     for student in students_list:
-        if student_to_search == student.get('Name'):
-            print(f"\n{student['Name']} - {student['Section']}")
-            print(f"Spanish: {student['Spanish']}")
-            print(f"English: {student['English']}")
-            print(f"Social Studies: {student['Social Studies']}")
-            print(f"Science: {student['Science']}")
-            print(f"Average: {student['Average']}\n")
+        if student_to_search == student.student_name:
+            print(f"\n{student.student_name} - {student.student_section}")
+            print(f"Spanish: {student.spanish_grade}")
+            print(f"English: {student.english_grade}")
+            print(f"Social Studies: {student.social_grade}")
+            print(f"Science: {student.science_grade}")
+            print(f"Average: {student.individual_avg}\n")
             break
     else:
         print(f"\nNo student named '{student_to_search}' was found.\n")
@@ -251,10 +291,10 @@ def ask_for_student_to_delete():
 
 
 def delete_student_from_students_list(student_to_delete, students_list):
-    for i, student in enumerate(students_list):
-        if student_to_delete == student.get('Name'):
-            students_list.pop(i)
-            print(f"\n{student.get('Name')} was deleted from the database.\n")
+    for student in students_list:
+        if student_to_delete == student.student_name:
+            students_list.remove(student)
+            print(f"\n{student.student_name} was deleted from the database.\n")
             break
 
     else:
@@ -286,17 +326,19 @@ def act4_delete_student(students_list):
 
 def search_for_failing_grades(students_list):
     failing_students_list = []
+
     for student in students_list:
-        failing_student_dict = {'Name': student.get('Name'), 'Section': student.get('Section'), 'Average': student.get('Average')}
-        for subject, value in student.items():
-            if subject not in ("Name", "Section", "Average"): 
-                try:
-                    grade = float(value)
-                    if grade < 60:
-                        failing_student_dict[subject] = grade
-                except ValueError:
-                    continue
-        
+        failing_student_dict = {'Name': student.student_name, 'Section': student.student_section, 'Average': student.individual_avg}
+        grades_dict = {'Spanish': student.spanish_grade, 'English': student.english_grade, 'Social Studies': student.social_grade, 'Science': student.science_grade}
+
+        for subject, value in grades_dict.items():
+            try:
+                grade = float(value)
+                if grade < 60:
+                    failing_student_dict[subject] = grade
+            except ValueError:
+                continue
+
         if len(failing_student_dict) > 3:
                 failing_students_list.append(failing_student_dict)
 
@@ -309,13 +351,15 @@ def iterate_through_failing_students_list(failing_students_list):
         print("There are no failing students.\n")
         return
 
-    for student in failing_students_list:
-        print(f"{student['Name']} - {student['Section']}")
-        for subject, grade in student.items():
-            if subject not in ("Name", "Section", "Average"):
-                print(f"{subject}: {grade}")
-        print(f"Average: {student.get('Average')}")
-        print("--------------------")
+    else:
+        print(f"There are {len(failing_students_list)} students with failing grades:")
+        for student in failing_students_list:
+            print(f"{student['Name']} - {student['Section']}")
+            for subject, grade in student.items():
+                if subject not in ("Name", "Section", "Average"):
+                    print(f"{subject}: {grade}")
+            print(f"Average: {student.get('Average')}")
+            print("--------------------")
 
 
 def act5_show_failing_students(students_list):
@@ -327,13 +371,13 @@ def act5_show_failing_students(students_list):
 # # # # # Start of ACTION 6 # # # # #
 
 def act6_extract_top_3_avgs(students_list):
-    sorted_students = sorted(students_list, key=lambda s: float(s['Average']), reverse=True)
+    sorted_students = sorted(students_list, key=lambda s: float(s.individual_avg), reverse=True)
     top_three = sorted_students[:3]
 
     print("The students with the top three average grades are: ")
     for student in top_three:
-        print(f"{student['Name']}")
-        print(f"Average: {student.get('Average')}")
+        print(f"{student.student_name}")
+        print(f"Average: {student.individual_avg}")
         print("----------------")
 
 
@@ -344,7 +388,7 @@ def act6_extract_top_3_avgs(students_list):
 def act7_calculate_all_students_avg(students_list):
     sum_of_avgs = 0
     for student in students_list:
-        ind_avg = float(student.get('Average'))
+        ind_avg = float(student.individual_avg)
         sum_of_avgs += ind_avg
     
     all_students_avg = sum_of_avgs / len(students_list)
@@ -357,7 +401,8 @@ def act7_calculate_all_students_avg(students_list):
 # # # # # Start of MAIN # # # # #
 
 def main():
-    students_list = []
+    students_obj_list = []
+    headers = ["Name", "Section", "Spanish", "English", "Social Studies", "Science", "Average"]
 
     while True:
         menu_choice = show_menu()
@@ -366,24 +411,24 @@ def main():
             print("Program ended.\n")
             break
         elif menu_choice == '8':
-            students_list = read_csv_file_and_extract_students_list('semana_10/proyecto_semana_10/project/students_info.csv')
-            if students_list:
+            students_obj_list = read_csv_file_and_extract_students_list('semana_11/ejercicios_semana_11/oop3/project/students_info.csv', students_obj_list)
+            if students_obj_list:
                 print("Data successfully imported!")
             else:
                 print("No data imported.")
         elif menu_choice == '9':
-            if not students_list:
+            if not students_obj_list:
                 print("No data available. Please import or add student data first.\n")
             else:
-                write_csv_file('semana_10/proyecto_semana_10/project/students_info.csv', students_list, students_list[0].keys())
+                write_csv_file('semana_11/ejercicios_semana_11/oop3/project/students_info.csv', students_obj_list, headers)
                 print("Data successfully exported!")
         elif menu_choice == '2':
-            act2_enter_student_into_students_list(students_list)
+            act2_enter_student_into_students_list(students_obj_list)
         else:
-            if not students_list:
+            if not students_obj_list:
                 print("No data available. Please import student data from CSV file first.\n")
             else:
-                route_menu_choice(menu_choice, students_list)
+                route_menu_choice(menu_choice, students_obj_list)
 
 
 main()
