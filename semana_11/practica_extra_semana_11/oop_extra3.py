@@ -2,14 +2,14 @@
 class BankAccount:
     def __init__(self, owner):
         self.owner = owner
-        self.__balance = 0  # __ Makes the attribute private.
+        self.__balance = 0  # __ INDICATES that the attribute is private.
 
     def deposit(self, amount):
         self.__balance += amount
         print(f"Deposited {amount}. New balance: {self.__balance}.")
     
     def withdraw(self, amount):
-        if self.__balance >= amount:
+        if self.__balance >= amount: # MAKES the attribute private
             self.__balance -= amount
             print(f"Withdrew {amount}. New balance: {self.__balance}.")
             return True   # Helps if later your code depends on whether the withdrawal succeeded.
