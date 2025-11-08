@@ -20,5 +20,5 @@ class SmartCar(MusicPlayerMixin, GPSMixin, Car):    # Mixins usually come before
 my_car = SmartCar("Tesla")
 
 print(my_car.drive())
-print(my_car.navigate_to("Rhode Island"))
+print(my_car.navigate_to("Newport"))
 print(my_car.play_music("Broadview - Slow Pulp"))
