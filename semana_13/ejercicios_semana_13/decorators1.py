@@ -1,5 +1,5 @@
 
-def return_area(func):
+def return_params_and_result(func):
     def wrapper(width, length):
         result = func(width, length)
         print(f"Parameters: {width, length}.")
@@ -8,7 +8,7 @@ def return_area(func):
     return wrapper
 
 
-@return_area
+@return_params_and_result
 def calculate_area(width, length):
     return width * length
 

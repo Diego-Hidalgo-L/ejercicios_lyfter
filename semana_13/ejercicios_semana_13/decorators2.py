@@ -7,9 +7,10 @@ def int_checker(func):
 
         for arg in args:
             if isinstance(arg, int):
-                print(f"{arg} is an integer.")
+                # print(f"{arg} is an integer.")
+                continue
             else:
-                print(f"{arg} is not an integer.")
+                print(f"'{arg}' is not an integer.")
     
     return wrapper
 
