@@ -16,10 +16,13 @@ class User:
 
 def check_age(func):
     def wrapper(user):
-        if user.age >= 18:
-            return func(user)
-        else:
-            print(f"Error: User {user.name} is underage ({user.age} years old).")
+        try:
+            if user.age >= 18:
+                return func(user)
+            else:
+                raise ValueError(f"ValueError: User {user.name} is underage ({user.age} years old).")
+        except ValueError:
+            print(f"ValueError: User {user.name} is underage ({user.age} years old).")
     
     return wrapper
 

@@ -2,15 +2,17 @@
 
 def int_checker(func):
     def wrapper(*args):
-
-        func(*args)
-
         for arg in args:
-            if isinstance(arg, int):
-                # print(f"{arg} is an integer.")
-                continue
-            else:
-                print(f"'{arg}' is not an integer.")
+            try:
+                if isinstance(arg, int):
+                    # print(f"{arg} is an integer.")
+                    continue
+                else:
+                    raise ValueError
+            except ValueError:
+                print(f"ValueError: '{arg}' is not an integer.")
+        
+        return func(*args)
     
     return wrapper
 

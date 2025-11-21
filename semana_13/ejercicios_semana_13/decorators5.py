@@ -1,12 +1,15 @@
 
-user_logged_in = True
+user_logged_in = False
 
 def requires_login(func):
-    def wrapper(user):
-        if user_logged_in == True:
-                func(user)
-        else:
-            print("Usuario no autenticado")
+    def wrapper(*args, **kwargs):
+        try:
+            if user_logged_in == True:
+                return func(*args, *kwargs.values())
+            else:
+                raise Exception
+        except Exception:
+            print("Error: Usuario no autenticado.")
 
     return wrapper
 

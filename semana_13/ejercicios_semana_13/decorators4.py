@@ -1,10 +1,9 @@
 
 
 def repeat_twice(func):
-    def wrapper(name):
-        func(name)
-        func(name)
-    
+    def wrapper(*args, **kwargs):
+         return (func(*args, *kwargs.values()), func(*args, *kwargs.values()))
+
     return wrapper
 
 
@@ -13,4 +12,4 @@ def print_str(name):
     print(f"Hola, {name}")
 
 
-print_str("Diego")
+print_str(my_param="Diego")
