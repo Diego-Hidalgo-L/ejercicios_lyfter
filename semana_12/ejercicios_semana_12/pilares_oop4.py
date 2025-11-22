@@ -31,3 +31,4 @@ employee = Employee("Ana", 1000)
 employee.promote(0.1)
 
 print(employee.salary)
+print(employee.show_name)
