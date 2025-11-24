@@ -23,7 +23,7 @@ def check_age(func):
                 raise ValueError(f"ValueError: User {user.name} is underage ({user.age} years old).")
         except ValueError:
             print(f"ValueError: User {user.name} is underage ({user.age} years old).")
-    
+
     return wrapper
 
 
