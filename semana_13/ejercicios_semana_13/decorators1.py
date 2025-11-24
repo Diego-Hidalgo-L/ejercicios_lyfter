@@ -3,7 +3,7 @@ def return_params_and_result(func):
     def wrapper(*args, **kwargs):
         list_of_params = [*args, *kwargs.values()]
 
-        result = func(*args, **kwargs)
+        result = func(*args, *kwargs.values())
 
         print(f"Parameters: {list_of_params}.")
         print(f"Resultado: {result}")
@@ -14,16 +14,8 @@ def return_params_and_result(func):
 
 
 @return_params_and_result
-def calculate_area(*args, **kwargs):
-    multiplier = 1
-
-    for arg in args:
-        multiplier *= arg
-
-    for kwarg in kwargs.values():
-        multiplier *= kwarg
-    
-    return multiplier
+def calculate_area(width, length):
+    return width * length
 
 
 print(calculate_area(10, key_param=12))
