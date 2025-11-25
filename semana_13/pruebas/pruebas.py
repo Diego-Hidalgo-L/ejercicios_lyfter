@@ -1,10 +1,11 @@
 
+word_list = ["Hola, ", "esto ", "es ", "un ", "string."]
 
-def my_function(*args, **kwargs):
-    # print(f"First parameter: {first_parameter}")
-    print(f"Args: {args}")
+new_string = ""
 
-    print(f"Kwargs: {kwargs}")
+for word in word_list:
+    new_string += word
 
 
-my_function("First value", 1, 2, 3, 4, my_other_parameter="World", whatever=6)
+
+print(new_string)
