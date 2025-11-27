@@ -7,8 +7,8 @@ class Node:
         self.data = data
         self.next = next
     
-    # def __str__(self):
-    #     return self.data
+    def __str__(self):
+        return self.data
 
 
 class LinkedList:
