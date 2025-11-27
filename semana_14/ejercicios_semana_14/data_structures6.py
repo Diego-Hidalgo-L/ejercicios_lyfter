@@ -12,6 +12,7 @@ class Node:
     def __str__(self):
         return self.data
 
+
 class DoubleLinkedList:
     head: Node
     tail: Node
