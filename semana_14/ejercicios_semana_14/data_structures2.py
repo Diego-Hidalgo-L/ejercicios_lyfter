@@ -22,15 +22,15 @@ class DoubleEndedQueue:
         old_head = self.head
 
         if old_head == None:
-            print("The Double-Ended Queue was empty.")
+            # print("The Double-Ended Queue was empty.")
             self.head = new_node
             self.tail = new_node
             new_node.prev = None
             new_node.next = None
         else:
             new_node.next = old_head
-            new_node.prev = None
             old_head.prev = new_node
+            new_node.prev = None
             self.head = new_node
 
     def pop_left(self):

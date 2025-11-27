@@ -15,9 +15,9 @@ class Stack:
         self.top = top
 
     def push(self, new_node):
-        current_top = self.top
+        old_top = self.top
         self.top = new_node
-        new_node.next = current_top
+        new_node.next = old_top
 
     def pop(self):
             if self.top == None:
