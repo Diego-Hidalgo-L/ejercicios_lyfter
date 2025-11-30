@@ -46,6 +46,7 @@ fourth_node = Node("Soy el nuevo nodo!")
 queue.enqueue(fourth_node)
 queue.print_structure()
 
+print("\n")
 print("Quitando un elemento!")
 
 queue.dequeue()
