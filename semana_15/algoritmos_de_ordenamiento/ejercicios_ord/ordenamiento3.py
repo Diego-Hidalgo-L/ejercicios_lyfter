@@ -21,13 +21,10 @@ class LinkedList:
             print(current_node.data)
             current_node = current_node.next
 
-    def add_node(self, new_node):
-        old_head = self.head
-        self.head = new_node
-        new_node.next = old_head
-
     def bubble_sort(self):
         swapped = True
+        iterations = 0
+        swaps = 0
 
         while swapped:
             current_node = self.head
@@ -38,8 +35,13 @@ class LinkedList:
                     current_node.data = current_node.next.data
                     current_node.next.data = temp_data
                     swapped = True
+                    swaps += 1
 
                 current_node = current_node.next
+            
+            iterations += 1
+        
+        return iterations, swaps
 
 
 # Así se vería el LinkedList antes del bubble sort:
@@ -50,12 +52,18 @@ fourth_node = Node(4, second_node)
 first_node = Node(1, fourth_node)
 third_node = Node(3, first_node)
 
-my_ll = LinkedList(third_node)
+def main():
+    my_ll = LinkedList(third_node)
 
-print("\nStructure BEFORE the bubble sort:")
-my_ll.print_structure()
+    print("\nStructure BEFORE the bubble sort:")
+    my_ll.print_structure()
 
-my_ll.bubble_sort()
+    iterations, swaps = my_ll.bubble_sort()
 
-print("\nStructure AFTER the bubble sort:")
-my_ll.print_structure()
+    print("\nStructure AFTER the bubble sort:")
+    my_ll.print_structure()
+    print("\nIterations:", iterations)
+    print("Swaps:", swaps)
+
+
+main()

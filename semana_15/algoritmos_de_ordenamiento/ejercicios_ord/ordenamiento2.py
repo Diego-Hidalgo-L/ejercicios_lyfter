@@ -1,6 +1,7 @@
 
 def reverse_bubble_sort(my_list):
     level = 0
+    swaps = 0
     for outer_index in range(len(my_list) - 1, - 1, - 1):
         has_made_changes = False
         print(" " * level + f"Level: {level}")
@@ -20,19 +21,24 @@ def reverse_bubble_sort(my_list):
                 my_list[index] = prev_number
                 my_list[index - 1] = current_number
                 has_made_changes = True
+                swaps += 1
             else:
                 print(" " * level + "--No changes made.")
         
         level += 1
 
         if not has_made_changes:
-            return
-
-
+            return level, swaps
 
 
 my_list = [19, 78, -3, 81, 34, 35, 67]
 
-reverse_bubble_sort(my_list)
+def main():
+    iterations, swaps = reverse_bubble_sort(my_list)
+    print("\n")
+    print(my_list)
+    print("Iterations:", iterations)
+    print("Swaps:", swaps)
 
-print(my_list)
+
+main()
