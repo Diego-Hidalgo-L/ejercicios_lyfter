@@ -6,7 +6,7 @@ def bubble_sort(list_to_sort):
         has_made_changes = False # O(1)
         level = outer_index # O(1)
         print(f"Level: {level}") # O(1)
-        for index in range(len(list_to_sort) - 1 - outer_index): # O(log n)
+        for index in range(len(list_to_sort) - 1 - outer_index): # O(n) - NO O(log n), porque la cantidad de iteraciones NO se va reduciendo de manera considerable.
             current_element = list_to_sort[index] # O(1)
             next_element = list_to_sort[index + 1] # O(1)
 

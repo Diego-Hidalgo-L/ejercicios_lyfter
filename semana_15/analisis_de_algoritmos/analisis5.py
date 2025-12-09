@@ -12,6 +12,6 @@ Preguntas:
 - La complejidad temporal es de O(n^2).
 
 2) ¿Cuánto dura si hay 1 millón de claves?
-- El algoritmo tendría que realizar 1_000_000_000_000 de operaciones.
+- El algoritmo tendría que realizar 1_000_000_000_000 operaciones.
 
 """
