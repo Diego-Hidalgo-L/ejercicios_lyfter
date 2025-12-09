@@ -1,10 +1,10 @@
 
 def bubble_sort(list_to_sort):
-    iterations = 0
-    swaps = 0
-    for outer_index in range(len(list_to_sort) - 1):
+    iterations = 0 
+    swaps = 0 
+    for outer_index in range(len(list_to_sort) - 1): 
         has_made_changes = False
-        level = outer_index
+        level = outer_index 
         print(f"Level: {level}")
         for index in range(len(list_to_sort) - 1 - outer_index):
             current_element = list_to_sort[index]
