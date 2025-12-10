@@ -50,7 +50,8 @@ class Queue:
         if not node_data:
             print("The Queue is empty.")
         else:
-            print(" -> ".join(node_data))
+            # print(" -> ".join(node_data))
+            print(node_data)
 
 
 head_node = Node("A")

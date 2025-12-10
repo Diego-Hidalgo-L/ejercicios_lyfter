@@ -49,7 +49,7 @@ class BinaryTree:
     def print_structure(self, node=None, level=0):
         if node is None:
             node = self.root
-            if node is None:
+            if node is None: # Como decir "if self.root is None:"
                 print("The Binary Tree is empty.")
                 return
         
