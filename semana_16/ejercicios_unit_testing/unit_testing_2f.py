@@ -1,5 +1,5 @@
 
-def char_counter():
+def count_chars():
     my_str = str(input("Please enter a string of characters: ")).lower()
     target_letter = str(input("Please enter the letter you wish to count within the string: ")).lower()
     counter = 0
@@ -10,7 +10,7 @@ def char_counter():
 
 
 def main():
-    my_str, target_letter, counter = char_counter()
+    my_str, target_letter, counter = count_chars()
     print(f"The letter '{target_letter}' appears {counter} times in '{my_str}'.")
 
 
