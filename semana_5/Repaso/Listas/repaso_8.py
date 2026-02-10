@@ -9,6 +9,10 @@ for number in numbers:
     else:
         impares.append(number)
 
+    # Opción 2: La MEJOR
+# pares = [n for n in numbers if n % 2 == 0]
+# impares = [n for n in numbers if n % 2 != 0]
+
 
 print("Pares:", pares)
 print("Impares:", impares)

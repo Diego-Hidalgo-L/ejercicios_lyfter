@@ -16,7 +16,7 @@ def offset_iterate(list_a, list_b):
 def main():
     print("Normal iteration:")
     normal_iterate(list_a, list_b)
-    print("\nReverse iteration:")
+    print("\nShifted iteration:")
     offset_iterate(list_a, list_b)
 
 

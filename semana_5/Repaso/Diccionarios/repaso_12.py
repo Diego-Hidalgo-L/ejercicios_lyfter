@@ -11,6 +11,7 @@ for student in students:
     name = student.get("name")
     grade = student.get("grade")
 
+    # también se puede usar if grade not in result:
     if result.get(grade) is None:
         result[grade] = []
 

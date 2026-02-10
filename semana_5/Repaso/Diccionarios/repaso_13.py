@@ -11,8 +11,8 @@ for product in products:
     category = product.get("category")
     price = product.get("price")
 
-    if result.get(category) is None:
-        result[category] = 0
+    if category not in result:
+        result[category] = price
 
     if price > result[category]:
         result[category] = price
