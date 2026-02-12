@@ -1,10 +1,14 @@
 
-count = 12
-
-def increase():
-    a = 12
-    c = a + count
-    return c
+def print_message():
+    print("Esta es la primera función.")
 
 
-print(increase())
+def call_first():
+    print_message()
+
+
+def call_second():
+    call_first()
+
+
+call_second()
