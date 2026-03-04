@@ -1,0 +1,3 @@
+name,age,country
+Ana,25,Costa Rica
+Luis,30,México
