@@ -1,7 +1,7 @@
 
 from utils.strings import clean_name, format_name
 from utils.stats import count_letters
-from utils.file_utils import save_results_in_json_file
+from utils.file_utils import save_results_json
 
 
 def print_result(names_dict):
@@ -15,7 +15,7 @@ def main():
     clean_names = clean_name(raw_names)
     formatted_names = format_name(clean_names)
     names_dict = count_letters(formatted_names)
-    save_results_in_json_file(names_dict, 'semana_10/repaso/name_processor/results.json')
+    save_results_json(names_dict, 'semana_10/repaso/name_processor/results.json')
     print_result(names_dict)
 
 
