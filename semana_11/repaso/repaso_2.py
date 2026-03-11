@@ -19,18 +19,18 @@ class Library:
 
     def add_book(self, book):
         if len(self.books) >= self.max_books:
-            return "La biblioteca está llena."
+            print("La biblioteca está llena.")
 
         self.books.append(book)
 
     def remove_book(self, book):
         if not self.books:
-            return "No hay libros para remover."
-        if book not in self.books:
-            return f"El libro {book} no se encuentra en la biblioteca."
-        
-        self.books.remove(book)
-        return f"Se ha removido el libro: {book}"
+            print("No hay libros para remover.")
+        elif book not in self.books:
+            print(f"El libro {book} no se encuentra en la biblioteca.")
+        else:
+            self.books.remove(book)
+            print(f"Se ha removido el libro: {book}.")
 
 
 def main():
@@ -41,12 +41,12 @@ def main():
     book5 = Book("Temporada de Huracanes", "Fernanda Melchor", 2017)
 
     my_books = [book1, book2, book3]
-    my_library = Library(4, my_books)
+    my_library = Library(4)
 
     print(my_books)
     my_library.add_book(book4)
     print(my_books)
-    print(my_library.remove_book(book5))
+    my_library.remove_book(book5)
     print(my_books)
 
 
