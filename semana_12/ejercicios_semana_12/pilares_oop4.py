@@ -24,7 +24,7 @@ class Employee:
             print("El porcentaje debe ser positivo.")
         else:
             new_salary = self.__salary * (1 + percentage)
-            self.salary = new_salary
+            self.__salary = new_salary
 
 
 employee = Employee("Ana", 1000)

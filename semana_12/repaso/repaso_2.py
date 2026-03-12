@@ -25,17 +25,20 @@ class Circle(Shape):
         return math.pi * (self.radius ** 2)
 
         # Otra opción menos Pythonic:
-        # return round(math.pi * (self.radius ** 2, 2))
+        # return round(math.pi * (self.radius ** 2), 2)
 
 
-shapes = [
-    Rectangle(4, 5),
-    Circle(3),
-    Rectangle(2, 10)
-]
+def main():
+    shapes = [
+        Rectangle(4, 5),
+        Circle(3),
+        Rectangle(2, 10)
+    ]
 
-for shape in shapes:
-    print(shape.area())
+    for shape in shapes:
+        print(shape.area())
 
     # Pythonic printing para solo 2 puntos decimales:
     # print(f"{shape.area():.2f}")
+
+main()

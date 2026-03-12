@@ -3,6 +3,9 @@ from abc import ABC, abstractmethod
 import math
 
 class Shape(ABC):
+    def __str__(self):
+        return self.__class__.__name__.lower()
+
     @abstractmethod
     def calculate_perimeter(self):
         pass
@@ -15,9 +18,6 @@ class Shape(ABC):
 class Circle(Shape):
     def __init__(self, radius):
         self.radius = radius
-
-    def __str__(self):
-        return "This is a circle."
     
     def calculate_perimeter(self):
         return round(2 * math.pi * self.radius, 2)
@@ -26,13 +26,21 @@ class Circle(Shape):
         return round(math.pi * (self.radius ** 2), 2)
 
 
+class Square(Shape):
+    def __init__(self, side):
+        self.side = side
+    
+    def calculate_perimeter(self):
+        return self.side * 4
+    
+    def calculate_area(self):
+        return self.side ** 2
+
+
 class Rectangle(Shape):
     def __init__(self, width, height):
         self.width = width
         self.height = height
-
-    def __str__(self):
-        return "This is a rectangle."
     
     def calculate_perimeter(self):
         return 2 * (self.width + self.height)
@@ -41,28 +49,16 @@ class Rectangle(Shape):
         return self.width * self.height
 
 
-class Square(Shape):
-    def __init__(self, side):
-        self.side = side
-    
-    def __str__(self):
-        return "This is a square."
+def main():
+    shapes = [
+        Circle(3),
+        Square(8),
+        Rectangle(5, 8)
+    ]
 
-    def calculate_perimeter(self):
-        return 4 * self.side
-    
-    def calculate_area(self):
-        return self.side ** 2
+    for shape in shapes:
+        print(f"The {shape}'s perimeter is: {shape.calculate_perimeter()}")
+        print(f"The {shape}'s area is: {shape.calculate_area()}\n")
 
 
-my_circle = Circle(3)
-my_rectangle = Rectangle(5, 8)
-my_square = Square(8)
-
-shapes = [my_circle, my_rectangle, my_square]
-
-for shape in shapes:
-    print(shape.__str__())
-    print(f"Perimeter: {shape.calculate_perimeter()}")
-    print(f"Area: {shape.calculate_area()}")
-    print("----------------")
+main()
