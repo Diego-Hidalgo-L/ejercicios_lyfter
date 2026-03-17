@@ -40,8 +40,7 @@ def buy_beer(user):
 user_1 = User("Diego", date(1997, 5, 25))
 print("\n")
 is_of_age(user_1)
-result = buy_beer(user_1)
-print(result)
+buy_beer(user_1)
 print("\n")
 
 
