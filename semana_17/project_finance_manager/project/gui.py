@@ -2,32 +2,24 @@
 import FreeSimpleGUI as sg
 from manager import FinanceManager
 
-manager = FinanceManager()
 
-manager.add_category("Work")
-manager.add_category("Food")
-
-manager.add_income("Salary", 1500, "Work")
-manager.add_expense("Lunch", 20, "Food")
-
-
-# Internal functions
+# Functions
 def format_movement(movements):
     return [[m.title, m.amount, m.category, m.type_] for m in movements]
 
 
-def show_add_income_window(categories):
+def show_add_movement_window(type_, categories):
     layout = [
-        [sg.Text("Add Income")],
+        [sg.Text(f"Add {type_.capitalize()}")],
 
         [sg.Text("Title")], [sg.Input(key="-TITLE-")],
         [sg.Text("Amount")], [sg.Input(key="-AMOUNT-")],
-        [sg.Text("Category")], [sg.Combo(categories, key="-CATEGORY-")],
+        [sg.Text("Category")], [sg.Combo(categories, key="-CATEGORY-", readonly=True)],
 
         [sg.Button("Save")], [sg.Button("Cancel")]
     ]
 
-    window = sg.Window("Add Income", layout)
+    window = sg.Window(f"Add {type_.capitalize()}", layout)
 
     while True:
         event, values = window.read()
@@ -37,34 +29,43 @@ def show_add_income_window(categories):
             return None
         
         if event == "Save":
+            window.close()
             return values
 
 
-# Main window:
-layout = [
-    [sg.Text("My First Finance Manager")],
+def run_app():
+    manager = FinanceManager()
 
-    [sg.Table(
-        values=format_movement(manager.get_movements()),
-        headings=["Title", "Amount", "Category", "Type"],
-        key="-TABLE-",
+    manager.add_category("Work")
+    manager.add_category("Food")
 
-        auto_size_columns=False,
-        col_widths=[20, 10, 15, 10],
-        justification="left",
-
-        expand_x=True,
-        expand_y=True,
-        num_rows=10
-    )],
-
-    [sg.Button("Add Category")],
-    [sg.Button("Add Income")],
-    [sg.Button("Add Expense")]
-]
+    manager.add_income("Salary", 1500, "Work")
+    manager.add_expense("Lunch", 20, "Food")
 
 
-if __name__ == "__main__":
+    # Main window:
+    layout = [
+        [sg.Text("My First Finance Manager")],
+
+        [sg.Table(
+            values=format_movement(manager.get_movements()),
+            headings=["Title", "Amount", "Category", "Type"],
+            key="-TABLE-",
+
+            auto_size_columns=False,
+            col_widths=[20, 10, 15, 10],
+            justification="left",
+
+            expand_x=True,
+            expand_y=True,
+            num_rows=10
+        )],
+
+        [sg.Button("Add Category")],
+        [sg.Button("Add Income")],
+        [sg.Button("Add Expense")]
+    ]
+
     window = sg.Window("Finance Manager", layout, resizable=True)
 
     while True:
@@ -79,16 +80,45 @@ if __name__ == "__main__":
             # )
             print("'Add Category' clicked")
 
-        if event == "Add Income":
-            data = show_add_income_window(manager.get_categories())
+        if event in ("Add Income", "Add Expense"):
+            if event == "Add Income":
+                print("'Add Income' clicked")
+                type_ = "income"
+            
+            elif event == "Add Expense":
+                print("'Add Expense' clicked")
+                type_ = "expense"
+
+            data = show_add_movement_window(type_, manager.get_categories())
 
             if data:
                 try:
-                    title = data["-TITLE-"].capitalize()
-                    amount = float(data["-AMOUNT-"])
-                    category = data["-CATEGORY-"].capitalize()
+                    title = data["-TITLE-"].strip()
+                    if not title:
+                        sg.popup_error("Title is required")
+                        continue
 
-                    manager.add_income(title, amount, category)
+                    amount_input = data["-AMOUNT-"]
+                    if not amount_input:
+                        sg.popup_error("Amount is required")
+                        continue
+                    try:
+                        amount = float(amount_input)
+                    except ValueError:
+                        sg.popup_error("Amount must be a number")
+                        continue
+
+
+                    category = data["-CATEGORY-"]
+                    if not data["-CATEGORY-"]:
+                        sg.popup_error("Please select a category")
+                        continue
+
+                    if type_ == "income":
+                        manager.add_income(title.capitalize(), amount, category)
+
+                    elif type_ == "expense":
+                        manager.add_expense(title.capitalize(), amount, category)
 
                     window["-TABLE-"].update(
                         values=format_movement(manager.get_movements())
@@ -98,8 +128,5 @@ if __name__ == "__main__":
                     sg.popup_error(str(e))
 
 
-        if event == "Add Expense":
-            print("'Add Expense' clicked")
-    
     window.close()
 
