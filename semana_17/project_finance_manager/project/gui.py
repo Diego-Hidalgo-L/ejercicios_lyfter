@@ -1,9 +1,57 @@
 
+import json
+import os
 import FreeSimpleGUI as sg
 from manager import FinanceManager
 
 
 # Functions
+# def show_add_category_window(categories):
+#     layout = [
+#         [sg.Text("Add Category")],
+
+#         [sg.Table(
+#             values=categories,
+#             headings=["Categories"],
+#             key="-TABLE-",
+
+#             auto_size_columns=False,
+#             col_widths=[20, 10, 15, 10],
+#             justification="left",
+
+#             expand_x=True,
+#             expand_y=True,
+#             num_rows=10
+#         )],
+
+#         [sg.Text("New Category")], [sg.Input()],
+#         [sg.Button("Save")], [sg.Button("Cancel")]
+#     ]
+
+
+# def verify_cancel_window():
+#     layout = [
+#         [sg.Text("Are you sure you want to cancel? All unsaved changes will be lost.")],
+
+#         [sg.Button("Save")], [sg.Button("Exit")]
+#     ]
+    
+#     window = sg.Window("Are you sure you want to cancel?", layout)
+
+#     while True:
+#         event, values = window.read()
+
+#         if event in (sg.WINDOW_CLOSED, "Exit"):
+#             window.close()
+#             return None
+        
+#         if event == "Save":
+#             # save_data(manager)
+#             sg.popup("Changes saved!")
+#             window.close()
+#             return values
+
+
 def format_movement(movements):
     return [[m.title, m.amount, m.category, m.type_] for m in movements]
 
@@ -25,6 +73,7 @@ def show_add_movement_window(type_, categories):
         event, values = window.read()
 
         if event in (sg.WINDOW_CLOSED, "Cancel"):
+            # verify_cancel_window()
             window.close()
             return None
         
@@ -33,14 +82,36 @@ def show_add_movement_window(type_, categories):
             return values
 
 
+def save_data(manager):
+    with open("semana_17/project_finance_manager/data.json", "w", encoding='utf-8') as file:
+        json.dump(manager.convert_all_to_dict(), file, indent=4)
+
+def load_data(manager):
+    if not os.path.exists("semana_17/project_finance_manager/data.json"):
+        return
+    
+    with open("semana_17/project_finance_manager/data.json", "r", encoding='utf-8') as file:
+        data = json.load(file)
+    
+    for category in data.get("categories", []):
+        manager.add_category(category)
+    
+    for m in data.get("movements", []):
+        if m["type"] == "income":
+            manager.add_income(m["title"], m["amount"], m["category"])
+        else:
+            manager.add_expense(m["title"], abs(m["amount"]), m["category"])
+
+
 def run_app():
     manager = FinanceManager()
+    load_data(manager)
 
-    manager.add_category("Work")
-    manager.add_category("Food")
+    # manager.add_category("Work")
+    # manager.add_category("Food")
 
-    manager.add_income("Salary", 1500, "Work")
-    manager.add_expense("Lunch", 20, "Food")
+    # manager.add_income("Salary", 1500, "Work")
+    # manager.add_expense("Lunch", 20, "Food")
 
 
     # Main window:
@@ -61,9 +132,7 @@ def run_app():
             num_rows=10
         )],
 
-        [sg.Button("Add Category")],
-        [sg.Button("Add Income")],
-        [sg.Button("Add Expense")]
+        [sg.Button("Add Category")], [sg.Button("Add Income")], [sg.Button("Add Expense")]
     ]
 
     window = sg.Window("Finance Manager", layout, resizable=True)
@@ -75,10 +144,11 @@ def run_app():
             break
 
         if event == "Add Category":
-            # window["-TABLE-"].update(
-            #     values=format_movement(manager.get_movements())
-            # )
             print("'Add Category' clicked")
+
+            window["-TABLE-"].update(
+                values=format_movement(manager.get_movements())
+            )
 
         if event in ("Add Income", "Add Expense"):
             if event == "Add Income":
@@ -110,15 +180,17 @@ def run_app():
 
 
                     category = data["-CATEGORY-"]
-                    if not data["-CATEGORY-"]:
+                    if not category:
                         sg.popup_error("Please select a category")
                         continue
 
                     if type_ == "income":
-                        manager.add_income(title.capitalize(), amount, category)
+                        manager.add_income(title.strip(), amount, category)
 
                     elif type_ == "expense":
-                        manager.add_expense(title.capitalize(), amount, category)
+                        manager.add_expense(title.strip(), amount, category)
+                    
+                    save_data(manager)
 
                     window["-TABLE-"].update(
                         values=format_movement(manager.get_movements())

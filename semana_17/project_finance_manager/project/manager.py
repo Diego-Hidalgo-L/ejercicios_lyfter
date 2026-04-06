@@ -91,6 +91,12 @@ class FinanceManager:
         return sum(m.amount for m in self.movements)
 
         # return self.get_total_income() - self.get_total_expense()
+    
+    def convert_all_to_dict(self):
+        return {
+            "categories": list(self.get_categories()),
+            "movements": [m.convert_movement_to_dict() for m in self.movements]
+        }
 
 
 class Movement:
@@ -111,3 +117,11 @@ class Movement:
 
     def __repr__(self):
         return f"{self.type_.upper()} | {self.title} | {self.amount} | {self.category}"
+
+    def convert_movement_to_dict(self):
+        return {
+            "title": self.title,
+            "amount": self.amount,
+            "category": self.category,
+            "type": self.type_
+        }
