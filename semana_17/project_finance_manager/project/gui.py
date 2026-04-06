@@ -5,29 +5,7 @@ import FreeSimpleGUI as sg
 from manager import FinanceManager
 
 
-# Functions
-# def show_add_category_window(categories):
-#     layout = [
-#         [sg.Text("Add Category")],
-
-#         [sg.Table(
-#             values=categories,
-#             headings=["Categories"],
-#             key="-TABLE-",
-
-#             auto_size_columns=False,
-#             col_widths=[20, 10, 15, 10],
-#             justification="left",
-
-#             expand_x=True,
-#             expand_y=True,
-#             num_rows=10
-#         )],
-
-#         [sg.Text("New Category")], [sg.Input()],
-#         [sg.Button("Save")], [sg.Button("Cancel")]
-#     ]
-
+# # # # # Start of FUNCTIONS # # # # #
 
 # def verify_cancel_window():
 #     layout = [
@@ -82,6 +60,44 @@ def show_add_movement_window(type_, categories):
             return values
 
 
+def show_add_category_window(categories):
+    layout = [
+        [sg.Text("Add Category")],
+
+        [sg.Table(
+            values=categories,
+            headings=["Categories"],
+            key="-TABLE-",
+
+            auto_size_columns=False,
+            col_widths=[20, 10, 15, 10],
+            justification="left",
+
+            expand_x=True,
+            expand_y=True
+        )],
+
+        [sg.Text("New Category:")], [sg.Input(key="-NEW_CATEGORY-")],
+        [sg.Button("Save")], [sg.Button("Cancel")]
+    ]
+
+    window = sg.Window("Add a new category", layout)
+
+    while True:
+        event, values = window.read()
+
+        if event in (sg.WINDOW_CLOSED, "Cancel"):
+            window.close()
+            return None
+        
+        if event == "Save":
+            window.close()
+            return values
+
+# # # # # End of FUNCTIONS # # # # #
+
+# # # # # Start of PERSISTENCE # # # # # 
+
 def save_data(manager):
     with open("semana_17/project_finance_manager/data.json", "w", encoding='utf-8') as file:
         json.dump(manager.convert_all_to_dict(), file, indent=4)
@@ -102,6 +118,8 @@ def load_data(manager):
         else:
             manager.add_expense(m["title"], abs(m["amount"]), m["category"])
 
+# # # # # End of PERSISTENCE # # # # #
+
 
 def run_app():
     manager = FinanceManager()
@@ -114,7 +132,8 @@ def run_app():
     # manager.add_expense("Lunch", 20, "Food")
 
 
-    # Main window:
+    # # # # # Start of MAIN WINDOW # # # # #
+
     layout = [
         [sg.Text("My First Finance Manager")],
 
@@ -146,9 +165,22 @@ def run_app():
         if event == "Add Category":
             print("'Add Category' clicked")
 
-            window["-TABLE-"].update(
-                values=format_movement(manager.get_movements())
-            )
+            data = show_add_category_window(manager.get_categories())
+
+            if data:
+                try:
+                    category = data["-NEW_CATEGORY-"]
+                    if not category:
+                        sg.popup_error("Please enter a category")
+                        continue
+                
+                    manager.add_category(category)
+
+                    save_data(manager)
+
+                except Exception as e:
+                    sg.popup_error(str(e))
+
 
         if event in ("Add Income", "Add Expense"):
             if event == "Add Income":
@@ -178,7 +210,6 @@ def run_app():
                         sg.popup_error("Amount must be a number")
                         continue
 
-
                     category = data["-CATEGORY-"]
                     if not category:
                         sg.popup_error("Please select a category")
@@ -198,7 +229,6 @@ def run_app():
                 
                 except Exception as e:
                     sg.popup_error(str(e))
-
 
     window.close()
 
