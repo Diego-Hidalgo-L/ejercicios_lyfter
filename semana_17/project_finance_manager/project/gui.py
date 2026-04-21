@@ -1,100 +1,11 @@
 
 import FreeSimpleGUI as sg
 from manager import FinanceManager
+from datetime import date
+from functions_gui import format_movement, show_add_category_window, show_add_movement_window
 from persistence import save_data, load_data
 
 
-# # # # # Start of FUNCTIONS # # # # #
-
-# def verify_cancel_window():
-#     layout = [
-#         [sg.Text("Are you sure you want to cancel? All unsaved changes will be lost.")],
-
-#         [sg.Button("Save")], [sg.Button("Exit")]
-#     ]
-    
-#     window = sg.Window("Are you sure you want to cancel?", layout)
-
-#     while True:
-#         event, values = window.read()
-
-#         if event in (sg.WINDOW_CLOSED, "Exit"):
-#             window.close()
-#             return None
-        
-#         if event == "Save":
-#             # save_data(manager)
-#             sg.popup("Changes saved!")
-#             window.close()
-#             return values
-
-
-def format_movement(movements):
-    return [[m.title, m.amount, m.category, m.type_] for m in movements]
-
-
-def show_add_movement_window(type_, categories):
-    layout = [
-        [sg.Text(f"Add {type_.capitalize()}")],
-
-        [sg.Text("Title")], [sg.Input(key="-TITLE-")],
-        [sg.Text("Amount")], [sg.Input(key="-AMOUNT-")],
-        [sg.Text("Category")], [sg.Combo(categories, key="-CATEGORY-", readonly=True)],
-
-        [sg.Button("Save")], [sg.Button("Cancel")]
-    ]
-
-    window = sg.Window(f"Add {type_.capitalize()}", layout)
-
-    while True:
-        event, values = window.read()
-
-        if event in (sg.WINDOW_CLOSED, "Cancel"):
-            # verify_cancel_window()
-            window.close()
-            return None
-        
-        if event == "Save":
-            window.close()
-            return values
-
-
-def show_add_category_window(categories):
-    layout = [
-        [sg.Text("Add Category")],
-
-        [sg.Table(
-            values=categories,
-            headings=["Categories"],
-            key="-TABLE-",
-
-            auto_size_columns=False,
-            col_widths=[20, 10, 15, 10],
-            justification="left",
-
-            expand_x=True,
-            expand_y=True
-        )],
-
-        [sg.Text("New Category:")], [sg.Input(key="-NEW_CATEGORY-")],
-        [sg.Button("Save")], [sg.Button("Cancel")]
-    ]
-
-    window = sg.Window("Add a new category", layout)
-
-    while True:
-        event, values = window.read()
-
-        if event in (sg.WINDOW_CLOSED, "Cancel"):
-            window.close()
-            return None
-        
-        if event == "Save":
-            window.close()
-            return values
-
-
-# # # # # End of FUNCTIONS # # # # #
 
 def run_app():
     manager = FinanceManager()
@@ -114,12 +25,12 @@ def run_app():
 
         [sg.Table(
             values=format_movement(manager.get_movements()),
-            headings=["Title", "Amount", "Category", "Type"],
+            headings=["Date", "Title", "Amount", "Category", "Type"],
             key="-TABLE-",
 
             auto_size_columns=False,
-            col_widths=[20, 10, 15, 10],
-            justification="left",
+            col_widths=[15, 12, 12, 15, 12],
+            justification="center",
 
             expand_x=True,
             expand_y=True,
@@ -170,6 +81,11 @@ def run_app():
 
             if data:
                 try:
+                    mov_date = data["-DATE-"]
+                    if not date.fromisoformat(mov_date):
+                        sg.popup_error("The date must be in the format 'YYYY-MM-DD'")
+                        continue
+
                     title = data["-TITLE-"].strip()
                     if not title:
                         sg.popup_error("Title is required")
@@ -191,10 +107,10 @@ def run_app():
                         continue
 
                     if type_ == "income":
-                        manager.add_income(title.strip(), amount, category)
+                        manager.add_income(mov_date, title.strip(), amount, category)
 
                     elif type_ == "expense":
-                        manager.add_expense(title.strip(), amount, category)
+                        manager.add_expense(mov_date, title.strip(), amount, category)
                     
                     save_data(manager)
 

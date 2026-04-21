@@ -1,4 +1,6 @@
 
+from datetime import date
+
 class FinanceManager:
     def __init__(self):
         self.categories = {}
@@ -23,26 +25,32 @@ class FinanceManager:
 
 
     # Movements
-    def add_income(self, title, amount, category):
+    def add_income(self, mov_date, title, amount, category):
+        if not mov_date:
+            raise ValueError("Enter a date for the movement")
+
         if not self.category_exists(category):
             raise ValueError(f"The category '{category}' does not exist")
 
         if amount <= 0:
             raise ValueError("Amount must be greater than 0")
 
-        movement = Movement(title, amount, category, 'income')
+        movement = Movement(mov_date, title, amount, category, 'income')
         self.movements.append(movement)
         
         return "Income registered"
 
-    def add_expense(self, title, amount, category):
+    def add_expense(self, mov_date, title, amount, category):
+        if not mov_date:
+            raise ValueError("Enter a date for the movement")
+
         if not self.category_exists(category):
             raise ValueError(f"The category '{category}' does not exist")
 
         if amount <= 0:
             raise ValueError("Amount must be greater than 0")
         
-        movement = Movement(title, -amount, category, 'expense')
+        movement = Movement(mov_date, title, -amount, category, 'expense')
         self.movements.append(movement)
 
         return "Expense registered"
@@ -100,13 +108,17 @@ class FinanceManager:
 
 
 class Movement:
-    def __init__(self, title, amount, category, type_):
+    def __init__(self, mov_date, title, amount, category, type_):
+        if not date.fromisoformat(mov_date):
+            raise ValueError("The date is invalid")
+
         if not title.strip():
             raise ValueError("Title cannot be empty")
         
         if type_ not in ('income', 'expense'):
             raise ValueError("Invalid movement type")
 
+        self.mov_date = mov_date
         self.title = title
         self.amount = amount
         self.category = category
@@ -120,6 +132,7 @@ class Movement:
 
     def convert_movement_to_dict(self):
         return {
+            "date": self.mov_date,
             "title": self.title,
             "amount": self.amount,
             "category": self.category,

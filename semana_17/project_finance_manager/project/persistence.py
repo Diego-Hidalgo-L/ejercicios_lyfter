@@ -2,16 +2,15 @@
 import json
 import os
 
-
 def save_data(manager):
-    with open("semana_17/project_finance_manager/data.json", "w", encoding='utf-8') as file:
+    with open("semana_17/project_finance_manager/project/data.json", "w", encoding='utf-8') as file:
         json.dump(manager.convert_all_to_dict(), file, indent=4)
 
 def load_data(manager):
-    if not os.path.exists("semana_17/project_finance_manager/data.json"):
+    if not os.path.exists("semana_17/project_finance_manager/project/data.json"):
         return
     
-    with open("semana_17/project_finance_manager/data.json", "r", encoding='utf-8') as file:
+    with open("semana_17/project_finance_manager/project/data.json", "r", encoding='utf-8') as file:
         data = json.load(file)
     
     for category in data.get("categories", []):
@@ -19,6 +18,6 @@ def load_data(manager):
     
     for m in data.get("movements", []):
         if m["type"] == "income":
-            manager.add_income(m["title"], m["amount"], m["category"])
+            manager.add_income(m["date"], m["title"], m["amount"], m["category"])
         else:
-            manager.add_expense(m["title"], abs(m["amount"]), m["category"])
+            manager.add_expense(m["date"], m["title"], abs(m["amount"]), m["category"])

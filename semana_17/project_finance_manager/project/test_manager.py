@@ -1,6 +1,6 @@
 
 import pytest
-from semana_17.project_finance_manager.project.manager import FinanceManager
+from manager import FinanceManager
 
 # test add_category()
 def test_adding_valid_category():
