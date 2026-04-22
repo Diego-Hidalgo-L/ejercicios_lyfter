@@ -5,10 +5,13 @@ def input_date():
     while True:
         try:
             my_date = input("Please enter a date (YYYY-MM-DD): ")
-            if date.fromisoformat(my_date):
-                return True
+            parsed_date = date.fromisoformat(my_date)
+            today = date.today()
+
+            if parsed_date > today:
+                return "Error"
             else:
-                return False
+                return "OK"
         except ValueError:
             print("Please enter a valid date in the format YYYY-MM-DD")
 

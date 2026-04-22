@@ -4,7 +4,8 @@
         "Food",
         "Fun",
         "Miscellaneous",
-        "Transportation"
+        "Transportation",
+        "Freelance"
     ],
     "movements": [
         {
@@ -27,6 +28,13 @@
             "amount": -65.0,
             "category": "Transportation",
             "type": "expense"
+        },
+        {
+            "date": "2026-04-21",
+            "title": "Photo shoot",
+            "amount": 300.0,
+            "category": "Freelance",
+            "type": "income"
         }
     ]
 }

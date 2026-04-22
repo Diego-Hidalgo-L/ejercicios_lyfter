@@ -6,19 +6,9 @@ from functions_gui import format_movement, show_add_category_window, show_add_mo
 from persistence import save_data, load_data
 
 
-
 def run_app():
     manager = FinanceManager()
     load_data(manager)
-
-    # manager.add_category("Work")
-    # manager.add_category("Food")
-
-    # manager.add_income("Salary", 1500, "Work")
-    # manager.add_expense("Lunch", 20, "Food")
-
-
-    # # # # # Start of MAIN WINDOW # # # # #
 
     layout = [
         [sg.Text("My First Finance Manager")],
@@ -37,16 +27,16 @@ def run_app():
             num_rows=10
         )],
 
-        [sg.Button("Add Category")], [sg.Button("Add Income")], [sg.Button("Add Expense")]
+        [sg.Button("Add Category")],
+        [sg.Button("Add Income")], [sg.Button("Add Expense")],
+        # [sg.Button("Edit entry")],
+        [sg.Button("Save"), sg.Button("Cancel")]
     ]
 
     window = sg.Window("Finance Manager", layout, resizable=True)
 
     while True:
         event, values = window.read()
-
-        if event in (sg.WINDOW_CLOSED, "Exit"):
-            break
 
         if event == "Add Category":
             print("'Add Category' clicked")
@@ -82,8 +72,13 @@ def run_app():
             if data:
                 try:
                     mov_date = data["-DATE-"]
-                    if not date.fromisoformat(mov_date):
+                    try:
+                        iso_date = date.fromisoformat(mov_date)
+                    except ValueError:
                         sg.popup_error("The date must be in the format 'YYYY-MM-DD'")
+                        continue
+                    if iso_date > date.today():
+                        sg.popup_error("Enter a valid date")
                         continue
 
                     title = data["-TITLE-"].strip()
@@ -113,6 +108,7 @@ def run_app():
                         manager.add_expense(mov_date, title.strip(), amount, category)
                     
                     save_data(manager)
+                    sg.popup("Changes saved!")
 
                     window["-TABLE-"].update(
                         values=format_movement(manager.get_movements())
@@ -120,6 +116,14 @@ def run_app():
                 
                 except Exception as e:
                     sg.popup_error(str(e))
+        
+
+        # if event == "Edit entry":
+        #     pass
+
+
+        if event in (sg.WINDOW_CLOSED, "Exit", "Save", "Cancel"):
+            break
 
     window.close()
 

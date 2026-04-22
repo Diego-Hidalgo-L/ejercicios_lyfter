@@ -109,8 +109,8 @@ class FinanceManager:
 
 class Movement:
     def __init__(self, mov_date, title, amount, category, type_):
-        if not date.fromisoformat(mov_date):
-            raise ValueError("The date is invalid")
+        # if not date.fromisoformat(mov_date):
+        #     raise ValueError("The date is invalid")
 
         if not title.strip():
             raise ValueError("Title cannot be empty")

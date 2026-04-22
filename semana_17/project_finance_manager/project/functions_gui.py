@@ -1,27 +1,25 @@
 
 import FreeSimpleGUI as sg
 
-# def verify_cancel_window():
-#     layout = [
-#         [sg.Text("Are you sure you want to cancel? All unsaved changes will be lost.")],
+def verify_cancel_window():
+    layout = [
+        [sg.Text("Are you sure you want to exit? All unsaved changes will be lost.")],
 
-#         [sg.Button("Save")], [sg.Button("Exit")]
-#     ]
+        [sg.Button("Back")], [sg.Button("Exit")]
+    ]
     
-#     window = sg.Window("Are you sure you want to cancel?", layout)
+    window = sg.Window("Are you sure you want to exit?", layout)
 
-#     while True:
-#         event, values = window.read()
+    while True:
+        event, values = window.read()
 
-#         if event in (sg.WINDOW_CLOSED, "Exit"):
-#             window.close()
-#             return None
+        if event in (sg.WINDOW_CLOSED, "Exit"):
+            window.close()
+            return None
         
-#         if event == "Save":
-#             # save_data(manager)
-#             sg.popup("Changes saved!")
-#             window.close()
-#             return values
+        if event == "Back":
+            window.close()
+            return "Back"
 
 
 def show_add_category_window(categories):
@@ -63,6 +61,11 @@ def format_movement(movements):
     return [[m.mov_date, m.title, m.amount, m.category, m.type_] for m in movements]
 
 
+# Alternativa de format_movement(movements) si la utilizo para FILTRAR POR FECHA:
+# def format_movement(movements, start_date, end_date)
+    # return [[m.mov_date, m.title, m.amount, m.category, m.type_] for m in movements if start_date <= m.mov_date <= end_date]
+
+
 def show_add_movement_window(type_, categories):
     layout = [
         [sg.Text(f"Add {type_.capitalize()}")],
@@ -81,7 +84,8 @@ def show_add_movement_window(type_, categories):
         event, values = window.read()
 
         if event in (sg.WINDOW_CLOSED, "Cancel"):
-            # verify_cancel_window()
+            if verify_cancel_window():
+                continue
             window.close()
             return None
         
