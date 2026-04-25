@@ -2,8 +2,8 @@
 import FreeSimpleGUI as sg
 from manager import FinanceManager
 from datetime import date
-from functions_gui import format_movement, show_add_category_window, show_add_movement_window
-from persistence import save_data, load_data
+from functions_gui import format_movement, show_add_category_window, show_add_movement_window, show_filter_by_date_window, filter_by_date
+from persistence import save_data, load_data, export_csv
 
 
 def run_app():
@@ -13,6 +13,7 @@ def run_app():
     layout = [
         [sg.Text("My First Finance Manager")],
 
+        [sg.Button("Filter by date"), sg.Button("Reset Filter")],
         [sg.Table(
             values=format_movement(manager.get_movements()),
             headings=["Date", "Title", "Amount", "Category", "Type"],
@@ -27,16 +28,55 @@ def run_app():
             num_rows=10
         )],
 
-        [sg.Button("Add Category")],
-        [sg.Button("Add Income")], [sg.Button("Add Expense")],
+        [sg.Button("Add Category"), sg.Button("Add Income"), sg.Button("Add Expense")],
         # [sg.Button("Edit entry")],
-        [sg.Button("Save"), sg.Button("Cancel")]
+        [sg.Button("Export to CSV")],
+        [sg.Button("Save and Exit"), sg.Button("Cancel")]
     ]
 
     window = sg.Window("Finance Manager", layout, resizable=True)
 
     while True:
         event, values = window.read()
+
+        if event == "Filter by date":
+            print("'Filter by date' clicked")
+            
+            dates = show_filter_by_date_window()
+
+            if dates:
+                try:
+                    start_date = date.fromisoformat(dates["-START_DATE-"])
+                    end_date = date.fromisoformat(dates["-END_DATE-"])
+
+                    if start_date > end_date:
+                        sg.popup_error("Start date must be before end date")
+                        continue
+
+                    filtered = filter_by_date(manager.get_movements(), start_date, end_date)
+
+                    if not filtered:
+                        sg.popup("No movements found in that range")
+                        continue
+
+                    window["-TABLE-"].update(
+                        values=format_movement(filtered)
+                    )
+
+                except ValueError:
+                    sg.popup_error("Invalid input")
+                except Exception as e:
+                    sg.popup_error(str(e))
+                    continue
+        
+
+        if event == "Reset Filter":
+            print("'Reset Filter' clicked")
+
+            window["-TABLE-"].update(
+                        values=format_movement(manager.get_movements())
+                    )
+
 
         if event == "Add Category":
             print("'Add Category' clicked")
@@ -47,7 +87,7 @@ def run_app():
                 try:
                     category = data["-NEW_CATEGORY-"]
                     if not category:
-                        sg.popup_error("Please enter a category")
+                        sg.popup_error("No category entered")
                         continue
                 
                     manager.add_category(category)
@@ -56,6 +96,7 @@ def run_app():
 
                 except Exception as e:
                     sg.popup_error(str(e))
+                    continue
 
 
         if event in ("Add Income", "Add Expense"):
@@ -75,10 +116,10 @@ def run_app():
                     try:
                         iso_date = date.fromisoformat(mov_date)
                     except ValueError:
-                        sg.popup_error("The date must be in the format 'YYYY-MM-DD'")
+                        sg.popup_error("Date must be in the format 'YYYY-MM-DD'")
                         continue
                     if iso_date > date.today():
-                        sg.popup_error("Enter a valid date")
+                        sg.popup_error("Date cannot be in the future")
                         continue
 
                     title = data["-TITLE-"].strip()
@@ -116,13 +157,21 @@ def run_app():
                 
                 except Exception as e:
                     sg.popup_error(str(e))
+                    continue
         
 
         # if event == "Edit entry":
         #     pass
 
+        if event == "Export to CSV":
+            movements = [m.convert_movement_to_dict() for m in manager.get_movements()]
+            print(movements)
 
-        if event in (sg.WINDOW_CLOSED, "Exit", "Save", "Cancel"):
+            export_csv("semana_17/project_finance_manager/project/data.csv", movements, movements[0].keys())
+            sg.popup("Successfully exported to CSV!")
+
+
+        if event in (sg.WINDOW_CLOSED, "Exit", "Save and Exit", "Cancel"):
             break
 
     window.close()

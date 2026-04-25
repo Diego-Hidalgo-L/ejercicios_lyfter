@@ -1,10 +1,12 @@
 
+import csv
 import json
 import os
 
 def save_data(manager):
     with open("semana_17/project_finance_manager/project/data.json", "w", encoding='utf-8') as file:
         json.dump(manager.convert_all_to_dict(), file, indent=4)
+
 
 def load_data(manager):
     if not os.path.exists("semana_17/project_finance_manager/project/data.json"):
@@ -21,3 +23,10 @@ def load_data(manager):
             manager.add_income(m["date"], m["title"], m["amount"], m["category"])
         else:
             manager.add_expense(m["date"], m["title"], abs(m["amount"]), m["category"])
+
+
+def export_csv(path, data, headers):
+    with open(path, 'w', newline='', encoding='utf-8') as file:
+        writer = csv.DictWriter(file, fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(data)

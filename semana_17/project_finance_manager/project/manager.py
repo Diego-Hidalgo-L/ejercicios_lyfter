@@ -129,6 +129,10 @@ class Movement:
 
     def __repr__(self):
         return f"{self.type_.upper()} | {self.title} | {self.amount} | {self.category}"
+    
+    @property
+    def date(self):
+        return date.fromisoformat(self.mov_date)
 
     def convert_movement_to_dict(self):
         return {
