@@ -7,8 +7,8 @@ class FinanceManager:
         self.movements = []
 
     # Categories
-    def category_exists(self, category):
-        return category in self.categories
+    def category_exists(self, name):
+        return name in self.categories
 
     def add_category(self, category):
         if not category.strip():
@@ -17,7 +17,18 @@ class FinanceManager:
         if self.category_exists(category):
             raise ValueError(f"The category '{category}' already exists")
         
-        self.categories[category] = {}
+        if isinstance(category, str):
+            name = category
+            color = "#CCCCCC"
+
+        if isinstance(category, dict):
+            name = category["name"]
+            color = category["color"]
+        
+        self.categories[category] = {
+            "name": name,
+            "color": color
+        }
         return f"'{category}' added to Categories"
     
     def get_categories(self):
@@ -81,7 +92,6 @@ class FinanceManager:
         #         total_income += m.amount
         
         # return total_income
-        
 
     def get_total_expense(self):
         return sum(abs(m.amount) for m in self.movements if m.type_ == 'expense')
@@ -93,7 +103,6 @@ class FinanceManager:
         #         total_expense += abs(m.amount)
         
         # return total_expense
-        
 
     def get_balance(self):
         return sum(m.amount for m in self.movements)
@@ -102,7 +111,7 @@ class FinanceManager:
     
     def convert_all_to_dict(self):
         return {
-            "categories": list(self.get_categories()),
+            "categories": list(self.get_categories()), # Cambiar list por dict?
             "movements": [m.convert_movement_to_dict() for m in self.movements]
         }
 

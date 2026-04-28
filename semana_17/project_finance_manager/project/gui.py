@@ -90,6 +90,11 @@ def run_app():
                         sg.popup_error("No category entered")
                         continue
                 
+                    color = data["-COLOR-"]
+                    if not color:
+                        sg.popup_error("Choose a color for the category")
+                        continue
+
                     manager.add_category(category)
 
                     save_data(manager)
@@ -163,9 +168,9 @@ def run_app():
         # if event == "Edit entry":
         #     pass
 
+
         if event == "Export to CSV":
             movements = [m.convert_movement_to_dict() for m in manager.get_movements()]
-            print(movements)
 
             export_csv("semana_17/project_finance_manager/project/data.csv", movements, movements[0].keys())
             sg.popup("Successfully exported to CSV!")

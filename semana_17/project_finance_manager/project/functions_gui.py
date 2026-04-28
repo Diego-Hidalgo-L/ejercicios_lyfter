@@ -41,6 +41,8 @@ def show_add_category_window(categories):
         )],
 
         [sg.Text("New Category:")], [sg.Input(key="-NEW_CATEGORY-")],
+        [sg.ColorChooserButton("Choose color", key="-COLOR-")],
+        
         [sg.Button("Save"), sg.Button("Cancel")]
     ]
 
