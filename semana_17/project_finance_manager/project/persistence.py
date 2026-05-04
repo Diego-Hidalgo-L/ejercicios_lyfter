@@ -30,3 +30,6 @@ def export_csv(path, data, headers):
         writer = csv.DictWriter(file, fieldnames=headers)
         writer.writeheader()
         writer.writerows(data)
+
+        
+

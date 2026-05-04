@@ -10,6 +10,8 @@ def run_app():
     manager = FinanceManager()
     load_data(manager)
 
+    print(manager.get_categories())
+
     layout = [
         [sg.Text("My First Finance Manager")],
 
@@ -90,10 +92,10 @@ def run_app():
                         sg.popup_error("No category entered")
                         continue
                 
-                    color = data["-COLOR-"]
-                    if not color:
-                        sg.popup_error("Choose a color for the category")
-                        continue
+                    # color = data["-COLOR-"]
+                    # if not color:
+                    #     sg.popup_error("Choose a color for the category")
+                    #     continue
 
                     manager.add_category(category)
 
@@ -112,6 +114,10 @@ def run_app():
             elif event == "Add Expense":
                 print("'Add Expense' clicked")
                 type_ = "expense"
+
+            if not manager.get_categories():
+                sg.popup_error("There are no categories. You must enter a category first.")
+                continue
 
             data = show_add_movement_window(type_, manager.get_categories())
 
@@ -172,8 +178,12 @@ def run_app():
         if event == "Export to CSV":
             movements = [m.convert_movement_to_dict() for m in manager.get_movements()]
 
-            export_csv("semana_17/project_finance_manager/project/data.csv", movements, movements[0].keys())
-            sg.popup("Successfully exported to CSV!")
+            try:
+                export_csv("semana_17/project_finance_manager/project/data.csv", movements, movements[0].keys())
+                sg.popup("Successfully exported to CSV!")
+            except IndexError:
+                sg.popup_error("There is no data available to export to CSV.")
+                continue
 
 
         if event in (sg.WINDOW_CLOSED, "Exit", "Save and Exit", "Cancel"):

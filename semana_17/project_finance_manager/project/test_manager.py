@@ -38,7 +38,7 @@ def test_adding_valid_income():
     manager = FinanceManager()
     manager.add_category("Work")
     # Act
-    result = manager.add_income("Salary", 1500, "Work")
+    result = manager.add_income("2026-04-20", "Salary", 1500, "Work")
     # Assert
     assert result == "Income registered"
 
@@ -49,7 +49,7 @@ def test_adding_negative_income():
     manager.add_category("Misc")
     # Act & Assert
     with pytest.raises(ValueError):
-        manager.add_income("Extra hours", -250, "Misc")
+        manager.add_income("2026-03-19", "Extra hours", -250, "Misc")
 
 
 def test_adding_income_with_invalid_category():
@@ -63,7 +63,7 @@ def test_adding_income_with_invalid_category():
     manager.add_category("Misc")
     # Act & Assert
     with pytest.raises(ValueError):
-        manager.add_income("Extra hours", 250, "Extra")
+        manager.add_income("2026-03-19", "Extra hours", 250, "Extra")
 
 
 # test add_expense()
@@ -72,7 +72,7 @@ def test_adding_valid_expense():
     manager = FinanceManager()
     manager.add_category("Food")
     # Act
-    result = manager.add_expense("Lunch", 25, "Food")
+    result = manager.add_expense("2026-05-04", "Lunch", 25, "Food")
     # Assert
     assert result == "Expense registered"
 
@@ -83,7 +83,7 @@ def test_adding_negative_expense():
     manager.add_category("Food")
     # Act & Assert
     with pytest.raises(ValueError):
-        manager.add_expense("Lunch", -25, "Food")
+        manager.add_expense("2026-05-04", "Lunch", -25, "Food")
 
 
 def test_adding_expense_with_invalid_category():
@@ -97,7 +97,7 @@ def test_adding_expense_with_invalid_category():
     manager.add_category("Misc")
     # Act & Assert
     with pytest.raises(ValueError):
-        manager.add_expense("Laundry", 15, "Extra")
+        manager.add_expense("2026-05-04", "Laundry", 15, "Extra")
 
 
 # test get_total_income()
@@ -110,11 +110,11 @@ def test_get_total_income():
     manager.add_category("Misc")
     manager.add_category("Freelance")
         # Create movements
-    manager.add_income("Salary", 1500, "Work")
-    manager.add_income("Extra hours", 250, "Work")
-    manager.add_expense("Lunch", 18, "Food")
-    manager.add_expense("Gym membership", 90, "Misc")
-    manager.add_income("Photo shoot", 300, "Freelance")
+    manager.add_income("2026-05-04", "Salary", 1500, "Work")
+    manager.add_income("2026-05-04", "Extra hours", 250, "Work")
+    manager.add_expense("2026-05-04", "Lunch", 18, "Food")
+    manager.add_expense("2026-05-04", "Gym membership", 90, "Misc")
+    manager.add_income("2026-05-04", "Photo shoot", 300, "Freelance")
     # Act
     result = manager.get_total_income()
     # Assert
@@ -131,11 +131,11 @@ def test_get_total_expense():
     manager.add_category("Misc")
     manager.add_category("Freelance")
         # Create movements
-    manager.add_income("Salary", 1500, "Work")
-    manager.add_income("Extra hours", 250, "Work")
-    manager.add_expense("Lunch", 18, "Food")
-    manager.add_expense("Gym membership", 90, "Misc")
-    manager.add_income("Photo shoot", 300, "Freelance")
+    manager.add_income("2026-05-04", "Salary", 1500, "Work")
+    manager.add_income("2026-05-04", "Extra hours", 250, "Work")
+    manager.add_expense("2026-05-04", "Lunch", 18, "Food")
+    manager.add_expense("2026-05-04", "Gym membership", 90, "Misc")
+    manager.add_income("2026-05-04", "Photo shoot", 300, "Freelance")
     # Act
     result = manager.get_total_expense()
     # Assert
@@ -152,11 +152,11 @@ def test_get_balance():
     manager.add_category("Misc")
     manager.add_category("Freelance")
         # Create movements
-    manager.add_income("Salary", 1500, "Work")
-    manager.add_income("Extra hours", 250, "Work")
-    manager.add_expense("Lunch", 18, "Food")
-    manager.add_expense("Gym membership", 90, "Misc")
-    manager.add_income("Photo shoot", 300, "Freelance")
+    manager.add_income("2026-05-04", "Salary", 1500, "Work")
+    manager.add_income("2026-05-04", "Extra hours", 250, "Work")
+    manager.add_expense("2026-05-04", "Lunch", 18, "Food")
+    manager.add_expense("2026-05-04", "Gym membership", 90, "Misc")
+    manager.add_income("2026-05-04", "Photo shoot", 300, "Freelance")
     # Act
     result = manager.get_balance()
     # Assert
