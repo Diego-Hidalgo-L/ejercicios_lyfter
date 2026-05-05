@@ -1,11 +1,9 @@
 
 import FreeSimpleGUI as sg
 from manager import FinanceManager
-from datetime import date
-from pathlib import Path
 from gui_second import show_add_category_window, show_add_movement_window, show_filter_by_date_window
 from functions import format_movement, filter_by_date, validate_filter_dates
-from persistence import save_data, load_data, export_csv
+from persistence import save_data, load_data, export_csv, CSV_FILE
 
 
 def run_app():
@@ -144,7 +142,6 @@ def run_app():
 
 
         if event == "Export to CSV":
-            CSV_FILE = Path("semana_17/project_finance_manager/project/data.csv")
             movements = [m.convert_movement_to_dict() for m in manager.get_movements()]
 
             try:

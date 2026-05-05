@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 JSON_FILE = Path("semana_17/project_finance_manager/project/data.json")
+CSV_FILE = Path("semana_17/project_finance_manager/project/data.csv")
 
 def save_data(manager):
     with open(JSON_FILE, "w", encoding='utf-8') as file:
