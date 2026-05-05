@@ -2,15 +2,15 @@
 import FreeSimpleGUI as sg
 from manager import FinanceManager
 from datetime import date
-from functions_gui import format_movement, show_add_category_window, show_add_movement_window, show_filter_by_date_window, filter_by_date
+from pathlib import Path
+from gui_second import show_add_category_window, show_add_movement_window, show_filter_by_date_window
+from functions import format_movement, filter_by_date, validate_filter_dates
 from persistence import save_data, load_data, export_csv
 
 
 def run_app():
     manager = FinanceManager()
     load_data(manager)
-
-    print(manager.get_categories())
 
     layout = [
         [sg.Text("My First Finance Manager")],
@@ -48,12 +48,7 @@ def run_app():
 
             if dates:
                 try:
-                    start_date = date.fromisoformat(dates["-START_DATE-"])
-                    end_date = date.fromisoformat(dates["-END_DATE-"])
-
-                    if start_date > end_date:
-                        sg.popup_error("Start date must be before end date")
-                        continue
+                    start_date, end_date = validate_filter_dates(dates)
 
                     filtered = filter_by_date(manager.get_movements(), start_date, end_date)
 
@@ -65,8 +60,8 @@ def run_app():
                         values=format_movement(filtered)
                     )
 
-                except ValueError:
-                    sg.popup_error("Invalid input")
+                except ValueError as e:
+                    sg.popup_error(str(e))
                 except Exception as e:
                     sg.popup_error(str(e))
                     continue
@@ -87,10 +82,7 @@ def run_app():
 
             if data:
                 try:
-                    category = data["-NEW_CATEGORY-"]
-                    if not category:
-                        sg.popup_error("No category entered")
-                        continue
+                    category = data.get("-NEW_CATEGORY-")
                 
                     # color = data["-COLOR-"]
                     # if not color:
@@ -123,41 +115,17 @@ def run_app():
 
             if data:
                 try:
-                    mov_date = data["-DATE-"]
-                    try:
-                        iso_date = date.fromisoformat(mov_date)
-                    except ValueError:
-                        sg.popup_error("Date must be in the format 'YYYY-MM-DD'")
-                        continue
-                    if iso_date > date.today():
-                        sg.popup_error("Date cannot be in the future")
-                        continue
+                    mov_date, title, amount, category = manager.validate_movement(data)
+                except ValueError as e:
+                    sg.popup_error(str(e))
+                    continue
 
-                    title = data["-TITLE-"].strip()
-                    if not title:
-                        sg.popup_error("Title is required")
-                        continue
-
-                    amount_input = data["-AMOUNT-"]
-                    if not amount_input:
-                        sg.popup_error("Amount is required")
-                        continue
-                    try:
-                        amount = float(amount_input)
-                    except ValueError:
-                        sg.popup_error("Amount must be a number")
-                        continue
-
-                    category = data["-CATEGORY-"]
-                    if not category:
-                        sg.popup_error("Please select a category")
-                        continue
-
+                try:
                     if type_ == "income":
-                        manager.add_income(mov_date, title.strip(), amount, category)
+                        manager.add_income(mov_date, title, amount, category)
 
                     elif type_ == "expense":
-                        manager.add_expense(mov_date, title.strip(), amount, category)
+                        manager.add_expense(mov_date, title, amount, category)
                     
                     save_data(manager)
                     sg.popup("Changes saved!")
@@ -176,10 +144,11 @@ def run_app():
 
 
         if event == "Export to CSV":
+            CSV_FILE = Path("semana_17/project_finance_manager/project/data.csv")
             movements = [m.convert_movement_to_dict() for m in manager.get_movements()]
 
             try:
-                export_csv("semana_17/project_finance_manager/project/data.csv", movements, movements[0].keys())
+                export_csv(CSV_FILE, movements, movements[0].keys())
                 sg.popup("Successfully exported to CSV!")
             except IndexError:
                 sg.popup_error("There is no data available to export to CSV.")

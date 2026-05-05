@@ -60,14 +60,6 @@ def show_add_category_window(categories):
             return values
 
 
-def format_movement(movements):
-    return [[m.mov_date, m.title, m.amount, m.category, m.type_] for m in movements]
-
-
-def filter_by_date(movements, start_date, end_date):
-    return [m for m in movements if start_date <= m.date <= end_date]
-
-
 def show_filter_by_date_window():
     layout = [
         [sg.Text("Filter movements by date")],

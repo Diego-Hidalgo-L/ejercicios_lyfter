@@ -66,6 +66,33 @@ class FinanceManager:
 
         return "Expense registered"
     
+    def validate_movement(self, data):
+        mov_date = data.get("-DATE-")
+        try:
+            iso_date = date.fromisoformat(mov_date)
+        except ValueError:
+            raise ValueError("Date must be in the format 'YYYY-MM-DD'")
+        if iso_date > date.today():
+            raise ValueError("Date cannot be in the future")
+
+        title = data.get("-TITLE-").strip()
+        if not title:
+            raise ValueError("Title is required")
+
+        amount_input = data.get("-AMOUNT-")
+        if not amount_input:
+            raise ValueError("Amount is required")
+        try:
+            amount = float(amount_input)
+        except ValueError:
+            raise ValueError("Amount must be a number")
+
+        category = data.get("-CATEGORY-")
+        if not category:
+            raise ValueError("Please select a category")
+
+        return mov_date, title, amount, category
+    
     def get_movements(self):
         return self.movements
     

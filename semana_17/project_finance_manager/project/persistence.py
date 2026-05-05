@@ -1,18 +1,20 @@
 
 import csv
 import json
-import os
+from pathlib import Path
+
+JSON_FILE = Path("semana_17/project_finance_manager/project/data.json")
 
 def save_data(manager):
-    with open("semana_17/project_finance_manager/project/data.json", "w", encoding='utf-8') as file:
+    with open(JSON_FILE, "w", encoding='utf-8') as file:
         json.dump(manager.convert_all_to_dict(), file, indent=4)
 
 
 def load_data(manager):
-    if not os.path.exists("semana_17/project_finance_manager/project/data.json"):
+    if not JSON_FILE.exists():
         return
     
-    with open("semana_17/project_finance_manager/project/data.json", "r", encoding='utf-8') as file:
+    with open(JSON_FILE, "r", encoding='utf-8') as file:
         data = json.load(file)
     
     for category in data.get("categories", []):
