@@ -7,7 +7,7 @@ class BatteryDevice:
             self.battery = battery
     
     def status(self):
-        return f"Battery at {self.battery}%."
+        return f"Battery at {self.battery}%"
 
 
 class MusicMixin:
@@ -15,13 +15,13 @@ class MusicMixin:
 
     def play_song(self, song):
         self.current_song = song
-        return f"Playing {self.curent_song}."
+        return f"Playing {self.current_song}."
     
     def status(self):
         if self.current_song:
             return f"Music: {self.current_song}"
         else:
-            return "Music: stopped."
+            return "Music: stopped"
 
 class GPSMixin:
     destination = None
@@ -32,9 +32,9 @@ class GPSMixin:
     
     def status(self):
         if self.destination:
-            return f"GPS: heading to {self.destination}."
+            return f"GPS: heading to {self.destination}"
         else:
-            return "GPS: idle."
+            return "GPS: idle"
 
 class SmartDevice(BatteryDevice, MusicMixin, GPSMixin):
     def __init__(self, battery):
@@ -44,11 +44,12 @@ class SmartDevice(BatteryDevice, MusicMixin, GPSMixin):
         return f"{BatteryDevice.status(self)} - {MusicMixin.status(self)} - {GPSMixin.status(self)}."
 
 
+def main():
+    my_iphone = SmartDevice(76)
 
-my_iphone = SmartDevice(76)
+    print(my_iphone.play_song("Broadview"))
+    print(my_iphone.navigate_to("Newport"))
+    print(my_iphone.status())
 
-# print(my_iphone.play_song("Broadview"))
 
-print(my_iphone.navigate_to("Newport"))
-
-print(my_iphone.status())
+main()

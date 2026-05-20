@@ -61,8 +61,8 @@ my_square = Square(8)
 
 shapes = [my_circle, my_rectangle, my_square]
 
-for object in shapes:
-    print(object.__str__())
-    print(f"Perimeter: {object.calculate_perimeter()}")
-    print(f"Area: {object.calculate_area()}")
+for shape in shapes:
+    print(shape.__str__())
+    print(f"Perimeter: {shape.calculate_perimeter()}")
+    print(f"Area: {shape.calculate_area()}")
     print("----------------")

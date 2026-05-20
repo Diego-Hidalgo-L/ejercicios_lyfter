@@ -1,11 +1,11 @@
 
 def return_params_and_result(func):
     def wrapper(*args, **kwargs):
-        list_of_params = [*args, *kwargs.values()]
+        params = [*args, *kwargs.values()]
 
         result = func(*args, *kwargs.values())
 
-        print(f"Parameters: {list_of_params}.")
+        print(f"Parameters: {params}.")
         print(f"Resultado: {result}")
 
         return result

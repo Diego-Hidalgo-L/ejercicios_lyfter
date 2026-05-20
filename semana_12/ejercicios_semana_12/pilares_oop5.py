@@ -23,7 +23,7 @@ class AdminUser(User):
 
 
 class RegularUser(User):
-    allowed_permissions = {"read"}
+    allowed_permissions = {"read"} # esto es un set, no un dict. la búsqueda es más rápida.
     
     def get_role(self):
         return "Regular User"

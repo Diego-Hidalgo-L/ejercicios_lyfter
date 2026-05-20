@@ -22,7 +22,7 @@ def test_check_if_prime_with_non_prime_number_returns_false():
 
 def test_check_if_prime_with_non_int_input_raises_type_error():
     # Arrange
-    my_num = 27.4
+    my_num = "hola"
     # Act & Assert
     with pytest.raises(TypeError):
         check_if_prime(my_num)

@@ -6,7 +6,6 @@ class Head:
 class Arm:
     def __init__(self,hand):
         self.hand = hand
-        
 
 class Hand:
     def __init__(self):

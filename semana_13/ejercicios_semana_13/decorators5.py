@@ -1,6 +1,4 @@
 
-user_logged_in = False
-
 def requires_login(func):
     def wrapper(*args, **kwargs):
         try:
@@ -13,6 +11,8 @@ def requires_login(func):
 
     return wrapper
 
+
+user_logged_in = False
 
 @requires_login
 def view_profile(user):

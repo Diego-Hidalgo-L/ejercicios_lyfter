@@ -1,0 +1,40 @@
+{
+    "categories": [
+        "Work",
+        "Food",
+        "Fun",
+        "Misc",
+        "Transportation",
+        "Freelance"
+    ],
+    "movements": [
+        {
+            "date": "2026-04-20",
+            "title": "Salary",
+            "amount": 1500.0,
+            "category": "Work",
+            "type": "income"
+        },
+        {
+            "date": "2026-04-20",
+            "title": "Lunch",
+            "amount": -20.0,
+            "category": "Food",
+            "type": "expense"
+        },
+        {
+            "date": "2026-04-20",
+            "title": "Gasoline",
+            "amount": -65.0,
+            "category": "Transportation",
+            "type": "expense"
+        },
+        {
+            "date": "2026-04-21",
+            "title": "Photo shoot",
+            "amount": 300.0,
+            "category": "Freelance",
+            "type": "income"
+        }
+    ]
+}

@@ -1,0 +1,5 @@
+date,title,amount,category,type
+2026-04-20,Salary,1500.0,Work,income
+2026-04-20,Lunch,-20.0,Food,expense
+2026-04-20,Gasoline,-65.0,Transportation,expense
+2026-04-21,Photo shoot,300.0,Freelance,income
