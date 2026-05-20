@@ -1,11 +1,37 @@
 {
     "categories": [
-        "Work",
-        "Food",
-        "Fun",
-        "Misc",
-        "Transportation",
-        "Freelance"
+        {
+            "name": "Work",
+            "color": "#932092"
+        },
+        {
+            "name": "Food",
+            "color": "#ff2600"
+        },
+        {
+            "name": "Fun",
+            "color": "#FFD166"
+        },
+        {
+            "name": "Misc",
+            "color": "#6A4C93"
+        },
+        {
+            "name": "Transportation",
+            "color": "#00fcff"
+        },
+        {
+            "name": "Freelance",
+            "color": "#ff9200"
+        },
+        {
+            "name": "Test expense",
+            "color": "#fefb00"
+        },
+        {
+            "name": "Test 2",
+            "color": "#ff9200"
+        }
     ],
     "movements": [
         {
@@ -35,6 +61,13 @@
             "amount": 300.0,
             "category": "Freelance",
             "type": "income"
+        },
+        {
+            "date": "2026-05-15",
+            "title": "Test expense",
+            "amount": -250.0,
+            "category": "Test expense",
+            "type": "expense"
         }
     ]
 }

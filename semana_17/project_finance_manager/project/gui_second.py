@@ -1,6 +1,7 @@
 
 import FreeSimpleGUI as sg
 from datetime import date
+from functions import build_row_colors
 
 def verify_cancel_window():
     layout = [
@@ -23,7 +24,7 @@ def verify_cancel_window():
             return "Back"
 
 
-def show_add_category_window(categories):
+def show_add_category_window(categories, movements, manager):
     layout = [
         [sg.Text("Add Category")],
 
@@ -32,6 +33,7 @@ def show_add_category_window(categories):
             headings=["Categories"],
             key="-TABLE-",
 
+            row_colors=build_row_colors(movements, manager),
             auto_size_columns=False,
             col_widths=[20, 10, 15, 10],
             justification="left",
@@ -41,12 +43,37 @@ def show_add_category_window(categories):
         )],
 
         [sg.Text("New Category:")], [sg.Input(key="-NEW_CATEGORY-")],
-        [sg.ColorChooserButton("Choose color", key="-COLOR-")],
+        [sg.Input(key="-COLOR-", size=(12,1), readonly=True), sg.ColorChooserButton("Choose color", target="-COLOR-")],
         
         [sg.Button("Save"), sg.Button("Cancel")]
     ]
 
     window = sg.Window("Add a new category", layout)
+
+    while True:
+        event, values = window.read()
+
+        if event in (sg.WINDOW_CLOSED, "Cancel"):
+            window.close()
+            return None
+        
+        if event == "Save":
+            window.close()
+            print(values)
+            return values
+
+
+def show_edit_category_window(categories):
+    layout = [
+        [sg.Text("Edit Category")],
+
+        [sg.Combo(categories, key='-CATEGORY-', readonly=True)],
+        [sg.Input(key='-COLOR-', size=(12,1), readonly=True), sg.ColorChooserButton("Choose color", target='-COLOR-')],
+        
+        [sg.Button("Save"), sg.Button("Cancel")]
+    ]
+
+    window = sg.Window("Edit category", layout)
 
     while True:
         event, values = window.read()

@@ -2,6 +2,11 @@
 from datetime import date
 
 class FinanceManager:
+    DEFAULT_COLORS = [
+    "#FF6B6B", "#4ECDC4", "#FFD166",
+    "#6A4C93", "#456122", "#1A535C"
+]
+
     def __init__(self):
         self.categories = {}
         self.movements = []
@@ -9,31 +14,48 @@ class FinanceManager:
     # Categories
     def category_exists(self, name):
         return name in self.categories
+    
+    def _get_next_color(self):
+        used_colors = [data["color"] for data in self.categories.values() if "color" in data]
+
+        for color in self.DEFAULT_COLORS:
+            if color not in used_colors:
+                return color
+
+        import random
+        return random.choice(self.DEFAULT_COLORS)
+    
+    def update_category_color(self, category_name, new_color):
+        if not self.category_exists(category_name):
+            raise ValueError(f"The category '{category_name}' does not exist")
+        
+        self.categories[category_name]["color"] = new_color
 
     def add_category(self, category):
-        if not category.strip():
+        if isinstance(category, dict):
+            name = category.get("name", "").strip()
+            color = category.get("color")
+        else:
+            name = category.strip()
+            color = None
+
+        if not name:
             raise ValueError("The category cannot be empty")
 
-        if self.category_exists(category):
-            raise ValueError(f"The category '{category}' already exists")
+        if self.category_exists(name):
+            raise ValueError(f"The category '{name}' already exists")
         
-        if isinstance(category, str):
-            name = category
-            color = "#CCCCCC"
-
-        if isinstance(category, dict):
-            name = category["name"]
-            color = category["color"]
+        if not color:
+            color = self._get_next_color()
         
-        self.categories[category] = {
-            "name": name,
+        self.categories[name] = {
             "color": color
         }
+
         return f"'{category}' added to Categories"
     
     def get_categories(self):
         return list(self.categories.keys())
-
 
     # Movements
     def add_income(self, mov_date, title, amount, category):
@@ -138,8 +160,17 @@ class FinanceManager:
     
     def convert_all_to_dict(self):
         return {
-            "categories": list(self.get_categories()), # Cambiar list por dict?
-            "movements": [m.convert_movement_to_dict() for m in self.movements]
+            "categories": [
+                {
+                    "name": name,
+                    "color": data["color"]
+                }
+                for name, data in self.categories.items()
+            ], 
+            "movements": [
+                m.convert_movement_to_dict()
+                for m in self.movements
+            ]
         }
 
 

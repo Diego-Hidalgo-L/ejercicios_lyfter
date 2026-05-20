@@ -1,14 +1,16 @@
 
 import FreeSimpleGUI as sg
 from manager import FinanceManager
-from gui_second import show_add_category_window, show_add_movement_window, show_filter_by_date_window
-from functions import format_movement, filter_by_date, validate_filter_dates
+from gui_second import show_add_category_window, show_edit_category_window, show_add_movement_window, show_filter_by_date_window
+from functions import format_movement, build_row_colors, filter_by_date, validate_filter_dates, refresh_table
 from persistence import save_data, load_data, export_csv, CSV_FILE
 
 
 def run_app():
     manager = FinanceManager()
     load_data(manager)
+
+    movements = manager.get_movements()
 
     layout = [
         [sg.Text("My First Finance Manager")],
@@ -19,6 +21,7 @@ def run_app():
             headings=["Date", "Title", "Amount", "Category", "Type"],
             key="-TABLE-",
 
+            row_colors=build_row_colors(movements, manager),
             auto_size_columns=False,
             col_widths=[15, 12, 12, 15, 12],
             justification="center",
@@ -28,7 +31,8 @@ def run_app():
             num_rows=10
         )],
 
-        [sg.Button("Add Category"), sg.Button("Add Income"), sg.Button("Add Expense")],
+        [sg.Button("Add Category"), sg.Button("Edit Category color")],
+        [sg.Button("Add Income"), sg.Button("Add Expense")],
         # [sg.Button("Edit entry")],
         [sg.Button("Export to CSV")],
         [sg.Button("Save and Exit"), sg.Button("Cancel")]
@@ -48,50 +52,66 @@ def run_app():
                 try:
                     start_date, end_date = validate_filter_dates(dates)
 
-                    filtered = filter_by_date(manager.get_movements(), start_date, end_date)
+                    filtered = filter_by_date(movements, start_date, end_date)
 
                     if not filtered:
                         sg.popup("No movements found in that range")
                         continue
 
-                    window["-TABLE-"].update(
-                        values=format_movement(filtered)
-                    )
+                    refresh_table(window, movements, manager)
 
                 except ValueError as e:
                     sg.popup_error(str(e))
                 except Exception as e:
                     sg.popup_error(str(e))
                     continue
-        
+
 
         if event == "Reset Filter":
             print("'Reset Filter' clicked")
 
-            window["-TABLE-"].update(
-                        values=format_movement(manager.get_movements())
-                    )
+            refresh_table(window, movements, manager)
 
 
         if event == "Add Category":
             print("'Add Category' clicked")
 
-            data = show_add_category_window(manager.get_categories())
+            data = show_add_category_window(manager.get_categories(), movements, manager)
 
             if data:
                 try:
-                    category = data.get("-NEW_CATEGORY-")
-                
-                    # color = data["-COLOR-"]
-                    # if not color:
-                    #     sg.popup_error("Choose a color for the category")
-                    #     continue
+                    category_data = {
+                        "name": data.get("-NEW_CATEGORY-"),
+                        "color": data.get("-COLOR-")
+                    }
 
-                    manager.add_category(category)
+                    manager.add_category(category_data)
 
                     save_data(manager)
 
                 except Exception as e:
+                    sg.popup_error(str(e))
+                    continue
+
+        
+        if event == "Edit Category color":
+            print("'Edit category' clicked")
+
+            data = show_edit_category_window(manager.get_categories())
+
+            if data:
+                try:
+                    name = data.get("-CATEGORY-")
+                    color = data.get("-COLOR-")
+
+                    manager.update_category_color(name, color)
+
+                    refresh_table(window, movements, manager)
+                    sg.popup("Color changed successfully!")
+
+                    save_data(manager)
+
+                except ValueError as e:
                     sg.popup_error(str(e))
                     continue
 
@@ -128,14 +148,12 @@ def run_app():
                     save_data(manager)
                     sg.popup("Changes saved!")
 
-                    window["-TABLE-"].update(
-                        values=format_movement(manager.get_movements())
-                    )
+                    refresh_table(window, movements, manager)
                 
                 except Exception as e:
                     sg.popup_error(str(e))
                     continue
-        
+
 
         # if event == "Edit entry":
         #     pass
