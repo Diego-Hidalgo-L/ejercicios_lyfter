@@ -13,7 +13,7 @@ def read_file_and_print_rows(path):
 
 
 def main():
-    read_file_and_print_rows("videogames.csv")
+    read_file_and_print_rows("semana_8/Ejercicios de Manejo de CSV/videogames.csv")
 
 
 main()
