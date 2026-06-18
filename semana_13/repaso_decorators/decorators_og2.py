@@ -13,7 +13,7 @@ def int_checker(func):
             except ValueError:
                 print("The parameter is not an integer.")
         
-        return func(int_params)
+        return func(*int_params)
     
     return wrapper
 

@@ -6,8 +6,7 @@ def limit_calls(limit=3):
             nonlocal calls
 
             if calls >= limit:
-                print("Function call limit reached")
-                return
+                return f"Function call limit reached"
             
             calls += 1
             return func(*args, **kwargs)

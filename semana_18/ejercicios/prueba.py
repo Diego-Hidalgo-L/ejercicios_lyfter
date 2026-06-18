@@ -1,3 +1,5 @@
 
+from datetime import date
 
-print("b" == "a")
+today = date.today()
+
