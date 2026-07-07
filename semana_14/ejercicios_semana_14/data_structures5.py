@@ -42,12 +42,12 @@ class LinkedList:
             while current_node.data is not data:   # si esto no sirve, intentar con current_node.data
                 previous_node = current_node
                 current_node = current_node.next
-            if previous_node is None:
-                self.head = current_node.next
+            if previous_node is None: 
+                self.head = current_node.next # Esta línea desconecta nuestro nodo de su next
             else:
-                previous_node.next = current_node.next
+                previous_node.next = current_node.next # Esta también
             
-            current_node.next = None
+            current_node.next = None # Esta no la entiendo 100%
             return current_node
 
     def print_all(self):

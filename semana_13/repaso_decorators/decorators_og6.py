@@ -1,5 +1,5 @@
 
-from datetime import date, time
+from datetime import date
 
 def log_call(func):
     def wrapper(*args, **kwargs):
