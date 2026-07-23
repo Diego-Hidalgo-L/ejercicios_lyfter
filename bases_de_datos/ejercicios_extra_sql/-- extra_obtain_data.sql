@@ -9,7 +9,7 @@ SELECT *
 
 SELECT *
     FROM products
-    WHERE brand LIKE 'apple';
+    WHERE product_name LIKE '%apple%';
 
 SELECT *
     FROM products
