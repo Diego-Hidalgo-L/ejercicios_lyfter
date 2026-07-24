@@ -1,4 +1,4 @@
-SQLite
+-- SQLite
 
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
