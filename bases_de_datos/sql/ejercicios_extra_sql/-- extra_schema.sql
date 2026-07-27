@@ -1,0 +1,7 @@
+-- SQLite
+
+CREATE TABLE categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(10) UNIQUE NOT NULL,
+    description TEXT
+);
