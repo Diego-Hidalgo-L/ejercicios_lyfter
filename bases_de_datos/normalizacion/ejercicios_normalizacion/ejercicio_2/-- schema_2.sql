@@ -1,0 +1,34 @@
+-- SQLite
+
+CREATE TABLE owners (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(10) NOT NULL,
+    phone_number CHAR(12) NOT NULL
+);
+
+CREATE TABLE makes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    make VARCHAR(10) NOT NULL
+);
+
+CREATE TABLE models (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    make_id INTEGER REFERENCES makes(id),
+    model VARCHAR(15) NOT NULL,
+    year SMALLINT NOT NULL,
+    color VARCHAR(10) NOT NULL
+);
+
+CREATE TABLE cars (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    vin VARCHAR(11) NOT NULL,
+    model_id INTEGER REFERENCES models(id)
+);
+
+CREATE TABLE car_owners (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    car_id INTEGER REFERENCES cars(id),
+    owner_id INTEGER REFERENCES owners(id),
+    insurance_company VARCHAR(20) NOT NULL,
+    insurance_policy VARCHAR(20) NOT NULL
+);
