@@ -70,7 +70,7 @@ INSERT INTO order_items
     VALUES (2, 001, 102, 1, 'Extra ketchup');
 
 INSERT INTO order_items
-    VALUES (3, 002, 013, 1, 'Extra cheese');
+    VALUES (3, 002, 103, 1, 'Extra cheese');
 
 INSERT INTO order_items
     VALUES (4, 003, 102, 2, NULL);
@@ -80,4 +80,5 @@ INSERT INTO order_items
 
 INSERT INTO order_items
     VALUES (6, 005, 106, 1, NULL);
+
 

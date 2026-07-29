@@ -41,7 +41,6 @@ CREATE TABLE orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     customer_id INTEGER REFERENCES customers(id),
     address_id INTEGER REFERENCES addresses(id),
-    total_amount FLOAT NOT NULL,
     delivery_time DATETIME NOT NULL
 );
 

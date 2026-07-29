@@ -1,6 +1,36 @@
 
-OBSERVACIONES INICIALES:
+1FN:
+    - Ya se cumple porque no hay más de una columna para el mismo dato ni hay más de un solo dato en cada celda.
 
-1) La 1NF está bien aplicada en la tabla inicial, ya que ninguna celda contiene más de un dato. También, no hay columnas que repiten el mismo dato, como podría ser el caso con algunos Customers que tienen más de un Order.
-2) Hay que aplicar correctamente la 2NF y la 3NF, ya que hay información que se repite varias veces a lo largo de la tabla inicial, como Customer Name, Customer Phone, Address y Item Name.
-3) Será necesario separar estos datos en tablas diferentes que incluyan únicamente los datos que dependen de ese PK.
+2FN:
+    - Order ID + Item ID forman una llave compuesta.
+    - Separamos la llave compuesta en las siguientes tablas:
+    - Orders:
+        a. ID.
+        b. Customer Name.
+        c. Address.
+        d. Delivery Time.
+    - Order Items:
+        a. ID.
+        b. Item Name.
+        c. Price.
+        d. Quantity.
+        e. Special Request.
+
+3FN:
+    - Se separan los datos en las siguientes tablas conforme a su dependencia a la llave primaria de la tabla anterior:
+    - Customers:
+        a. ID.
+        b. Phone Number (depende de) --> Customer Name.
+    - Addresses:
+        a. ID.
+        b. Customer ID --> Address.
+    - Items:
+        a. ID.
+        b. Price --> Item Name.
+    - Orders:
+        a. ID.
+        b. Delivery Time --> Customer ID + Address ID (llave compuesta).
+    - Order Items:
+        a. ID.
+        b. Quantity + Special Request --> Order ID + Item ID (llave compuesta).
