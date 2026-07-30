@@ -60,3 +60,4 @@ INSERT INTO rents
 
 INSERT INTO rents
     VALUES (5, 2, 2, 'Overdue');
+

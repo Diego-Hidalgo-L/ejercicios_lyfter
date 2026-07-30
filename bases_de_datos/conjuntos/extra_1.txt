@@ -1,0 +1,10 @@
+
+1. Explicación cruzada entre conjuntos y SQL.
+    - Analice la operación de conjuntos All - Odd.
+    - Explique cómo una operación similar se puede representar en SQL con JOINs.
+    - ¿Qué tipo de JOIN usaría?
+
+La operación de conjuntos All - Odd es una diferencia.
+La operación de diferencia puede ser representada, por ejemplo,
+al hacer un LEFT JOIN a dos tablas donde la tabla izquierda tiene todos los datos y la tabla derecha tiene datos nulos.
+Le agregamos un WHERE <columna> IS NULL, para conseguir únicamente las filas donde no hay coincidencias entre All y Odd.
