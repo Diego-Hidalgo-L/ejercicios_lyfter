@@ -45,4 +45,4 @@ SELECT books.book_name, rents.customer_id, rents.state
     FROM books
     INNER JOIN rents
     ON books.id = rents.book_id
-    WHERE state IS 'Overdue';
+    WHERE state = 'Overdue';
