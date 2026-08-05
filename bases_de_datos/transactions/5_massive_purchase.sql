@@ -4,6 +4,7 @@ DO $$
 DECLARE
     v_user_id INTEGER;
     v_stock INTEGER;
+    v_bill_id INTEGER;
 	item RECORD;
 
 BEGIN
@@ -57,13 +58,14 @@ BEGIN
 
     -- 4. SOLO si TODOS los productos están en stock, creamos la factura y registramos todos los productos en bill_products.
     INSERT INTO bills (user_id, address_id, purchase_date, status, delivery_date)
-        VALUES (3, 5, '2026-08-05', 'Pending', NULL);
+        VALUES (3, 5, '2026-08-05', 'Pending', NULL)
+        RETURNING id INTO v_bill_id;
 
     INSERT INTO bill_products (bill_id, product_id, quantity)
         VALUES
-            (5, 4, 4),
-            (5, 7, 2),
-            (5, 1, 3);
+            (v_bill_id, 4, 4),
+            (v_bill_id, 7, 2),
+            (v_bill_id, 1, 3);
 
     -- 5. Una vez hecha la factura, modificamos el stock de productos.
     FOR item IN
