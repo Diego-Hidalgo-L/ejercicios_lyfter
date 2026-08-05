@@ -1,4 +1,3 @@
 SET search_path TO ejercicio;
 
-SELECT * FROM bills;
-
+SELECT * FROM bill_products;

@@ -21,16 +21,16 @@ BEGIN
 
 
     -- 2. Crear la factura.
-    INSERT INTO bills (id, user_id, address_id, purchase_date, status, delivery_date) 
-        VALUES (1, v_user_id, 1, '2026-07-31', 'In transit', NULL);
+    INSERT INTO bills (user_id, address_id, purchase_date, status, delivery_date) 
+        VALUES (v_user_id, 1, '2026-07-31', 'Pending', NULL);
 
 
     -- 3. Ingresar productos en bill_products para poder iterar y verificar el stock de cada uno.
-    INSERT INTO bill_products (id, bill_id, product_id, quantity)
+    INSERT INTO bill_products (bill_id, product_id, quantity)
         VALUES
-        (1, 1, 1, 1),
-        (2, 1, 3, 1),
-        (3, 1, 8, 1);
+        (4, 1, 1),
+        (4, 3, 1),
+        (4, 8, 1);
     
 
     -- 4. Iterar los productos de cada bill a través de bill_products y verificar el stock de cada uno.
