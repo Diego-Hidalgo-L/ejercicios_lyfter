@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, Response, json, request, jsonify
 
 app = Flask(__name__)
 
@@ -78,11 +78,79 @@ comments_list = [
 @app.route("/comment", methods=["POST"])
 def post_comment():
     comment_content = request.form.get("comment_content") # .form también viene en formato de diccionario, por eso se puede hacer .get()
-    if not comment_content:
+    if not comment_content: # podría manejarse otro error para cuando no se incluye este key en el path DEL TODo.
         return jsonify(message="no empty comments allowed"), 400
 
     comments_list.append(comment_content)
     return comments_list
+
+
+# Validación:
+users_list = [
+	{
+		"email": "action.bronson@gmail.com",
+		"password": "123@a!",
+	},
+]
+
+@app.route("/register", methods=["POST"])
+def register_user():
+    try:
+        if "email" not in request.json: # Si el request no trae el email, mandamos error.
+            raise ValueError("email missing from the body")
+
+        if "password" not in request.json: # Si el request no trae el password, mandamos error.
+            raise ValueError("password missing from the body")
+
+        users_list.append(
+            {
+                "email": request.json["email"],
+                "password": request.json["password"],
+            }
+        )
+        return users_list
+    except ValueError as ex:
+        return jsonify(message=str(ex)), 400
+    except Exception as ex:
+	    # enviar un mensaje por slack
+        return jsonify(message=str(ex)), 500
+
+# Autenticación:
+@app.route('/view-token')
+def view_token():
+	token = request.headers.get('token', '') # Puedo accesar a cualquiera de los headers a través del atributo .headers en formato diccionario.
+	return token
+
+
+# RESPONSES:
+@app.route("/hello") # 3ro MEJOR: para retornar responses mucho más ESPECÍFICOS.
+def hello():
+    response_body = json.dumps({"msg": "Hello World!"}) # dumps: 'dump string' -> convierte el json en un string.
+    return Response(response_body, status=200, mimetype="application/json") # Response no convierte nada automáticamente; no hace ninguna suposición.
+
+@app.route("/hello2") # MEJOR: cuando queremos retornar DATOS PRIMITIVOS.
+def hello2():
+    return {"msg": "Hello, World!"}, 201
+
+
+from dataclasses import dataclass
+
+@dataclass
+class HelloResponse: # Usar objetos para los responses es una buena práctica (estructura definida)
+    msg: str
+
+@dataclass
+class LoginResponse: # Provee mayor información y orden sobre cada response para cada request diferente.
+    msg: str
+
+@dataclass
+class RegisterResponse: #Sirve para evitar redundancia (DRY).
+    msg: str
+
+@app.route("/hello3") # 2do MEJOR: para retornar datos NO primitivos (como clases.)
+def hello3():
+    response = HelloResponse("Hello, World!") # Usar objetos para los responses es una buena práctica (estructura definida)
+    return jsonify(response), 200
 
 
 if __name__ == "__main__":
