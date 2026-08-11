@@ -20,13 +20,19 @@
     {
         "description": "Team meeting to set objectives for the week",
         "identifier": "task4",
-        "status": "Pending",
+        "status": "Completed",
         "title": "Meeting"
     },
     {
         "description": "At the end of the work day, drive for 45 minutes back home and rest.",
         "identifier": "task5",
-        "status": "Pending",
+        "status": "Completed",
         "title": "Commute home"
+    },
+    {
+        "description": "Once you get home, dedicate 1.5-2 hours to study and improve your skills",
+        "identifier": "task6",
+        "status": "In progress",
+        "title": "Read or study"
     }
 ]

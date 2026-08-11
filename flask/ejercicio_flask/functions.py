@@ -25,7 +25,7 @@ def validate_task(request_body, task_list):
     description = request_body.get("description")
     status = request_body.get("status")
 
-    if not identifier:
+    if identifier is None:
         raise ValueError("The identifier is empty.")
 
     for task in task_list:
@@ -45,7 +45,7 @@ def validate_task(request_body, task_list):
         raise ValueError("Invalid status. Enter one of the following: 'Pending', 'In progress', 'Completed'.")
 
 
-def filter_list(my_filter, my_list):
+def filter_list(status_filter, task_list):
     return list(
-                filter(lambda task: task["status"] == my_filter, my_list)
+                filter(lambda task: task["status"] == status_filter, task_list)
             )

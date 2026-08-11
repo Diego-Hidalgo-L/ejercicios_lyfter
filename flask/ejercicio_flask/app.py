@@ -4,7 +4,7 @@ from functions import status_list, read_json, save_json, validate_task, filter_l
 app = Flask(__name__)
 
 
-@app.route("/all_tasks")
+@app.route("/tasks")
 def get_tasks():
     task_list = read_json("tasks.json")
     status_filter = request.args.get("status") 
@@ -16,7 +16,7 @@ def get_tasks():
     return task_list
 
 
-@app.route("/add_task", methods=["POST"])
+@app.route("/tasks", methods=["POST"])
 def add_task():
     request_body = request.json
     status = request_body.get("status")
@@ -31,20 +31,18 @@ def add_task():
     except ValueError as e:
         return jsonify(error_message=str(e)), 400
 
-    print("Task entered successfully!")
-    return request_body
+    return jsonify(request_body), 201
 
 
-@app.route("/edit_task", methods=["PATCH", "PUT"])
-def edit_task():
+@app.route("/tasks/<identifier>", methods=["PATCH", "PUT"])
+def edit_task(identifier):
     task_list = read_json("tasks.json")
-    identifier = request.json.get("identifier")
     title = request.json.get("title")
     description = request.json.get("description")
     status = request.json.get("status")
     task_found = False
 
-    if not identifier:
+    if identifier is None:
         return jsonify(error_message="The identifier is empty"), 400
 
     for task in task_list:
@@ -72,10 +70,9 @@ def edit_task():
     return jsonify(message=f"The task '{identifier}' was edited.")
 
 
-@app.route("/delete_task", methods=["DELETE"])
-def delete_task():
+@app.route("/tasks/<identifier>", methods=["DELETE"])
+def delete_task(identifier):
     task_list = read_json("tasks.json")
-    identifier = request.json.get("identifier")
 
     try:
         for i, task in enumerate(task_list):
