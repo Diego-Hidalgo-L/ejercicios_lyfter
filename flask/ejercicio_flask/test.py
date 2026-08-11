@@ -147,7 +147,7 @@ class LoginResponse: # Provee mayor información y orden sobre cada response par
 class RegisterResponse: #Sirve para evitar redundancia (DRY).
     msg: str
 
-@app.route("/hello3") # 2do MEJOR: para retornar datos NO primitivos (como clases.)
+@app.route("/hello3") # 2do MEJOR: para retornar datos NO primitivos (como classes.)
 def hello3():
     response = HelloResponse("Hello, World!") # Usar objetos para los responses es una buena práctica (estructura definida)
     return jsonify(response), 200

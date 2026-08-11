@@ -1,0 +1,95 @@
+from flask import Flask, request, jsonify
+from functions import status_list, read_json, save_json, validate_task, filter_list
+
+app = Flask(__name__)
+
+
+@app.route("/all_tasks")
+def get_tasks():
+    task_list = read_json("tasks.json")
+    status_filter = request.args.get("status") 
+
+    if status_filter:
+        status_filter = status_filter.strip().capitalize()
+        return filter_list(status_filter, task_list)
+
+    return task_list
+
+
+@app.route("/add_task", methods=["POST"])
+def add_task():
+    request_body = request.json
+    status = request_body.get("status")
+    task_list = read_json("tasks.json")
+
+    try:
+        validate_task(request_body, task_list)
+        request_body["status"] = status.capitalize()
+        task_list.append(request_body)
+        save_json("tasks.json", task_list)
+
+    except ValueError as e:
+        return jsonify(error_message=str(e)), 400
+
+    print("Task entered successfully!")
+    return request_body
+
+
+@app.route("/edit_task", methods=["PATCH", "PUT"])
+def edit_task():
+    task_list = read_json("tasks.json")
+    identifier = request.json.get("identifier")
+    title = request.json.get("title")
+    description = request.json.get("description")
+    status = request.json.get("status")
+    task_found = False
+
+    if not identifier:
+        return jsonify(error_message="The identifier is empty"), 400
+
+    for task in task_list:
+        if task.get("identifier") == identifier:
+            task_found = True
+
+            if title:
+                task["title"] = title
+
+            if description:
+                task["description"] = description
+
+            if status:
+                if status.strip().lower() not in status_list:
+                    return jsonify(error_message="Invalid status. Enter one of the following: 'Pending', 'In progress', 'Completed'."), 400
+
+                task["status"] = status.capitalize()
+
+            break
+
+    if not task_found:
+        return jsonify(error_message=f"The identifier '{identifier}' does not exist."), 400
+
+    save_json("tasks.json", task_list)
+    return jsonify(message=f"The task '{identifier}' was edited.")
+
+
+@app.route("/delete_task", methods=["DELETE"])
+def delete_task():
+    task_list = read_json("tasks.json")
+    identifier = request.json.get("identifier")
+
+    try:
+        for i, task in enumerate(task_list):
+            if task.get("identifier") == identifier:
+                task_list.pop(i)
+                save_json("tasks.json", task_list)
+
+                return jsonify(message=f"The task '{identifier}' was deleted.")
+
+        raise ValueError(f"The identifier '{identifier}' does not exist.")
+
+    except ValueError as e:
+        return jsonify(error_message=str(e)), 400
+
+
+if __name__ == "__main__":
+    app.run(host='localhost', port=8000, debug=True)

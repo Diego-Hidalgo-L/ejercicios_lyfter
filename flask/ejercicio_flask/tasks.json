@@ -1,0 +1,32 @@
+[
+    {
+        "description": "As soon as you wake up, get up and make the bed nice and neatly",
+        "identifier": "task1",
+        "status": "Completed",
+        "title": "Make the bed"
+    },
+    {
+        "description": "Clean yourself up and get ready for the day",
+        "identifier": "task2",
+        "status": "Completed",
+        "title": "Shower"
+    },
+    {
+        "description": "Get in the car and drive for 30 minutes to your place of business",
+        "identifier": "task3",
+        "status": "Completed",
+        "title": "Commute to work"
+    },
+    {
+        "description": "Team meeting to set objectives for the week",
+        "identifier": "task4",
+        "status": "Pending",
+        "title": "Meeting"
+    },
+    {
+        "description": "At the end of the work day, drive for 45 minutes back home and rest.",
+        "identifier": "task5",
+        "status": "Pending",
+        "title": "Commute home"
+    }
+]
