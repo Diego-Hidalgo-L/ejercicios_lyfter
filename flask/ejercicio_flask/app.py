@@ -43,7 +43,7 @@ def edit_task(identifier):
     task_found = False
 
     if identifier is None:
-        return jsonify(error_message="The identifier is empty"), 400
+        return jsonify(error_message="The identifier is empty"), 404
 
     for task in task_list:
         if task.get("identifier") == identifier:
@@ -64,7 +64,7 @@ def edit_task(identifier):
             break
 
     if not task_found:
-        return jsonify(error_message=f"The identifier '{identifier}' does not exist."), 400
+        return jsonify(error_message=f"The task '{identifier}' does not exist."), 404
 
     save_json("tasks.json", task_list)
     return jsonify(message=f"The task '{identifier}' was edited.")
@@ -74,18 +74,14 @@ def edit_task(identifier):
 def delete_task(identifier):
     task_list = read_json("tasks.json")
 
-    try:
-        for i, task in enumerate(task_list):
-            if task.get("identifier") == identifier:
-                task_list.pop(i)
-                save_json("tasks.json", task_list)
+    for i, task in enumerate(task_list):
+        if task.get("identifier") == identifier:
+            task_list.pop(i)
+            save_json("tasks.json", task_list)
 
-                return jsonify(message=f"The task '{identifier}' was deleted.")
+            return jsonify(message=f"The task '{identifier}' was deleted.")
 
-        raise ValueError(f"The identifier '{identifier}' does not exist.")
-
-    except ValueError as e:
-        return jsonify(error_message=str(e)), 400
+    return jsonify(error_message=f"The task '{identifier}' does not exist."), 404
 
 
 if __name__ == "__main__":
