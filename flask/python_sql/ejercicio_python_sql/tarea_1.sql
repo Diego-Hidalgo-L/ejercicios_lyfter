@@ -25,7 +25,8 @@ CREATE TABLE rentals (
     car_id INTEGER REFERENCES cars(id),
     user_id INTEGER REFERENCES users(id),
     rental_date DATE DEFAULT CURRENT_DATE,
-    status VARCHAR(30) NOT NULL CHECK (status IN ('ongoing', 'returned'))
+    status VARCHAR(30) NOT NULL CHECK (status IN ('ongoing', 'returned')),
+    return_date DATE
 );
 
 -- USERS DATA:
@@ -101,3 +102,9 @@ insert into cars (id, license_plate, brand, model, year, status) values (17, 'GZ
 insert into cars (id, license_plate, brand, model, year, status) values (18, 'BUP302', 'Audi', 'Q7', 2010, 'available');
 insert into cars (id, license_plate, brand, model, year, status) values (19, 'TKY510', 'Chevrolet', 'Astro', 1995, 'rent ineligible');
 insert into cars (id, license_plate, brand, model, year, status) values (20, 'WWO040', 'GMC', 'Jimmy', 2001, 'rental ongoing');
+
+--RENTALS DATA:
+INSERT INTO rentals (car_id, user_id, rental_date, status) VALUES (20, 5, '2026-08-15', 'ongoing');
+INSERT INTO rentals (car_id, user_id, rental_date, status) VALUES (13, 28, '2026-08-15', 'ongoing');
+INSERT INTO rentals (car_id, user_id, rental_date, status) VALUES (7, 42, '2026-08-14', 'ongoing');
+INSERT INTO rentals (car_id, user_id, rental_date, status) VALUES (10, 3, '2026-08-11', 'ongoing');

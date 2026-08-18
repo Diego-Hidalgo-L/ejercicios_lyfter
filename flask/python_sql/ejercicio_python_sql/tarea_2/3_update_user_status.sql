@@ -2,7 +2,6 @@ SET search_path TO lyfter_car_rental;
 
 DO $$
 DECLARE
-    v_id INTEGER;
     v_status VARCHAR(30);
 
 BEGIN

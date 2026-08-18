@@ -2,7 +2,6 @@ SET search_path TO lyfter_car_rental;
 
 DO $$
 DECLARE
-    v_id INTEGER;
     v_status VARCHAR(30);
 
 BEGIN
@@ -16,7 +15,7 @@ BEGIN
     END IF;
 
     IF v_status = 'rental ongoing' THEN
-        RAISE EXCEPTION 'The user status is already -Payment pending-';
+        RAISE EXCEPTION 'The car status is already -Rental ongoing-';
     END IF;
 
     UPDATE cars

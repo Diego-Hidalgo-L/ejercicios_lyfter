@@ -31,15 +31,12 @@ BEGIN
         v_car_id;
     END IF;
 
-    ALTER TABLE rentals
-    ADD COLUMN return_date DATE;
-
     UPDATE rentals
-    SET status = 'returned', return_date = CURRENT_DATE
+    SET status = 'returned', return_date = '2026-08-16'
     WHERE id = 1;
 
     UPDATE cars
     SET status = 'available'
-    WHERE id = 1;
+    WHERE id = v_car_id;
 
 END $$
