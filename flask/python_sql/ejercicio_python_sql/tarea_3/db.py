@@ -15,6 +15,7 @@ class PgManager:
             print("Database connected successfully!")
             self.cursor = self.connection.cursor()
 
+
     def create_connection(self):
         try:
             connection = psycopg2.connect(
@@ -30,19 +31,43 @@ class PgManager:
             print("Error connecting to the database:", error)
             return None
 
+
     def execute_query(self, query, *args):
         try:
             self.cursor.execute(query, args)
-            self.cursor.commit()
-
-            if self.cursor.description:
-                result = self.cursor.fetchall()
-                return result
-
             return "Query executed"
 
         except Exception as error:
             print("Error executing the query:", error)
+
+
+    def fetchall(self, query, *args):
+            try:
+                self.cursor.execute(query, args)
+                results = self.cursor.fetchall()
+
+                return results
+
+            except Exception as error:
+                print("Error executing query with results", error)
+
+
+    def commit(self):
+        try:
+            self.connection.commit()
+            return "Query committed"
+        
+        except Exception as error:
+            print("Error committing query to database:", error)
+
+
+    def rollback(self):
+        try:
+            self.connection.rollback()
+            return "Query rolled back"
+        
+        except Exception as error:
+            print("Error rolling back query:", error)
 
 
     def close_connection(self):
@@ -53,3 +78,12 @@ class PgManager:
             self.connection.close()
 
         print("Connection closed")
+
+
+db_manager = PgManager(
+    db_name='postgres',
+    user='postgres',
+    password='xyz0138',
+    host='localhost'
+)
+
