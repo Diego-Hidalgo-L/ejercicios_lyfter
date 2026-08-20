@@ -23,7 +23,8 @@ class PgManager:
                 user=self.user,
                 password=self.password,
                 host=self.host,
-                port=self.port
+                port=self.port,
+                options="-c search_path=lyfter_car_rental"
             )
             return connection
 
@@ -38,18 +39,18 @@ class PgManager:
             return "Query executed"
 
         except Exception as error:
-            print("Error executing the query:", error)
+            raise Exception("Error executing query:", error)
 
 
     def fetchall(self, query, *args):
-            try:
-                self.cursor.execute(query, args)
-                results = self.cursor.fetchall()
+        try:
+            self.cursor.execute(query, args)
+            results = self.cursor.fetchall()
 
-                return results
+            return results
 
-            except Exception as error:
-                print("Error executing query with results", error)
+        except Exception as error:
+            raise Exception("Error fetching all:", error)
 
 
     def commit(self):
@@ -58,8 +59,7 @@ class PgManager:
             return "Query committed"
         
         except Exception as error:
-            print("Error committing query to database:", error)
-
+            raise Exception ("Error committing query to database:", error)
 
     def rollback(self):
         try:
@@ -67,7 +67,7 @@ class PgManager:
             return "Query rolled back"
         
         except Exception as error:
-            print("Error rolling back query:", error)
+            raise Exception ("Error rolling back query:", error)
 
 
     def close_connection(self):
