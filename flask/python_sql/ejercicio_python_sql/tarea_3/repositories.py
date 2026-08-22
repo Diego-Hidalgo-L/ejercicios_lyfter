@@ -1,9 +1,9 @@
 from flask import jsonify
-from db import db_manager
-from functions import format_users, format_cars, format_rentals
+from tarea_3.db import db_manager
+from tarea_3.functions import format_users, format_cars, format_rentals
 from datetime import date
 
-class UsersRepo:
+class UsersRepository:
     def __init__(self, db_manager):
         self.db_manager = db_manager
 
@@ -90,7 +90,7 @@ class UsersRepo:
             return jsonify(error_message=f"Error updating user status: {error}"), 400
 
 
-class CarsRepo:
+class CarsRepository:
     def __init__(self, db_manager):
         self.db_manager = db_manager
 
@@ -168,7 +168,7 @@ class CarsRepo:
             return jsonify(error_message=f"Error updating car status: {error}"), 400
 
 
-class RentalsRepo:
+class RentalsRepository:
     def __init__(self, db_manager):
         self.db_manager = db_manager
 
@@ -268,6 +268,6 @@ class RentalsRepo:
 
 
 # CLASS INSTANCES:
-users_repo = UsersRepo(db_manager)
-cars_repo = CarsRepo(db_manager)
-rentals_repo = RentalsRepo(db_manager)
+users_repo = UsersRepository(db_manager)
+cars_repo = CarsRepository(db_manager)
+rentals_repo = RentalsRepository(db_manager)

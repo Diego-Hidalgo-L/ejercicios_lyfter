@@ -9,7 +9,6 @@ def get_users():
     filters = request.args
     return users_repo.get_users(filters)
 
-
 @app.route("/users", methods=["POST"])
 def add_user():
     request_body = request.json
