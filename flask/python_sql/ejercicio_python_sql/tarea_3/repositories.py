@@ -89,6 +89,26 @@ class UsersRepository:
             self.db_manager.rollback()
             return jsonify(error_message=f"Error updating user status: {error}"), 400
 
+    def flag_user(self, identifier):
+        try:
+            query = """
+                UPDATE users
+                SET status = 'payment pending'
+                WHERE id = %s;
+                """
+
+            execute_result = self.db_manager.execute_query(query, identifier)
+
+            if not execute_result:
+                raise Exception("Error executing query")
+            
+            self.db_manager.commit()
+            return jsonify(message=f"User {identifier} status updated successfully!")
+
+        except Exception as error:
+            self.db_manager.rollback()
+            return jsonify(error_message=f"Error updating user status: {error}"), 400
+
 
 class CarsRepository:
     def __init__(self, db_manager):

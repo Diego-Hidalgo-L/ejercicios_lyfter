@@ -9,6 +9,7 @@ def get_users():
     filters = request.args
     return users_repo.get_users(filters)
 
+
 @app.route("/users", methods=["POST"])
 def add_user():
     request_body = request.json
@@ -19,6 +20,11 @@ def add_user():
 def update_user_status(identifier):
     request_body = request.json
     return users_repo.update_user_status(identifier, request_body)
+
+
+@app.route("/users/<identifier>/flag", methods=["PATCH"])
+def flag_user(identifier):
+    return users_repo.flag_user(identifier)
 
 
 # CARS:
@@ -38,6 +44,7 @@ def add_car():
 def update_car_status(identifier):
     request_body = request.json
     return cars_repo.update_car_status(identifier, request_body)
+
 
 # RENTALS:
 @app.route("/rentals")
