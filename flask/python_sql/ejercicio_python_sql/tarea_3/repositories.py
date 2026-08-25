@@ -103,11 +103,11 @@ class UsersRepository:
                 raise Exception("Error executing query")
             
             self.db_manager.commit()
-            return jsonify(message=f"User {identifier} status updated successfully!")
+            return jsonify(message=f"User {identifier} flagged successfully!")
 
         except Exception as error:
             self.db_manager.rollback()
-            return jsonify(error_message=f"Error updating user status: {error}"), 400
+            return jsonify(error_message=f"Error flagging user: {error}"), 400
 
 
 class CarsRepository:
