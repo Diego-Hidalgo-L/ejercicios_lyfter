@@ -30,14 +30,18 @@ def verify_cars_table():
 
 
 def main():
-    tables_verification = verify_tables()
+    if db_manager.connection:
+        print("Database is connected")
+        tables_verification = verify_tables()
 
-    if not tables_verification:
-        print("DB ERROR: The tables don't exist ('users', 'cars, 'rentals')")
+        if not tables_verification:
+            print("DB ERROR: The tables don't exist ('users', 'cars', 'rentals')")
+        else:
+            print("All tables exist: 'users', 'cars, 'rentals'")
+            cars_verification = verify_cars_table()
+            print(cars_verification)
     else:
-        print("All tables exist: 'users', 'cars, 'rentals'")
-        cars_verification = verify_cars_table()
-        print(cars_verification)
+        raise Exception("Database connection unavailable")
 
 
 if __name__ == "__main__":

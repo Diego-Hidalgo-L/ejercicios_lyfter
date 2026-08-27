@@ -1,6 +1,8 @@
 import csv
 from datetime import date
-from tarea_3.repositories import users_repo, cars_repo, rentals_repo
+from pathlib import Path
+from tarea_3.db import db_manager
+from tarea_3.functions import format_users, format_cars, format_rentals
 
 def backup_tables(path, data, headers):
     with open(path, 'w', newline="", encoding='utf-8') as file:
@@ -10,17 +12,28 @@ def backup_tables(path, data, headers):
 
 
 def main():
-    filters = None
     today = date.today()
 
-    users_data = users_repo.get_users(filters)
-    backup_tables(f"flask/python_sql/ejercicios_python_sql/extra/db_backups/users_backup_{today}.csv", users_data, users_data[0].keys())
+    backups_folder = Path("extra/db_backups")
+    if not backups_folder.exists():
+        backups_folder.mkdir()
+        print("'db_backups' folder was created")
 
-    cars_data = cars_repo.get_cars(filters)
-    backup_tables(f"flask/python_sql/ejercicios_python_sql/extra/db_backups/cars_backup_{today}.csv", cars_data, cars_data[0].keys())
+    users_path = backups_folder/f"users_backup_{today}.csv"
+    cars_path = backups_folder/f"cars_backup_{today}.csv"
+    rentals_path = backups_folder/f"rentals_backup_{today}.csv"
 
-    rentals_data = rentals_repo.get_rentals(filters)
-    backup_tables(f"flask/python_sql/ejercicios_python_sql/extra/db_backups/rentals_backup_{today}.csv", rentals_data, rentals_data[0].keys())
+    users_results, users_headers = db_manager.fetchall_with_headers("SELECT * FROM users ORDER BY id ASC;")
+    users_data = [format_users(user) for user in users_results]
+    backup_tables(users_path, users_data, users_headers)
+
+    cars_results, cars_headers = db_manager.fetchall_with_headers("SELECT * FROM cars ORDER BY id ASC;")
+    cars_data = [format_cars(car) for car in cars_results]
+    backup_tables(cars_path, cars_data, cars_headers)
+
+    rentals_results, rentals_headers = db_manager.fetchall_with_headers("SELECT * FROM rentals ORDER BY id ASC;")
+    rentals_data = [format_rentals(rental) for rental in rentals_results]
+    backup_tables(rentals_path, rentals_data, rentals_headers)
 
     print("Tables backed-up successfully")
 

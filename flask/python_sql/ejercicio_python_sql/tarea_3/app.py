@@ -1,5 +1,5 @@
 from flask import Flask, request
-from repositories import users_repo, cars_repo, rentals_repo
+from tarea_3.repositories import users_repo, cars_repo, rentals_repo
 
 app = Flask(__name__)
 

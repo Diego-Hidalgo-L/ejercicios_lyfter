@@ -24,10 +24,10 @@ class UsersRepository:
                         return jsonify(error_message=f"Invalid filter: {column}"), 400
 
                 where_clause = " AND ".join(filter_columns)
-                query = f"SELECT * FROM users WHERE {where_clause};" 
+                query = f"SELECT * FROM users WHERE {where_clause} ORDER BY id ASC;" 
 
             else:
-                query = "SELECT * FROM users;"
+                query = "SELECT * FROM users ORDER BY id ASC;"
 
             results = self.db_manager.fetchall(query, *filter_values)
             return [format_users(user) for user in results]
@@ -130,10 +130,10 @@ class CarsRepository:
                     return jsonify(error_message=f"Invalid filter: {column}"), 400
 
             where_clause = " AND ".join(filter_columns)
-            query = f"SELECT * FROM cars WHERE {where_clause};" 
+            query = f"SELECT * FROM cars WHERE {where_clause} ORDER BY id ASC;" 
 
         else:
-            query = "SELECT * FROM cars;"
+            query = "SELECT * FROM cars ORDER BY id ASC;"
 
         results = self.db_manager.fetchall(query, *filter_values)
         return [format_cars(car) for car in results]
@@ -208,10 +208,10 @@ class RentalsRepository:
                     return jsonify(error_message=f"Invalid filter: {column}"), 400
 
             where_clause = " AND ".join(filter_columns)
-            query = f"SELECT * FROM rentals WHERE {where_clause};" 
+            query = f"SELECT * FROM rentals WHERE {where_clause} ORDER BY id ASC;" 
 
         else:
-            query = "SELECT * FROM rentals;"
+            query = "SELECT * FROM rentals ORDER BY id ASC;"
 
         results = self.db_manager.fetchall(query, *filter_values)
         return [format_rentals(rental) for rental in results]

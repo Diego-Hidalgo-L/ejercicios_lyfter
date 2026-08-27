@@ -22,7 +22,8 @@ def insert_fake_users():
         print("Users inserted and committed")
 
     except Exception as error:
-        print("Error inserting fake users:", error)
+        db_manager.rollback()
+        print(f"Error inserting fake users: {error}")
 
 
 def insert_fake_cars():
@@ -129,9 +130,9 @@ def insert_fake_cars():
     try:
         for _ in range(100):
             license_plate = (
-                            ''.join(random.choices(string.ascii_uppercase, k=3))
-                            + ''.join(random.choices(string.digits, k=3))
-                        )
+                    ''.join(random.choices(string.ascii_uppercase, k=3))
+                    + ''.join(random.choices(string.digits, k=3))
+                )
             brand = random.choice(list(car_models))
             model = random.choice(car_models[brand])
             year = random.randint(2010, 2026)
@@ -149,46 +150,83 @@ def insert_fake_cars():
         print("Cars inserted and committed")
 
     except Exception as error:
-        print("Error inserting fake cars:", error)
+        db_manager.rollback()
+        print(f"Error inserting fake cars: {error}")
 
 
 def insert_fake_rentals():
-    status_list = ('returned', 'ongoing')
-    car_results = db_manager.fetchall("SELECT id FROM cars;")
-    car_id_list = [row[0] for row in car_results]
-    user_results = db_manager.fetchall("SELECT id FROM users;")
-    user_id_list = [row[0] for row in user_results]
+    insert_count = 0
 
     try:
-        for _ in range(99):
-            car_id = random.choice(car_id_list)
-            user_id = random.choice(user_id_list)
-            rental_date = fake.date_between(start_date="-1y", end_date="today")
-            status = random.choice(status_list)
+        while insert_count < 99:
 
-            if status == "returned":
-                return_date = fake.date_between(start_date=rental_date, end_date="today")
+            cars_result = db_manager.fetchall("SELECT id FROM cars;")
+            car_ids = [row[0] for row in cars_result]
+
+            users_result = db_manager.fetchall("SELECT id FROM users WHERE status = 'active';")
+            user_ids = [row[0] for row in users_result]
+
+            available_cars_result = db_manager.fetchall("SELECT id FROM  cars WHERE status = 'available'")
+            available_cars = [row[0] for row in available_cars_result]
+
+            available_users_result = db_manager.fetchall("""
+                    SELECT id
+                    FROM users
+                    WHERE status = 'active'
+                    AND id NOT IN (
+                        SELECT user_id
+                        FROM rentals
+                        WHERE status = 'ongoing'
+                    );
+                """)
+            available_users =  [row[0] for row in available_users_result]
+
+
+            if available_cars and available_users:
+                status = random.choice(('returned', 'ongoing'))
             else:
-                return_date = None
+                status = "returned"
 
-            args = (car_id, user_id, rental_date, status, return_date)
-            query = """
-                INSERT INTO rentals (car_id, user_id, rental_date, status, return_date)
-                VALUES (%s, %s, %s, %s, %s);
-                """
 
-            db_manager.execute_query(query, *args)
+            if status == 'returned':
+                random_car = random.choice(car_ids)
+                random_user = random.choice(user_ids)
+                rental_date = fake.date_between(start_date="-1y", end_date="today")
+                return_date = fake.date_between(start_date=rental_date, end_date="today")
+
+                args = (random_car, random_user, rental_date, status, return_date)
+                query = """
+                    INSERT INTO rentals (car_id, user_id, rental_date, status, return_date)
+                    VALUES (%s, %s, %s, %s, %s);
+                    """
+
+            elif status == "ongoing":
+                random_car = random.choice(available_cars)
+                random_user = random.choice(available_users)
+                rental_date = fake.date_between(start_date="-1y", end_date="today")
+
+                args = (random_user, random_car, rental_date)
+                query ="SELECT add_rental(%s, %s, %s)"
+
+
+            execute_result = db_manager.execute_query(query, *args)
+            
+            if not execute_result:
+                raise Exception("Error executing query")
+
+            insert_count += 1
 
         db_manager.commit()
         print("Rentals inserted and committed")
 
     except Exception as error:
-        print("Error inserting fake rentals:", error)
+        db_manager.rollback()
+        print(f"Error inserting fake rentals: {error}")
 
 
 def main():
-    insert_fake_users()
-    insert_fake_cars()
+    # insert_fake_users()
+    # insert_fake_cars()
     insert_fake_rentals()
 
 

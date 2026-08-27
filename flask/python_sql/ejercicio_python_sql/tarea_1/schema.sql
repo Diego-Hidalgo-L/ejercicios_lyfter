@@ -108,3 +108,7 @@ INSERT INTO rentals (car_id, user_id, rental_date, status) VALUES (20, 5, '2026-
 INSERT INTO rentals (car_id, user_id, rental_date, status) VALUES (13, 28, '2026-08-15', 'ongoing');
 INSERT INTO rentals (car_id, user_id, rental_date, status) VALUES (7, 42, '2026-08-14', 'ongoing');
 INSERT INTO rentals (car_id, user_id, rental_date, status) VALUES (10, 3, '2026-08-11', 'ongoing');
+
+-- INSERT INTO rentals (car_id, user_id, rental_date, status) VALUES (5, 1, 40, 2026-08-16, 'returned', 2026-08-17);
+-- INSERT INTO rentals (car_id, user_id, rental_date, status) VALUES (6, 22, 37, 2026-08-19, 'ongoing');
+-- INSERT INTO rentals (car_id, user_id, rental_date, status) VALUES (7, 23, 29, 2026-08-21, 'ongoing');

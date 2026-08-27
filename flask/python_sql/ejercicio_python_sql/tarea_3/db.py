@@ -29,7 +29,7 @@ class PgManager:
             return connection
 
         except Exception as error:
-            print("Error connecting to the database:", error)
+            print(f"Error connecting to the database: {error}")
             return None
 
 
@@ -39,7 +39,7 @@ class PgManager:
             return "Query executed"
 
         except Exception as error:
-            raise Exception("Error executing query:", error)
+            raise Exception(f"Error executing query: {error}")
 
 
     def fetchall(self, query, *args):
@@ -50,8 +50,18 @@ class PgManager:
             return results
 
         except Exception as error:
-            raise Exception("Error fetching all:", error)
+            raise Exception(f"Error fetching results: {error}")
 
+    def fetchall_with_headers(self, query, *args):
+        try:
+            self.cursor.execute(query, args)
+            results = self.cursor.fetchall()
+            headers = [column[0] for column in self.cursor.description]
+
+            return results, headers
+            
+        except Exception as error:
+            raise Exception(f"Error fetching results with headers: {error}")
 
     def commit(self):
         try:
@@ -59,7 +69,7 @@ class PgManager:
             return "Query committed"
         
         except Exception as error:
-            raise Exception ("Error committing query to database:", error)
+            raise Exception (f"Error committing query to database: {error}")
 
     def rollback(self):
         try:
@@ -67,7 +77,7 @@ class PgManager:
             return "Query rolled back"
         
         except Exception as error:
-            raise Exception ("Error rolling back query:", error)
+            raise Exception (f"Error rolling back query: {error}")
 
 
     def close_connection(self):
