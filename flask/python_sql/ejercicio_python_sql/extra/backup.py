@@ -35,7 +35,7 @@ def main():
     rentals_data = [format_rentals(rental) for rental in rentals_results]
     backup_tables(rentals_path, rentals_data, rentals_headers)
 
-    print("Tables backed-up successfully")
+    print("Tables backed up successfully")
 
 
 if __name__ == "__main__":
