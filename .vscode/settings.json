@@ -8,5 +8,11 @@
         "lyfter",
         "plpgsql",
         "pycache"
-    ]
+    ],
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/node_modules": true,
+        "**/.DS_Store": true
+    }
 }
