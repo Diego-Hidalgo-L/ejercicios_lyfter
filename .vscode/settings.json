@@ -3,6 +3,10 @@
         "AUTOINCREMENT",
         "Cardiología",
         "SMALLINT",
-        "VARCHAR"
+        "VARCHAR",
+        "Lyfter",
+        "lyfter",
+        "plpgsql",
+        "pycache"
     ]
 }

@@ -1,0 +1,24 @@
+id,license_plate,brand,model,year,status
+3,ECE539,Dodge,Caliber,2011,available
+5,SEC480,Chevrolet,Camaro,2012,available
+6,TAW787,Mazda,Protege,1992,rent ineligible
+7,FAO755,Chrysler,PT Cruiser,2003,rental ongoing
+8,MSM669,Ford,Econoline E350,1999,rent ineligible
+9,HUW602,Mitsubishi,RVR,1994,rent ineligible
+10,RCC192,Infiniti,I,2001,rental ongoing
+11,PUB593,Land Rover,Defender 90,1997,rent ineligible
+12,IAL342,Volvo,S60,2008,rent ineligible
+14,IYK747,BMW,X5,2008,available
+15,AVN000,Dodge,Ram 3500,1999,rent ineligible
+16,IFE562,Audi,riolet,1995,available
+17,GZF868,Chevrolet,Corsica,1995,rent ineligible
+18,BUP302,Audi,Q7,2010,available
+19,TKY510,Chevrolet,Astro,1995,rent ineligible
+21,CWQ653,Mazda,Millenia,2001,available
+1,QOP732,Saab,900,1989,rent ineligible
+22,MBO817,Jeep,Commander,2007,rental ongoing
+2,IJB243,BMW,525,2001,rent ineligible
+20,WWO040,GMC,Jimmy,2001,available
+4,ULT048,Jeep,Wrangler,1995,available
+23,VVV056,Toyota,Land Cruiser,2016,rental ongoing
+13,ACB578,Chevrolet,S10,2000,available

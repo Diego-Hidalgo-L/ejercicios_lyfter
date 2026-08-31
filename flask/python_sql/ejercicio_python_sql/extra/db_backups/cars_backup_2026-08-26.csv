@@ -1,0 +1,124 @@
+id,license_plate,brand,model,year,status
+1,QOP732,Saab,900,1989,rent ineligible
+2,IJB243,BMW,525,2001,rent ineligible
+3,ECE539,Dodge,Caliber,2011,available
+4,ULT048,Jeep,Wrangler,1995,available
+5,SEC480,Chevrolet,Camaro,2012,available
+6,TAW787,Mazda,Protege,1992,rent ineligible
+7,FAO755,Chrysler,PT Cruiser,2003,rental ongoing
+8,MSM669,Ford,Econoline E350,1999,rent ineligible
+9,HUW602,Mitsubishi,RVR,1994,rent ineligible
+10,RCC192,Infiniti,I,2001,rental ongoing
+11,PUB593,Land Rover,Defender 90,1997,rent ineligible
+12,IAL342,Volvo,S60,2008,rent ineligible
+13,ACB578,Chevrolet,S10,2000,available
+14,IYK747,BMW,X5,2008,available
+15,AVN000,Dodge,Ram 3500,1999,rent ineligible
+16,IFE562,Audi,riolet,1995,available
+17,GZF868,Chevrolet,Corsica,1995,rent ineligible
+18,BUP302,Audi,Q7,2010,available
+19,TKY510,Chevrolet,Astro,1995,rent ineligible
+20,WWO040,GMC,Jimmy,2001,available
+21,CWQ653,Mazda,Millenia,2001,available
+22,MBO817,Jeep,Commander,2007,rental ongoing
+23,VVV056,Toyota,Land Cruiser,2016,rental ongoing
+24,DDV542,Volkswagen,Jetta,2023,rental ongoing
+25,EME857,Ford,Explorer,2014,rent ineligible
+26,LBG418,Kia,Forte,2024,rental ongoing
+27,IAO721,Ford,F-150,2019,rental ongoing
+28,HWW187,Toyota,Camry,2012,rental ongoing
+29,ONW551,BMW,3 Series,2022,available
+30,VAR606,BMW,X3,2014,rental ongoing
+31,EZZ429,Subaru,Outback,2019,available
+32,VWX417,Ford,F-150,2026,rent ineligible
+33,QXJ553,Hyundai,Tucson,2010,available
+34,AHK967,Mercedes-Benz,E-Class,2020,available
+35,FCQ414,BMW,X7,2015,available
+36,NME756,Nissan,Versa,2013,rental ongoing
+37,VSY918,Chevrolet,Tahoe,2019,rental ongoing
+38,DIJ471,Hyundai,Sonata,2020,rental ongoing
+39,SNB414,Hyundai,Tucson,2012,available
+40,WYS881,Mazda,CX-30,2014,rental ongoing
+41,ZKV059,Volkswagen,Jetta,2016,rent ineligible
+42,NCG693,Mazda,CX-3,2021,rental ongoing
+43,DPW875,Toyota,Prius,2021,rental ongoing
+44,UIR116,Toyota,Camry,2022,rent ineligible
+45,DPM325,Honda,Accord,2014,rent ineligible
+46,NBV224,Kia,Sportage,2014,available
+47,KQJ782,Kia,Telluride,2012,rent ineligible
+48,ZPV123,Honda,HR-V,2013,available
+49,BMZ113,Volkswagen,Atlas,2011,rent ineligible
+50,PKQ304,Mazda,CX-3,2011,rental ongoing
+51,GLE253,Subaru,Forester,2020,available
+52,GOI735,Toyota,Land Cruiser,2020,available
+53,CCX516,BMW,5 Series,2022,available
+54,SXX456,Ford,Ranger,2011,available
+55,ROV629,Nissan,Sentra,2014,rent ineligible
+56,BXT604,Honda,Civic,2022,available
+57,MWU352,Nissan,Sentra,2022,available
+58,UYD514,Toyota,RAV4,2016,available
+59,GAV259,Chevrolet,Tahoe,2025,rental ongoing
+60,FHD787,Subaru,Impreza,2010,rental ongoing
+61,LKW668,Mercedes-Benz,A-Class,2016,available
+62,THQ403,BMW,X5,2014,available
+63,AVP580,Honda,Accord,2020,rent ineligible
+64,BZK271,Chevrolet,Malibu,2010,available
+65,RYR732,BMW,7 Series,2011,available
+66,WPS564,Mazda,CX-30,2021,rental ongoing
+67,YYR215,Subaru,Crosstrek,2019,rental ongoing
+68,UCO128,Mazda,Mazda3,2021,available
+69,KSL466,Subaru,Legacy,2026,rental ongoing
+70,XSW216,Mazda,Mazda3,2026,available
+71,NST130,Toyota,Land Cruiser,2026,rent ineligible
+72,WEX856,Kia,Sportage,2014,rent ineligible
+73,DPW269,Subaru,Ascent,2014,rent ineligible
+74,QUO200,Ford,Escape,2012,rent ineligible
+75,ZPP978,Mazda,CX-90,2012,available
+76,PMY847,Kia,Seltos,2019,rental ongoing
+77,SMT834,Chevrolet,Equinox,2020,rental ongoing
+78,BEX388,Ford,Bronco,2022,available
+79,LAI757,Kia,K5,2022,rental ongoing
+80,HZB542,Volkswagen,Golf,2025,available
+81,NYE418,Chevrolet,Tahoe,2016,available
+82,KYS607,Chevrolet,Corvette,2026,available
+83,ZNO402,Mazda,CX-3,2024,rental ongoing
+84,EQY061,Toyota,Land Cruiser,2014,rental ongoing
+85,KUU921,Toyota,Prius,2025,rent ineligible
+86,KHR237,Kia,Sorento,2024,rental ongoing
+87,AAW553,Mazda,CX-90,2010,rental ongoing
+88,TQW286,Honda,Odyssey,2014,rent ineligible
+89,IKD119,Toyota,Corolla,2014,rental ongoing
+90,YCG005,Kia,Seltos,2024,rental ongoing
+91,JTX189,BMW,X5,2013,rental ongoing
+92,TGY601,Mercedes-Benz,C-Class,2015,available
+93,WEO759,Volkswagen,Passat,2017,available
+94,ROB198,Mercedes-Benz,GLC,2016,available
+95,LSK044,Ford,Explorer,2025,rent ineligible
+96,SYW707,Kia,Seltos,2019,available
+97,IPG243,Hyundai,Elantra,2025,available
+98,BUG216,Chevrolet,Suburban,2012,rental ongoing
+99,JIT316,Mercedes-Benz,GLE,2026,rent ineligible
+100,VVL387,Toyota,RAV4,2023,available
+101,JIR082,Hyundai,Tucson,2011,rental ongoing
+102,QPV864,Honda,HR-V,2014,rent ineligible
+103,HQR661,Honda,HR-V,2022,available
+104,EZA967,BMW,3 Series,2014,rental ongoing
+105,YOI460,Kia,Forte,2025,rental ongoing
+106,JLT365,Ford,Bronco,2018,rental ongoing
+107,YCP656,Mazda,CX-30,2025,rent ineligible
+108,MBL757,Hyundai,Kona,2022,available
+109,JIP927,Toyota,Corolla,2018,rent ineligible
+110,DHC354,Chevrolet,Malibu,2012,rent ineligible
+111,NHT946,Mercedes-Benz,S-Class,2020,rental ongoing
+112,PFL267,Mercedes-Benz,GLC,2025,available
+113,ALP374,Kia,Telluride,2012,available
+114,TVK815,Mercedes-Benz,E-Class,2024,available
+115,EZK158,Hyundai,Kona,2017,available
+116,SXI691,Kia,Sorento,2024,available
+117,OCM567,Hyundai,Sonata,2025,rent ineligible
+118,YNS212,Toyota,Hilux,2014,rent ineligible
+119,IBP003,BMW,X3,2017,available
+120,FUC977,Toyota,Hilux,2018,rental ongoing
+121,JSF072,Mercedes-Benz,S-Class,2011,rental ongoing
+122,SDT732,Mercedes-Benz,GLC,2020,available
+123,TNA320,BMW,3 Series,2024,rental ongoing
