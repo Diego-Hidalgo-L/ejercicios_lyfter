@@ -6,8 +6,10 @@
         "VARCHAR",
         "Lyfter",
         "lyfter",
+        "postgresql",
         "plpgsql",
-        "pycache"
+        "pycache",
+        "nullable"
     ],
     "files.exclude": {
         "**/__pycache__": true,
