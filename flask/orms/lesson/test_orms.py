@@ -2,7 +2,7 @@ import sqlalchemy
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, ForeignKey
 from sqlalchemy import insert
 
-print(sqlalchemy.__version__) # 2.0.0
+print(sqlalchemy.__version__) # 2.0.52
 
 DB_URI = 'postgresql://postgres:xyz0138@localhost:5432/postgres' # postgresql://<username>:<password>@<host>:<port>/<database>
 engine = create_engine(DB_URI, echo=True)
