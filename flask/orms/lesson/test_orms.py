@@ -11,7 +11,7 @@ try:
     connection = engine.connect()
     print("Connection successful!")
 
-    metadata_obj = MetaData()
+    metadata_obj = MetaData(schema="public") # "public" es el default si no especifico ningún schema
 
     user_table = Table(
         "users",
