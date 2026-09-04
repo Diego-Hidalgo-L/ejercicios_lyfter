@@ -3,7 +3,7 @@ import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData, Table, Column, Integer, String, ForeignKey
 
-print(sqlalchemy.__version__)
+print(sqlalchemy.__version__) # 2.0.52
 
 DB_URI = "postgresql://postgres:xyz0138@localhost:5432/postgres"
 engine = create_engine(DB_URI, echo=True)
