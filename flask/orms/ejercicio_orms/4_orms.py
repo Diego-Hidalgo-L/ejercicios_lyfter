@@ -1,6 +1,6 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session
 from sqlalchemy import MetaData, ForeignKey, Integer, String
-from sqlalchemy import create_engine, select, relationship
+from sqlalchemy import create_engine, select, relationship, func
 
 DB_URI = "postgresql://postgres:xyz0138@localhost:5432/postgres"
 engine = create_engine(DB_URI, echo=True)
@@ -85,43 +85,91 @@ class User(Base):
                 session.rollback()
                 print("Error deleting user:", error)
 
-    def relate_car(self, car):
-        try:
-            self.cars.append(car)
-            print("User-car relationship created")
+    def relate_car(self, car_id):
+        with Session(engine) as session:
+            try:
+                car = session.get(Car, car_id)
 
-        except Exception as error:
-            print("Error creating user-car relationship:", error)
+                if car:
+                    self.cars.append(car)
+                    session.commit()
+                    print("User-car relationship created")
+                else:
+                    raise ValueError(f"Car ID {car_id} not found")
 
-    def unrelate_car(self, car):
-        try:
-            if car in self.cars:
-                self.cars.remove(car)
-                print("User-car relationship removed")
-            else:
-                raise Exception(f"Relationship with car ID {car.id} not found")
+            except Exception as error:
+                session.rollback()
+                print("Error creating user-car relationship:", error)
 
-        except Exception as error:
-            print("Error removing user-car relationship:", error)
+    def unrelate_car(self, car_id):
+        with Session(engine) as session:
+            try:
+                car = session.get(Car, car_id)
 
-    def relate_address(self, address):
-        try:
-            self.addresses.append(address)
-            print("User-address relationship created")
+                if car in self.cars:
+                    self.cars.remove(car)
+                    session.commit()
+                    print("User-car relationship removed")
+                else:
+                    raise Exception(f"Relationship with car ID {car.id} not found")
 
-        except Exception as error:
-            print("Error creating user-address relationship:", error)
+            except Exception as error:
+                session.rollback()
+                print("Error removing user-car relationship:", error)
 
-    def unrelate_address(self, address):
-        try:
-            if address in self.addresses:
-                self.addresses.remove(address)
-                print("User-address relationship removed")
-            else:
-                print(f"Relationship with address ID {address.id} not found")
+    # EXTRA
+    def get_users_with_more_than_one_car(self):
+        with Session(engine) as session:
+            try:
+                stmt = select(User).where(len(self.cars) > 1) 
+                users = session.scalars(stmt).all()
 
-        except Exception as error:
-            print("Error removing user-address relationship:", error)
+                # Alternativa:
+                stmt2 = (
+                    select(Car.user_id, func.count(Car.id))
+                    .group_by(Car.user_id)
+                    .having(func.count(Car.id) > 1)
+                )
+
+                return users
+
+            except Exception as error:
+                session.rollback()
+                print("Error getting all users with more than one car:", error)
+
+    def print_user_cars(self, user_id):
+        with Session(engine) as session:
+            try:
+                user = session.get(User, user_id)
+
+                if user:
+                    print(f"User ID {user_id}'s related cars:")
+                    for car in user.cars:
+                        print(car)
+
+                else:
+                    raise ValueError(f"User ID {user_id} not found")
+
+            except Exception as error:
+                session.rollback()
+                print("Error printing user's related cars:", error)
+
+    def print_user_addresses(self, user_id):
+        with Session(engine) as session:
+            try:
+                user = session.get(User, user_id)
+
+                if user:
+                    print(f"User ID {user_id}'s related addresses:")
+                    for address in user.addresses:
+                        print(address)
+
+                else:
+                    raise ValueError(f"User ID {user_id} not found")
+
+            except Exception as error:
+                session.rollback()
+                print("Error printing user's related addresses:", error)
 
 
 class Address(Base):
@@ -163,15 +211,37 @@ class Address(Base):
 
                 if address:
                     address.address = new_address
+                    session.commit()
+                    print(f"Address ID {address_id} was modified successfully")
                 else:
                     raise Exception(f"Address ID {address_id} not found")
-
-                session.commit()
-                print(f"Address ID {address_id} was modified successfully")
 
             except Exception as error:
                 session.rollback()
                 print("Error modifying address:", error)
+
+    def modify_user_relationship(self, user_id):
+        with Session(engine) as session:
+            try:
+                new_user = session.get(User, user_id)
+
+                if new_user:
+                    change = input(f"This address is already related to user ID {self.user_id}. Are you sure you want to change that relationship? [y/n]: ")
+
+                    if change == "y":
+                        self.user = new_user
+                        session.commit()
+                        print(f"Address-user relationship created with user ID {user_id}")
+                    else:
+                        return
+
+                else:
+                    raise ValueError(f"User ID {user_id} not found")
+
+            except Exception as error:
+                session.rollback()
+                print("Error modifying relationship: ", error)
+
 
     def delete(self):
         with Session(engine) as session:
@@ -189,13 +259,18 @@ class Address(Base):
                 session.rollback()
                 print("Error deleting address:", error)
 
-    def relate_user(self, user): # No tenemos unrelate_user(self, user) porque definimos la columna address.user_id como nullable=False
-        try:
-            self.user = user
-            print("Address-user relationship created")
+    # EXTRA
+    def get_all_addresses_containing(self, substring):
+        with Session(engine) as session:
+            try:
+                stmt = select(Address).where(Address.address.ilike(f"%{substring}%"))
+                addresses = session.scalars(stmt).all()
 
-        except Exception as error:
-            print("Error creating address-user relationship:", error)
+                return addresses
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error getting all address that include '{substring}':", error)
 
 
 class Car(Base):
@@ -273,24 +348,67 @@ class Car(Base):
                 session.rollback()
                 print("Error deleting car:", error)
 
-    def relate_user(self, user):
-        try:
-            self.user = user
-            print("Car-user relationship created")
+    def relate_user(self, user_id):
+        with Session(engine) as session:
+            try:
+                new_user = session.get(User, user_id)
 
-        except Exception as error:
-            print("Error creating car-user relationship:", error)
+                if new_user:
+                    if self.user:
+                        change = input(f"This car is already related to user ID {self.user_id}. Are you sure you want to change that relationship? [y/n]: ")
 
-    def unrelate_user(self, user):
-        try:
-            if self.user == user:
-                self.user = None
-                print("Car-user relationship removed")
-            else:
-                raise Exception("Car-user relationship not found")
+                        if change == "y":
+                            self.user = new_user
+                            session.commit()
+                            print(f"Car-user relationship created with user ID {user_id}")
+                        else:
+                            return
+                        
+                    else:
+                        self.user = new_user
+                        session.commit()
+                        print(f"Car-user relationship created with user ID {user_id}")
 
-        except Exception as error:
-            print("Error removing car-user relationship:", error)
+                else:
+                    raise ValueError(f"User ID {user_id} not found")
+
+            except Exception as error:
+                session.rollback()
+                print("Error creating car-user relationship:", error)
+
+    def unrelate_user(self):
+        with Session(engine) as session:
+            try:
+                if self.user:
+                    change = input(f"This car is related to user ID {self.user_id}. Are you sure you want to remove that relationship? [y/n]: ")
+
+                    if change == "y":
+                        self.user = None
+                        session.commit()
+                        print("Car-user relationship removed")
+                    else:
+                        return
+                    
+                else:
+                    print("This car is not related to any user")
+
+            except Exception as error:
+                session.rollback()
+                print("Error removing car-user relationship:", error)
+
+    # EXTRA
+    def get_unrelated_cars(self):
+        with Session(engine) as session:
+            try:
+                stmt = select(Car).where(self.user == None) # self.user.is_(None) | Car.user_id.is_(None)
+                unrelated_cars = session.scalars(stmt).all()
+
+                return unrelated_cars
+
+            except Exception as error:
+                session.rollback()
+                print("Error getting all unrelated cars:", error)
+
 
 
 Base.metadata.create_all(engine)

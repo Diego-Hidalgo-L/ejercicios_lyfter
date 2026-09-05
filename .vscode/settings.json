@@ -11,7 +11,8 @@
         "pycache",
         "nullable",
         "orms",
-        "unrelate"
+        "unrelate",
+        "ilike"
     ],
     "files.exclude": {
         "**/__pycache__": true,
