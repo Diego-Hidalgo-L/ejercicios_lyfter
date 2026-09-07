@@ -1,6 +1,6 @@
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
 from sqlalchemy import MetaData, ForeignKey, Integer, String
-from sqlalchemy import create_engine, select, relationship, func
+from sqlalchemy import create_engine, select, func
 
 DB_URI = "postgresql://postgres:xyz0138@localhost:5432/postgres"
 engine = create_engine(DB_URI, echo=True)
@@ -45,10 +45,10 @@ class User(Base):
                 session.rollback()
                 print("Error adding user:", error)
 
-    def modify(self, user_id, username=None, email=None, fullname=None):
+    def modify(self, username=None, email=None, fullname=None): # Manejar todos los métodos con la misma instancia 'self' es la mejor decisión?
         with Session(engine) as session:
             try:
-                user = session.get(User, user_id)
+                user = session.get(User, self.id)
 
                 if user:
                     if username is not None:
@@ -60,10 +60,10 @@ class User(Base):
                     if fullname is not None:
                         user.fullname = fullname
                 else:
-                    raise Exception(f"User ID {user_id} not found")
+                    raise Exception(f"User ID {self.id} not found")
 
                 session.commit()
-                print(f"User ID {user_id} was modified successfully")
+                print(f"User ID {self.id} was modified successfully")
 
             except Exception as error:
                 session.rollback()
@@ -121,15 +121,16 @@ class User(Base):
     def get_users_with_more_than_one_car(self):
         with Session(engine) as session:
             try:
-                stmt = select(User).where(len(self.cars) > 1) 
-                users = session.scalars(stmt).all()
+                stmt = (                                           # PENSAR EN SQL -> TRADUCIR A PYTHON / SQLAlchemy ORM
+                        select(Car.user_id, func.count(Car.id))    # SELECT user_id, COUNT(id)
+                        .group_by(Car.user_id)                     # FROM cars
+                        .having(func.count(Car.id) > 1)            # GROUP BY user_id
+                    )                                              # HAVING COUNT(id) > 1
+                
+                users = session.scalars(stmt).all()     # Esto retorna users o user_id's? Me parece que user_id's
 
-                # Alternativa:
-                stmt2 = (
-                    select(Car.user_id, func.count(Car.id))
-                    .group_by(Car.user_id)
-                    .having(func.count(Car.id) > 1)
-                )
+                # Alternativa incorrecta:
+                # stmt2 = select(User).where(len(self.cars) > 1) 
 
                 return users
 
@@ -137,35 +138,35 @@ class User(Base):
                 session.rollback()
                 print("Error getting all users with more than one car:", error)
 
-    def print_user_cars(self, user_id):
+    def print_user_cars(self):
         with Session(engine) as session:
             try:
-                user = session.get(User, user_id)
+                user = session.get(User, self.id)
 
                 if user:
-                    print(f"User ID {user_id}'s related cars:")
+                    print(f"User ID {user.id}'s related cars:")
                     for car in user.cars:
                         print(car)
 
                 else:
-                    raise ValueError(f"User ID {user_id} not found")
+                    raise ValueError(f"User not found")
 
             except Exception as error:
                 session.rollback()
                 print("Error printing user's related cars:", error)
 
-    def print_user_addresses(self, user_id):
+    def print_user_addresses(self):
         with Session(engine) as session:
             try:
-                user = session.get(User, user_id)
+                user = session.get(User, self.id)
 
                 if user:
-                    print(f"User ID {user_id}'s related addresses:")
+                    print(f"User ID {user.id}'s related addresses:")
                     for address in user.addresses:
                         print(address)
 
                 else:
-                    raise ValueError(f"User ID {user_id} not found")
+                    raise ValueError(f"User not found")
 
             except Exception as error:
                 session.rollback()
@@ -204,17 +205,17 @@ class Address(Base):
                 session.rollback()
                 print("Error adding address:", error)
 
-    def modify(self, address_id, new_address):
+    def modify(self, new_address):
         with Session(engine) as session:
             try:
-                address = session.get(Address, address_id)
+                address = session.get(Address, self.id)
 
                 if address:
                     address.address = new_address
                     session.commit()
-                    print(f"Address ID {address_id} was modified successfully")
+                    print(f"Address ID {self.id} was modified successfully")
                 else:
-                    raise Exception(f"Address ID {address_id} not found")
+                    raise Exception(f"Address not found")
 
             except Exception as error:
                 session.rollback()
@@ -225,15 +226,10 @@ class Address(Base):
             try:
                 new_user = session.get(User, user_id)
 
-                if new_user:
-                    change = input(f"This address is already related to user ID {self.user_id}. Are you sure you want to change that relationship? [y/n]: ")
-
-                    if change == "y":
-                        self.user = new_user
-                        session.commit()
-                        print(f"Address-user relationship created with user ID {user_id}")
-                    else:
-                        return
+                if new_user: # User confirmations NO VAN AQUÍ. SOLO BASE DE DATOS
+                    self.user = new_user
+                    session.commit()
+                    print(f"Address-user relationship created with user ID {user_id}")
 
                 else:
                     raise ValueError(f"User ID {user_id} not found")
@@ -241,7 +237,6 @@ class Address(Base):
             except Exception as error:
                 session.rollback()
                 print("Error modifying relationship: ", error)
-
 
     def delete(self):
         with Session(engine) as session:
@@ -307,10 +302,10 @@ class Car(Base):
                 session.rollback()
                 print("Error adding car:", error)
 
-    def modify(self, car_id, make=None, model=None, year=None):
+    def modify(self, make=None, model=None, year=None):
         with Session(engine) as session:
             try:
-                car = session.get(Car, car_id)
+                car = session.get(Car, self.id)
 
                 if car:
                     if make is not None:
@@ -321,12 +316,11 @@ class Car(Base):
 
                     if year is not None:
                         car.year = year
-                    
                 else:
-                    raise Exception(f"Car ID {car_id} not found")
+                    raise Exception(f"Car not found")
 
                 session.commit()
-                print(f"Car ID {car_id} was modified successfully")
+                print(f"Car ID {self.id} was modified successfully")
 
             except Exception as error:
                 session.rollback()
@@ -354,20 +348,9 @@ class Car(Base):
                 new_user = session.get(User, user_id)
 
                 if new_user:
-                    if self.user:
-                        change = input(f"This car is already related to user ID {self.user_id}. Are you sure you want to change that relationship? [y/n]: ")
-
-                        if change == "y":
-                            self.user = new_user
-                            session.commit()
-                            print(f"Car-user relationship created with user ID {user_id}")
-                        else:
-                            return
-                        
-                    else:
-                        self.user = new_user
-                        session.commit()
-                        print(f"Car-user relationship created with user ID {user_id}")
+                    self.user = new_user
+                    session.commit()
+                    print(f"Car-user relationship created with user ID {user_id}")
 
                 else:
                     raise ValueError(f"User ID {user_id} not found")
@@ -380,14 +363,9 @@ class Car(Base):
         with Session(engine) as session:
             try:
                 if self.user:
-                    change = input(f"This car is related to user ID {self.user_id}. Are you sure you want to remove that relationship? [y/n]: ")
-
-                    if change == "y":
-                        self.user = None
-                        session.commit()
-                        print("Car-user relationship removed")
-                    else:
-                        return
+                    self.user = None
+                    session.commit()
+                    print("Car-user relationship removed")
                     
                 else:
                     print("This car is not related to any user")
@@ -400,7 +378,7 @@ class Car(Base):
     def get_unrelated_cars(self):
         with Session(engine) as session:
             try:
-                stmt = select(Car).where(self.user == None) # self.user.is_(None) | Car.user_id.is_(None)
+                stmt = select(Car).where(Car.user_id.is_(None)) # NO -> self.user.is_(None) | NI TAMPOCO -> self.user == None (pensar más en SQLAlchemy ORM)
                 unrelated_cars = session.scalars(stmt).all()
 
                 return unrelated_cars
@@ -410,6 +388,9 @@ class Car(Base):
                 print("Error getting all unrelated cars:", error)
 
 
-
-Base.metadata.create_all(engine)
+if __name__ == "__main__": # Cuál sería la mejor decisión de diseño? Dejar esta ejecución aquí o en otro módulo?
+    try:
+        Base.metadata.create_all(engine)
+    except Exception as error:
+        print(f"Error creating tables:", error)
 
