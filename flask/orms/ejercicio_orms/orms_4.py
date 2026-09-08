@@ -40,9 +40,9 @@ class User(Base):
             try:
                 session.add(self)
                 session.commit()
-                session.refresh(self)
                 print("User added successfully")
 
+                session.refresh(self)
                 return self
 
             except Exception as error:
@@ -156,7 +156,7 @@ class User(Base):
                 print("Error getting all users with more than one car:", error)
 
     @staticmethod
-    def print_user_cars(user_id):
+    def print_user_cars_and_address(user_id): # No sirve dejarlo como un método de instancia porque no estoy modificando esa instancia. Estoy consultando la base de datos.
         with Session(engine) as session:
             try:
                 user = session.get(User, user_id)
@@ -166,20 +166,6 @@ class User(Base):
                     for car in user.cars:
                         print(car)
 
-                else:
-                    raise ValueError(f"User not found")
-
-            except Exception as error:
-                session.rollback()
-                print("Error printing user's related cars:", error)
-
-    @staticmethod
-    def print_user_addresses(user_id):
-        with Session(engine) as session:
-            try:
-                user = session.get(User, user_id)
-
-                if user:
                     print(f"User ID {user.id}'s related addresses:")
                     for address in user.addresses:
                         print(address)
@@ -189,7 +175,7 @@ class User(Base):
 
             except Exception as error:
                 session.rollback()
-                print("Error printing user's related addresses:", error)
+                print("Error printing user's related cars and addresses:", error)
 
 
 class Address(Base):
@@ -223,6 +209,10 @@ class Address(Base):
                     session.add(self)
                     session.commit()
                     print("Address added successfully!")
+
+                    session.refresh(self)
+                    return self
+
                 else:
                     raise ValueError(f"User ID {self.user_id} not found")
 
