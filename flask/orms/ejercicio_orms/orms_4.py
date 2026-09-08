@@ -5,9 +5,7 @@ from db_engine import engine
 
 # INVESTIGAR: Cómo hacer ALTER TABLE con SQLAlchemy
 
-
 meta_obj = MetaData(schema="orms")
-
 
 class Base(DeclarativeBase):
     metadata = meta_obj
@@ -37,7 +35,7 @@ class User(Base):
                 session.rollback()
                 print("Error getting all users:", error)
 
-    def add(self): # Instancio la clase User AFUERA de la clase
+    def add(self): # Instancio la clase User AFUERA del método
         with Session(engine) as session:
             try:
                 session.add(self)
@@ -91,14 +89,14 @@ class User(Base):
                 session.rollback()
                 print("Error deleting user:", error)
 
-    def relate_car(self, car_id):
+    def relate_car(self, car_id): # Por qué exactamente el 'self' que importo en estos métodos no se agregaría al Session, pero en el resto sí? Esa instancia (self) inicial pertenece a otro Session.
         with Session(engine) as session:
             try:
-                user = session.get(User, self.id) # Por qué exactamente el 'self' que importo en estos métodos no se agrega a la session, pero en el resto sí? Porque estoy instanciando otro objeto (Car) en la misma sesión?
+                user = session.get(User, self.id)
                 car = session.get(Car, car_id)
 
                 if car:
-                    user.cars.append(car)
+                    user.cars.append(car) # Cualquier cambio sobre 'self' o sobre una relación de 'self' ('self.cars.append(...)', 'self.user = ...') la sesión no lo ve y no se llega a flushear.
                     session.commit()
                     print("User-car relationship created")
                 else:
@@ -114,7 +112,7 @@ class User(Base):
                 user = session.get(User, self.id)
                 car = session.get(Car, car_id)
 
-                if car in self.cars:
+                if car in user.cars:
                     user.cars.remove(car)
                     session.commit()
                     print("User-car relationship removed")
@@ -157,10 +155,11 @@ class User(Base):
                 session.rollback()
                 print("Error getting all users with more than one car:", error)
 
-    def print_user_cars(self):
+    @staticmethod
+    def print_user_cars(user_id):
         with Session(engine) as session:
             try:
-                user = session.get(User, self.id)
+                user = session.get(User, user_id)
 
                 if user:
                     print(f"User ID {user.id}'s related cars:")
@@ -174,10 +173,11 @@ class User(Base):
                 session.rollback()
                 print("Error printing user's related cars:", error)
 
-    def print_user_addresses(self):
+    @staticmethod
+    def print_user_addresses(user_id):
         with Session(engine) as session:
             try:
-                user = session.get(User, self.id)
+                user = session.get(User, user_id)
 
                 if user:
                     print(f"User ID {user.id}'s related addresses:")
@@ -250,9 +250,10 @@ class Address(Base):
         with Session(engine) as session:
             try:
                 new_user = session.get(User, user_id)
+                address = session.get(Address, self.id)
 
                 if new_user: # User confirmations NO VAN AQUÍ. SOLO BASE DE DATOS
-                    self.user = new_user
+                    address.user = new_user
                     session.commit()
                     print(f"Address-user relationship created with user ID {user_id}")
 
@@ -305,7 +306,8 @@ class Car(Base):
 
     user: Mapped["User | None"] = relationship(back_populates="cars") # N:1 | back_populates = nombre de ese atributo en la otra clase
 
-    def get_all(self):
+    @staticmethod
+    def get_all():
         with Session(engine) as session:
             try:
                 stmt = select(Car)
@@ -400,8 +402,10 @@ class Car(Base):
     def unrelate_user(self):
         with Session(engine) as session:
             try:
-                if self.user:
-                    self.user = None
+                car = session.get(Car, self.id)
+
+                if car.user:
+                    car.user = None
                     session.commit()
                     print("Car-user relationship removed")
                     
