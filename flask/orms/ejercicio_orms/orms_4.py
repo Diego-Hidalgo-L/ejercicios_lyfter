@@ -1,9 +1,11 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
-from sqlalchemy import MetaData, ForeignKey, Integer, String
-from sqlalchemy import create_engine, select, func
+from sqlalchemy import MetaData, Identity, ForeignKey, Integer, String
+from sqlalchemy import select, func
+from db_engine import engine
 
-DB_URI = "postgresql://postgres:xyz0138@localhost:5432/postgres"
-engine = create_engine(DB_URI, echo=True)
+# INVESTIGAR: Cómo hacer ALTER TABLE con SQLAlchemy
+
+
 meta_obj = MetaData(schema="orms")
 
 
@@ -14,7 +16,7 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     username: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     email: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     fullname: Mapped[str] = mapped_column(String(30), nullable=False)
@@ -22,7 +24,8 @@ class User(Base):
     addresses: Mapped[list["Address"]] = relationship(back_populates="user") # 1:N | back_populates = nombre de ese atributo en la otra clase
     cars: Mapped[list["Car"]] = relationship(back_populates="user") # 1:N | back_populates = nombre de ese atributo en la otra clase
 
-    def get_all(self):
+    @staticmethod
+    def get_all():
         with Session(engine) as session:
             try:
                 stmt = select(User)
@@ -34,18 +37,21 @@ class User(Base):
                 session.rollback()
                 print("Error getting all users:", error)
 
-    def add(self): # Creo el objeto User AFUERA de la clase
+    def add(self): # Instancio la clase User AFUERA de la clase
         with Session(engine) as session:
             try:
                 session.add(self)
                 session.commit()
+                session.refresh(self)
                 print("User added successfully")
+
+                return self
 
             except Exception as error:
                 session.rollback()
                 print("Error adding user:", error)
 
-    def modify(self, username=None, email=None, fullname=None): # Manejar todos los métodos con la misma instancia 'self' es la mejor decisión?
+    def modify(self, username=None, email=None, fullname=None):
         with Session(engine) as session:
             try:
                 user = session.get(User, self.id)
@@ -88,10 +94,11 @@ class User(Base):
     def relate_car(self, car_id):
         with Session(engine) as session:
             try:
+                user = session.get(User, self.id) # Por qué exactamente el 'self' que importo en estos métodos no se agrega a la session, pero en el resto sí? Porque estoy instanciando otro objeto (Car) en la misma sesión?
                 car = session.get(Car, car_id)
 
                 if car:
-                    self.cars.append(car)
+                    user.cars.append(car)
                     session.commit()
                     print("User-car relationship created")
                 else:
@@ -104,10 +111,11 @@ class User(Base):
     def unrelate_car(self, car_id):
         with Session(engine) as session:
             try:
+                user = session.get(User, self.id)
                 car = session.get(Car, car_id)
 
                 if car in self.cars:
-                    self.cars.remove(car)
+                    user.cars.remove(car)
                     session.commit()
                     print("User-car relationship removed")
                 else:
@@ -118,19 +126,30 @@ class User(Base):
                 print("Error removing user-car relationship:", error)
 
     # EXTRA
-    def get_users_with_more_than_one_car(self):
+    @staticmethod
+    def get_users_with_more_than_one_car():
         with Session(engine) as session:
             try:
-                stmt = (                                           # PENSAR EN SQL -> TRADUCIR A PYTHON / SQLAlchemy ORM
-                        select(Car.user_id, func.count(Car.id))    # SELECT user_id, COUNT(id)
-                        .group_by(Car.user_id)                     # FROM cars
-                        .having(func.count(Car.id) > 1)            # GROUP BY user_id
-                    )                                              # HAVING COUNT(id) > 1
+                stmt = (
+                    select(User, func.count(Car.id))             # SELECT users.*, COUNT(cars.id) FROM users
+                    .join(Car, User.id == Car.user_id)           # JOIN cars ON users.id == cars.user_id
+                    .group_by(User.id)                           # GROUP BY user.id
+                    .having(func.count(Car.id) > 1)              # HAVING COUNT(car.id) > 1
+                )
                 
-                users = session.scalars(stmt).all()     # Esto retorna users o user_id's? Me parece que user_id's
+                users = session.scalars(stmt).all()              # retorna User objects
 
-                # Alternativa incorrecta:
-                # stmt2 = select(User).where(len(self.cars) > 1) 
+
+                # Alternativa si quiero retornar user_id's:
+                # stmt = (                                       # PENSAR EN SQL -> TRADUCIR A PYTHON / SQLAlchemy ORM
+                #     select(Car.user_id, func.count(Car.id))    # SELECT user_id, COUNT(id) FROM cars
+                #     .group_by(Car.user_id)                     # GROUP BY user_id
+                #     .having(func.count(Car.id) > 1)            # HAVING COUNT(id) > 1   
+                # )
+
+
+                # Idea inicial incorrecta (no estaba pensando en queries SQL):
+                # stmt = select(User).where(len(self.cars) > 1)
 
                 return users
 
@@ -176,13 +195,14 @@ class User(Base):
 class Address(Base):
     __tablename__ = "addresses"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False) # "users.id" es el nombre de la columna en SQL - NO objeto Python.
-    address: Mapped[str] = mapped_column(String(50), nullable=False)
+    address: Mapped[str] = mapped_column(String(100), nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="addresses") # N:1 | back_populates = nombre de ese atributo en la otra clase
 
-    def get_all(self):
+    @staticmethod
+    def get_all():
         with Session(engine) as session:
             try:
                 stmt = select(Address)
@@ -197,9 +217,14 @@ class Address(Base):
     def add(self):
         with Session(engine) as session:
             try:
-                session.add(self)
-                session.commit()
-                print("Address added successfully!")
+                user = session.get(User, self.user_id)
+
+                if user:
+                    session.add(self)
+                    session.commit()
+                    print("Address added successfully!")
+                else:
+                    raise ValueError(f"User ID {self.user_id} not found")
 
             except Exception as error:
                 session.rollback()
@@ -255,7 +280,8 @@ class Address(Base):
                 print("Error deleting address:", error)
 
     # EXTRA
-    def get_all_addresses_containing(self, substring):
+    @staticmethod
+    def get_all_addresses_containing(substring):
         with Session(engine) as session:
             try:
                 stmt = select(Address).where(Address.address.ilike(f"%{substring}%"))
@@ -271,7 +297,7 @@ class Address(Base):
 class Car(Base):
     __tablename__ = "cars"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
     make: Mapped[str] = mapped_column(String(15), nullable=False)
     model: Mapped[str] = mapped_column(String(15), nullable=False)
@@ -294,9 +320,20 @@ class Car(Base):
     def add(self):
         with Session(engine) as session:
             try:
-                session.add(self)
-                session.commit()
-                print("Car added successfully!")
+                if self.user_id is not None:
+                    user = session.get(User, self.user_id)
+
+                    if user:
+                        session.add(self)
+                        session.commit()
+                        print("Car added successfully!")
+                    else:
+                        raise ValueError(f"User ID {self.user_id} not found")
+
+                else:
+                    session.add(self)
+                    session.commit()
+                    print("Car added successfully!")
 
             except Exception as error:
                 session.rollback()
@@ -345,10 +382,11 @@ class Car(Base):
     def relate_user(self, user_id):
         with Session(engine) as session:
             try:
+                car = session.get(Car, self.id)
                 new_user = session.get(User, user_id)
 
                 if new_user:
-                    self.user = new_user
+                    car.user = new_user
                     session.commit()
                     print(f"Car-user relationship created with user ID {user_id}")
 
@@ -375,7 +413,8 @@ class Car(Base):
                 print("Error removing car-user relationship:", error)
 
     # EXTRA
-    def get_unrelated_cars(self):
+    @staticmethod
+    def get_unrelated_cars():
         with Session(engine) as session:
             try:
                 stmt = select(Car).where(Car.user_id.is_(None)) # NO -> self.user.is_(None) | NI TAMPOCO -> self.user == None (pensar más en SQLAlchemy ORM)
@@ -386,11 +425,3 @@ class Car(Base):
             except Exception as error:
                 session.rollback()
                 print("Error getting all unrelated cars:", error)
-
-
-if __name__ == "__main__": # Cuál sería la mejor decisión de diseño? Dejar esta ejecución aquí o en otro módulo?
-    try:
-        Base.metadata.create_all(engine)
-    except Exception as error:
-        print(f"Error creating tables:", error)
-
