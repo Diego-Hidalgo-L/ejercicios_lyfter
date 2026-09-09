@@ -9,7 +9,10 @@
         "postgresql",
         "plpgsql",
         "pycache",
-        "nullable"
+        "nullable",
+        "orms",
+        "unrelate",
+        "ilike"
     ],
     "files.exclude": {
         "**/__pycache__": true,
