@@ -72,3 +72,9 @@ class UsersRepository:
                 conn.rollback()
                 return jsonify(error_message=f"Error deleting user ID {user_id}: {error}")
 
+
+class FruitsRepository:
+    def __init__(self, engine):
+        self.engine = engine
+
+    

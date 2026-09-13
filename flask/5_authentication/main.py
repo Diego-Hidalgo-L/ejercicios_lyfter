@@ -4,9 +4,11 @@ from flask import Flask, request, Response, jsonify
 app = Flask("user-service")
 ioc = IocContainer()
 
+
 @app.route("/liveness", methods=["GET"])
 def liveness():
     return "<p>Hello, World!</p>"
+
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -20,6 +22,7 @@ def register():
         token = ioc.jwt_manager.encode({'id':user_id})
         
         return jsonify(token=token)
+
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -36,6 +39,7 @@ def login():
             token = ioc.jwt_manager.encode({'id':user_id})
         
             return jsonify(token=token)
+
 
 @app.route('/me')
 def me():
