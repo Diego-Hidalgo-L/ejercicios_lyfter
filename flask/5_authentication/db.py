@@ -16,7 +16,7 @@ class DBContext:
             Column("role", String(20), CheckConstraint("role in ('Administrator', 'User')"))
         )
 
-        self.products = Table( # No en DB
+        self.products = Table(
             "products",
             self.metadata_obj,
             Column("id", Integer, Identity(), primary_key=True),
@@ -25,7 +25,7 @@ class DBContext:
             Column("stock", Integer)
         )
 
-        self.invoices = Table( # No en DB
+        self.invoices = Table(
             "invoices",
             self.metadata_obj,
             Column("id", Integer, Identity(), primary_key=True),
@@ -33,7 +33,7 @@ class DBContext:
             Column("total_price", Integer, nullable=False)
         )
 
-        self.invoice_products = Table( # No en DB
+        self.invoice_products = Table(
             "invoice_products",
             self.metadata_obj,
             Column("id", Integer, Identity(), primary_key=True),
