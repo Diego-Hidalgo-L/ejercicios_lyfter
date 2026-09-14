@@ -22,19 +22,25 @@ def register():
         role = data.get('role')
 
         if username is None or password is None:
-            return Response(status=400)
+            return jsonify(error_message="Invalid credentials"), 403
         
         hashed_password = ioc.ph.hash(password)
-
         result = ioc.users_repo.insert(username, hashed_password, role)
-        user_id = result[0]     # 'result' es un tupla - esto devuelve su primer índice (id)
 
+        if result is None:
+            return jsonify(error_message="Error registering user"), 403
+
+        user_id = result[0]     # 'result' es un tupla - esto devuelve su primer índice (id)
         token = ioc.jwt_manager.encode({'id':user_id})
+
+        if token is None:
+            return jsonify(error_message="Error encoding token"), 403
         
         return jsonify(token=token)
 
     except Exception as error:
-            print(error)
+        print(error)
+        return jsonify(error_message=f"Error registering user: {error}"), 400
 
 
 @app.route("/login", methods=['POST'])
@@ -45,25 +51,29 @@ def login():
         password = data.get('password')
         
         if username is None or password is None:
-            return Response(status=400)
+            return jsonify(error_message="Invalid credentials"), 403
         
         user = ioc.users_repo.get_user_by_username(username)
 
         if user is None:
-            return Response(status=403)
+            return jsonify(error_message="Invalid credentials"), 403
 
-        # stored_hash = user[2]
+        stored_hash = user[2]
 
-        # if not ioc.ph.verify(stored_hash, password):
-        #     return Response(status=403)
+        if not ioc.ph.verify(stored_hash, password):
+            return jsonify(error_message="Invalid credentials"), 403
 
         user_id = user[0]
         token = ioc.jwt_manager.encode({'id':user_id})
+
+        if token is None:
+            return jsonify(error_message="Error encoding token"), 403
     
         return jsonify(token=token)
 
     except Exception as error:
         print(error)
+        return jsonify(error_message=f"Error logging in: {error}"), 400
 
 
 @app.route("/me", methods=["GET"])
@@ -72,44 +82,51 @@ def me():
         token = request.headers.get('Authorization')
 
         if token is None:
-            return Response(status=403)
+            return jsonify(error_message="Empty token"), 403
         
-        test = token.replace("Bearer ","")
-        print(test)
-        decoded = ioc.jwt_manager.decode(test)
+        test_token = token.replace("Bearer ","")
+        print(test_token)
+        decoded = ioc.jwt_manager.decode(test_token)
 
         if decoded is None:
-            return Response(status=403)
+            return jsonify(error_message="Error decoding token"), 403
 
         user_id = decoded['id']
         user = ioc.users_repo.get_user_by_id(user_id)
+
+        if user is None:
+            return jsonify(error_message="Invalid credentials"), 403
 
         return jsonify(id=user_id, username=user[1])
 
     except Exception as error:
         print(error)
+        return jsonify(error_message=f"Error accessing user profile: {error}"), 400
 
 
 @app.route("/users/<identifier>", methods=["PATCH"]) # Tiene sentido pasar el ID como un path parameter? 
-def update_user(identifier):                        # Si estoy loggeado ya debería tener acceso a mi ID y solo debería poder eliminar mi propio user.
+def update_user(identifier):                         # Si estoy logged ya debería tener acceso a mi ID y solo debería poder eliminar mi propio user.
     try:
         token = request.headers.get("Authorization")
 
         if token is None:
-            return jsonify(error_message="Invalid token"), 403
+            return jsonify(error_message="Invalid credentials"), 403
 
         user = ioc.users_repo.get_user_by_id(identifier)
 
         if user is None:
-            return jsonify(error_message="Invalid user"), 403 
+            return jsonify(error_message="Invalid credentials"), 403 
 
         data = request.get_json()
         username = data.get('username')
         password = data.get('password')
         role = data.get('role')
         
-        ioc.users_repo.update(identifier, username=username, password=password, role=role)
+        result = ioc.users_repo.update(identifier, username=username, password=password, role=role)
 
+        if result is None:
+            return jsonify(error_message=f"Error updating user ID {identifier}: {error}"), 403
+        
         return jsonify(message=f"User ID {identifier} updated successfully")
 
     except Exception as error:
@@ -122,26 +139,45 @@ def delete_user(identifier):
         token = request.headers.get("Authorization")
 
         if token is None:
-            return Response(status=403)
+            return jsonify(error_message="Invalid credentials"), 403
 
         user = ioc.users_repo.get_user_by_id(identifier)
 
         if user is None:
-            return Response(status=403)
+            return jsonify(error_message="Invalid credentials"), 403
 
-        ioc.users_repo.delete(identifier)
+        result = ioc.users_repo.delete(identifier)
 
-        return
+        if result is None:
+            jsonify(error_message=f"Error deleting user ID {identifier}: {error}"), 403
+
+        return jsonify(message=f"User ID {identifier} deleted successfully")
 
     except Exception as error:
         print(error)
+        return jsonify(error_message=f"Error deleting user ID {identifier}: {error}"), 403
 
 # ------------------- end USERS: -------------------
 
 # ------------------- start PRODUCTS: -------------------
-@app.route("/products", methods=["GET"])
-def get_product():
-    pass
+@app.route("/products/<identifier>", methods=["GET"])
+def get_product(identifier):
+    try:
+        token = request.headers.get("Authorization")
+
+        if token is None:
+            return jsonify(error_message="Invalid credentials"), 403
+
+        product = ioc.products_repo.get_product_by_id(identifier)
+
+        if product is None:
+            return jsonify(error_message=f"Error getting product ID {identifier}: {error}"), 403
+
+        return jsonify(id=identifier, name=product[1], price=product[2], entry_date=product[3], stock=product[4])
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error getting product ID {identifier}: {error}"), 403
 
 
 

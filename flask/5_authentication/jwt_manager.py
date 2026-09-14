@@ -17,6 +17,7 @@ class JWTManager:
         try:
             encoded = jwt.encode(data, self.private_key, algorithm=self.algorithm)
             return encoded
+        
         except Exception as error:
             print(error)
             return None
@@ -25,6 +26,7 @@ class JWTManager:
         try:
             decoded = jwt.decode(token, self.public_key, algorithms=[self.algorithm])
             return decoded
-        except Exception as e:
-            print(e)
+        
+        except Exception as error:
+            print(error)
             return None

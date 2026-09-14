@@ -12,8 +12,8 @@ class UsersRepository:
         with self.engine.connect() as conn:
             try:
                 stmt = select(db_context.users).where(db_context.users.c.username == username)
-
                 result = conn.execute(stmt)
+
                 users = result.all()
 
                 if len(users) == 0:
@@ -22,26 +22,35 @@ class UsersRepository:
                     return users[0]
 
             except Exception as error:
-                print(error)
+                print(f"Error getting user by username: {error}")
+                return None
 
     def get_user_by_id(self, user_id):
         with self.engine.connect() as conn:
-            stmt = select(db_context.users).where(db_context.users.c.id == user_id)
+            try:
+                stmt = select(db_context.users).where(db_context.users.c.id == user_id)
+                result = conn.execute(stmt)
 
-            result = conn.execute(stmt)
-            user = result.all()
+                user = result.all()
 
-            if len(user) == 0:
+                if len(user) == 0:
+                    return None
+                else:
+                    return user[0]
+
+            except Exception as error:
+                print(f"Error getting user ID {user_id}: {error}")
                 return None
-            else:
-                return user[0]
 
     def insert(self, username, password, role):
         with self.engine.connect() as conn:
             try:
                 stmt = insert(db_context.users).returning(db_context.users.c.id).values(username=username, password=password, role=role)
-
                 result = conn.execute(stmt)
+                
+                if len(result) == 0:
+                    return None
+                
                 conn.commit()
                 print("User inserted successfully")
 
@@ -49,7 +58,8 @@ class UsersRepository:
 
             except Exception as error:
                 conn.rollback()
-                return jsonify(error_message=f"Error adding user to database: {error}"), 400
+                print("Error adding user to database:", error)
+                return None
 
     def update(self, user_id, username=None, password=None, role=None):   
         with self.engine.connect() as conn:
@@ -65,24 +75,26 @@ class UsersRepository:
 
                 conn.execute(stmt)
                 conn.commit()
-                return jsonify(message=f"User ID {user_id} updated successfully")
+                print(f"User ID {user_id} updated successfully")
 
             except Exception as error:
                 conn.rollback()
-                return jsonify(error_message=f"Error updating user ID {user_id}: {error}"), 400
+                print(f"Error updating user ID {user_id}: {error}")
+                return None
 
     def delete(self, user_id):
         with self.engine.connect() as conn:
             try:
                 stmt = delete(db_context.users).where(db_context.users.c.id==user_id)
-
                 conn.execute(stmt)
+
                 conn.commit()
-                return jsonify(message=f"User ID {user_id} deleted successfully")
+                print(f"User ID {user_id} deleted successfully")
 
             except Exception as error:
                 conn.rollback()
-                return jsonify(error_message=f"Error deleting user ID {user_id}: {error}")
+                print(f"Error deleting user ID {user_id}: {error}")
+                return None
 
 
 class FruitsRepository:
@@ -93,17 +105,18 @@ class FruitsRepository:
         with self.engine.connect() as conn:
             try:
                 stmt = select(db_context.products).where(db_context.products.c.id == product_id)
-
                 result = conn.execute(stmt)
-                products = result.all()
 
-                if len(products) == 0:
+                product = result.all()
+
+                if len(product) == 0:
                     return None
                 else:
-                    return products[0]
+                    return product[0]
 
             except Exception as error:
-                print(error)
+                print(f"Error getting product ID {product_id}: {error}")
+                return None
 
     def insert(self, name, price, entry_date, stock):
         with self.engine.connect() as conn:
