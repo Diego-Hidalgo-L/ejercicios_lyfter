@@ -3,6 +3,7 @@ from sqlalchemy import MetaData
 from sqlalchemy import Table, Column, Identity, ForeignKey, Integer, String, Date, CheckConstraint
 
 # Se encarga de crear las tablas y el engine
+
 class DBContext:
     def __init__(self) -> None:
         self.metadata_obj = MetaData(schema="authentication")
@@ -20,6 +21,7 @@ class DBContext:
             "products",
             self.metadata_obj,
             Column("id", Integer, Identity(), primary_key=True),
+            Column("name", String, nullable=False),
             Column("price", Integer),
             Column("entry_date", Date),
             Column("stock", Integer)

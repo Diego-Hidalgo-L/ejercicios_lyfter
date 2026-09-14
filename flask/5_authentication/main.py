@@ -4,13 +4,16 @@ from flask import Flask, request, Response, jsonify
 app = Flask("user-service")
 ioc = IocContainer()
 
+# MENSAJES JSONIFY y RESPONSES:
+# Van aquí, no en el repositorio.
 
 @app.route("/liveness", methods=["GET"])
 def liveness():
     return "<p>Hello, World!</p>"
 
 
-@app.route('/register', methods=['POST'])
+# ------------------- start USERS: -------------------
+@app.route("/register", methods=['POST'])
 def register():
     try:
         data = request.get_json()
@@ -34,25 +37,25 @@ def register():
             print(error)
 
 
-@app.route('/login', methods=['POST'])
+@app.route("/login", methods=['POST'])
 def login():
     try:
-        data = request.get_json()  # data is empty
+        data = request.get_json()
         username = data.get('username')
         password = data.get('password')
         
         if username is None or password is None:
             return Response(status=400)
         
-        user = ioc.users_repo.get_user(username)
+        user = ioc.users_repo.get_user_by_username(username)
 
         if user is None:
             return Response(status=403)
 
-        stored_hash = user[2]
+        # stored_hash = user[2]
 
-        if not ioc.ph.verify(stored_hash, password):
-            return Response(status=403)
+        # if not ioc.ph.verify(stored_hash, password):
+        #     return Response(status=403)
 
         user_id = user[0]
         token = ioc.jwt_manager.encode({'id':user_id})
@@ -63,7 +66,7 @@ def login():
         print(error)
 
 
-@app.route('/me', methods=["GET"])
+@app.route("/me", methods=["GET"])
 def me():
     try:
         token = request.headers.get('Authorization')
@@ -85,6 +88,62 @@ def me():
 
     except Exception as error:
         print(error)
+
+
+@app.route("/users/<identifier>", methods=["PATCH"]) # Tiene sentido pasar el ID como un path parameter? 
+def update_user(identifier):                        # Si estoy loggeado ya debería tener acceso a mi ID y solo debería poder eliminar mi propio user.
+    try:
+        token = request.headers.get("Authorization")
+
+        if token is None:
+            return jsonify(error_message="Invalid token"), 403
+
+        user = ioc.users_repo.get_user_by_id(identifier)
+
+        if user is None:
+            return jsonify(error_message="Invalid user"), 403 
+
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        role = data.get('role')
+        
+        ioc.users_repo.update(identifier, username=username, password=password, role=role)
+
+        return jsonify(message=f"User ID {identifier} updated successfully")
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error updating user ID {identifier}: {error}"), 403
+
+@app.route("/users/<identifier>", methods=["DELETE"])
+def delete_user(identifier):
+    try:
+        token = request.headers.get("Authorization")
+
+        if token is None:
+            return Response(status=403)
+
+        user = ioc.users_repo.get_user_by_id(identifier)
+
+        if user is None:
+            return Response(status=403)
+
+        ioc.users_repo.delete(identifier)
+
+        return
+
+    except Exception as error:
+        print(error)
+
+# ------------------- end USERS: -------------------
+
+# ------------------- start PRODUCTS: -------------------
+@app.route("/products", methods=["GET"])
+def get_product():
+    pass
+
+
 
 
 if __name__ == "__main__":
