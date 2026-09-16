@@ -18,7 +18,7 @@ BEGIN
     END IF;
 
 
-    -- 2. Creo una tabla temporal con todos los productos de la compra.ABORT
+    -- 2. Creo una tabla temporal con todos los productos de la compra.
     CREATE TEMP TABLE purchase_items (
         product_id INTEGER,
         quantity SMALLINT

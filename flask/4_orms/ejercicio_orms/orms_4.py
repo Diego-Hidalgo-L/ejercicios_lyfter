@@ -27,7 +27,7 @@ class User(Base):
         with Session(engine) as session:
             try:
                 stmt = select(User)
-                users = session.scalars(stmt).all() # scalars() lo convierte todo en una lista de objetos, EN VEZ de objetos Row
+                users = session.scalars(stmt).all() # scalars() convierte el resultado en una lista de objetos CON SOLO el primer índice, EN VEZ de objetos Row
 
                 return users
 
