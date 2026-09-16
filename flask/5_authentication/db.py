@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
-from sqlalchemy import Table, Column, Identity, ForeignKey, Integer, String, Date, CheckConstraint
+from sqlalchemy import Table, Column, Identity, ForeignKey, Integer, Float, String, Date, CheckConstraint
+from datetime import date
 
 # Se encarga de crear las tablas y el engine
 
@@ -12,9 +13,9 @@ class DBContext:
             "users",
             self.metadata_obj,
             Column("id", Integer, Identity(), primary_key=True),
-            Column("username", String(30)),
-            Column("password", String),
-            Column("role", String(20), CheckConstraint("role in ('Administrator', 'User')"))
+            Column("username", String(30), nullable=False),
+            Column("password", String, nullable=False),
+            Column("role", String(20), CheckConstraint("role in ('Administrator', 'User')"), nullable=False)
         )
 
         self.products = Table(
@@ -22,7 +23,7 @@ class DBContext:
             self.metadata_obj,
             Column("id", Integer, Identity(), primary_key=True),
             Column("name", String, nullable=False),
-            Column("price", Integer),
+            Column("price", Float),
             Column("entry_date", Date),
             Column("stock", Integer)
         )
@@ -32,7 +33,7 @@ class DBContext:
             self.metadata_obj,
             Column("id", Integer, Identity(), primary_key=True),
             Column("user_id", Integer, ForeignKey("users.id"), nullable=False),
-            Column("total_price", Integer, nullable=False)
+            Column("purchase_date", Date, default=date.today) # Estoy pasando la función en sí, no la invocación del método - Si paso 'null' NO genera el default
         )
 
         self.invoice_products = Table(
@@ -41,7 +42,8 @@ class DBContext:
             Column("id", Integer, Identity(), primary_key=True),
             Column("invoice_id", Integer, ForeignKey("invoices.id"), nullable=False),
             Column("product_id", Integer, ForeignKey("products.id"), nullable=False),
-            Column("quantity", Integer, nullable=False)
+            Column("quantity", Integer, nullable=False),
+            Column("total_price", Float, nullable=False)
         )
 
         self.engine = create_engine(

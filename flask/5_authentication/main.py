@@ -1,5 +1,6 @@
 from ioc_container import IocContainer
-from flask import Flask, request, Response, jsonify
+from flask import Flask, request, jsonify
+from datetime import date
 
 app = Flask("user-service")
 ioc = IocContainer()
@@ -7,9 +8,40 @@ ioc = IocContainer()
 # MENSAJES JSONIFY y RESPONSES:
 # Van aquí, no en el repositorio.
 
+# Implementar una validación del rol del usuario (descodifico el token y lo uso para conseguir el role)
+# Cómo hago para que solo pueda haber un 'Administrator'?
+
 @app.route("/liveness", methods=["GET"])
 def liveness():
-    return "<p>Hello, World!</p>"
+    try:
+        token = request.headers.get("Authorization")
+
+        if token is None:
+            return jsonify(error_message="Invalid token"), 403
+
+        # Podría convertir este role validation en una función, un método o un decorator. Cuál sería mejor?
+        test_token = token.replace("Bearer ","")
+        decoded = ioc.jwt_manager.decode(test_token)
+
+        if decoded is None:
+            return jsonify(error_message="Error decoding token"), 403
+
+        user_id = decoded['id']
+        user = ioc.users_repo.get_user_by_id(user_id)
+
+        if user is None:
+            return jsonify(error_message="User not found"), 403
+
+        user_role = user[3]
+
+        if user_role != "Administrator":
+            return jsonify(error_message="Cannot access page"), 403
+        
+        return "<p>Hello, World!</p>"
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error testing liveness: {error}"), 403
 
 
 # ------------------- start USERS: -------------------
@@ -21,8 +53,11 @@ def register():
         password = data.get('password')
         role = data.get('role')
 
-        if username is None or password is None:
-            return jsonify(error_message="Invalid credentials"), 403
+        if username is None or password is None: # Estos validations son necesarios aún cuando en la DB tienen el constraint de nullable=False?
+            return jsonify(error_message="Invalid credentials"), 403 # Debería cambiar estos returns por raises?
+
+        if role is None:
+            return jsonify(error_message="Role is empty"), 403
         
         hashed_password = ioc.ph.hash(password)
         result = ioc.users_repo.insert(username, hashed_password, role)
@@ -30,7 +65,7 @@ def register():
         if result is None:
             return jsonify(error_message="Error registering user"), 403
 
-        user_id = result[0]     # 'result' es un tupla - esto devuelve su primer índice (id)
+        user_id = result
         token = ioc.jwt_manager.encode({'id':user_id})
 
         if token is None:
@@ -56,7 +91,7 @@ def login():
         user = ioc.users_repo.get_user_by_username(username)
 
         if user is None:
-            return jsonify(error_message="Invalid credentials"), 403
+            return jsonify(error_message="User not found"), 403
 
         stored_hash = user[2]
 
@@ -76,56 +111,98 @@ def login():
         return jsonify(error_message=f"Error logging in: {error}"), 400
 
 
-@app.route("/me", methods=["GET"])
-def me():
+@app.route("/me/<identifier>", methods=["GET"])
+def me(identifier):
     try:
         token = request.headers.get('Authorization')
 
         if token is None:
-            return jsonify(error_message="Empty token"), 403
+            return jsonify(error_message="Invalid token"), 403
         
-        test_token = token.replace("Bearer ","")
-        print(test_token)
-        decoded = ioc.jwt_manager.decode(test_token)
+        if token is None:
+            return jsonify(error_message="Invalid token"), 403
 
-        if decoded is None:
-            return jsonify(error_message="Error decoding token"), 403
+        user_id = ioc.users_repo.get_user_by_id(identifier)[0]
+        user_name = ioc.users_repo.get_user_by_id(identifier)[1]
 
-        user_id = decoded['id']
-        user = ioc.users_repo.get_user_by_id(user_id)
+        if user_id is None:
+            return jsonify(error_message=f"User ID {identifier} not found"), 403
 
-        if user is None:
-            return jsonify(error_message="Invalid credentials"), 403
+        test_token = token.replace("Bearer ", "")
+        decoded_user_id = ioc.jwt_manager.decode(test_token)['id']
+        decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
 
-        return jsonify(id=user_id, username=user[1])
+        if user_id != decoded_user_id and decoded_user_role != "Administrator":
+            return jsonify(error_message="Cannot access page"), 403
+
+        return jsonify(id=user_id, username=user_name)
 
     except Exception as error:
         print(error)
         return jsonify(error_message=f"Error accessing user profile: {error}"), 400
 
 
-@app.route("/users/<identifier>", methods=["PATCH"]) # Tiene sentido pasar el ID como un path parameter? 
-def update_user(identifier):                         # Si estoy logged ya debería tener acceso a mi ID y solo debería poder eliminar mi propio user.
+@app.route("/me/<identifier>/invoices", methods=["GET"]) # Después implementar filters
+def me_invoices(identifier): # Cómo un 'Administrator' puede tener acceso a los invoices de cualquier user?
     try:
         token = request.headers.get("Authorization")
 
         if token is None:
-            return jsonify(error_message="Invalid credentials"), 403
+            return jsonify(error_message="Invalid token"), 403
 
-        user = ioc.users_repo.get_user_by_id(identifier)
+        user_id = ioc.users_repo.get_user_by_id(identifier)[0]
 
-        if user is None:
-            return jsonify(error_message="Invalid credentials"), 403 
+        if user_id is None:
+            return jsonify(error_message=f"User ID {identifier} not found"), 403
+
+        test_token = token.replace("Bearer ", "")
+        decoded_user_id = ioc.jwt_manager.decode(test_token)['id']
+        decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
+
+        if user_id != decoded_user_id and decoded_user_role != "Administrator":
+            return jsonify(error_message="Cannot access page"), 403
+
+        invoices = ioc.invoices_repo.get_invoices(user_id)
+
+        if invoices is None:
+            return jsonify(message=f"User ID {user_id} has no invoices")
+
+        return jsonify(invoices)
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error getting user's invoices: {error}"), 400
+
+
+@app.route("/users/<identifier>", methods=["PATCH"]) # Tiene sentido pasar el ID como un path parameter? 
+def update_user(identifier):
+    try:
+        token = request.headers.get("Authorization")
+
+        if token is None:
+            return jsonify(error_message="Invalid token"), 403
+
+        user_id = ioc.users_repo.get_user_by_id(identifier)[0]
+
+        if user_id is None:
+            return jsonify(error_message=f"User ID {identifier} not found"), 403
+
+        test_token = token.replace("Bearer ", "")
+        decoded_user_id = ioc.jwt_manager.decode(test_token)['id']
+        decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
+
+        if user_id != decoded_user_id and decoded_user_role != "Administrator":
+            return jsonify(error_message="Cannot access page"), 403
 
         data = request.get_json()
         username = data.get('username')
         password = data.get('password')
-        role = data.get('role')
+        # role = data.get('role') --> SOLO ADMINISTRATOR
         
-        result = ioc.users_repo.update(identifier, username=username, password=password, role=role)
+        result = ioc.users_repo.update(identifier, username=username, password=password) # (, role=role) --> SOLO ADMINISTRATOR
 
         if result is None:
-            return jsonify(error_message=f"Error updating user ID {identifier}: {error}"), 403
+            return jsonify(error_message=f"Error updating user ID {identifier}"), 403
         
         return jsonify(message=f"User ID {identifier} updated successfully")
 
@@ -139,17 +216,24 @@ def delete_user(identifier):
         token = request.headers.get("Authorization")
 
         if token is None:
-            return jsonify(error_message="Invalid credentials"), 403
+            return jsonify(error_message="Invalid token"), 403
 
-        user = ioc.users_repo.get_user_by_id(identifier)
+        user_id = ioc.users_repo.get_user_by_id(identifier)[0]
 
-        if user is None:
-            return jsonify(error_message="Invalid credentials"), 403
+        if user_id is None:
+            return jsonify(error_message=f"User ID {identifier} not found"), 403
+
+        test_token = token.replace("Bearer ", "")
+        decoded_user_id = ioc.jwt_manager.decode(test_token)['id']
+        decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
+
+        if user_id != decoded_user_id and decoded_user_role != "Administrator":
+            return jsonify(error_message="Cannot access page"), 403
 
         result = ioc.users_repo.delete(identifier)
 
         if result is None:
-            jsonify(error_message=f"Error deleting user ID {identifier}: {error}"), 403
+            jsonify(error_message=f"Error deleting user ID {identifier}"), 403
 
         return jsonify(message=f"User ID {identifier} deleted successfully")
 
@@ -160,18 +244,62 @@ def delete_user(identifier):
 # ------------------- end USERS: -------------------
 
 # ------------------- start PRODUCTS: -------------------
+@app.route("/products", methods=["POST"])
+def insert_product():
+    try:
+        token = request.headers.get("Authorization")
+
+        if token is None:
+            return jsonify(error_message="Invalid token"), 403
+
+        # Podría convertir este role validation en una función, un método o un decorator. Cuál sería mejor?
+        test_token = token.replace("Bearer ","")
+        decoded = ioc.jwt_manager.decode(test_token)
+
+        if decoded is None:
+            return jsonify(error_message="Error decoding token"), 403
+
+        user_id = decoded['id']
+        user = ioc.users_repo.get_user_by_id(user_id)
+
+        if user is None:
+            return jsonify(error_message="User not found"), 403
+
+        user_role = user[3]
+
+        if user_role != "Administrator":
+            return jsonify(error_message="Cannot access page"), 403
+
+        data = request.get_json()
+        name = data.get('name')
+        price = data.get('price')
+        entry_date = data.get('entry_date')
+        stock = data.get('stock')
+
+        result_name = ioc.products_repo.insert(name, price, entry_date, stock) 
+
+        if result_name is None:
+            return jsonify(error_message="Error adding product to database")
+
+        return jsonify(message=f"Product '{result_name}' inserted successfully")
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error inserting product: {error}"), 403
+
+
 @app.route("/products/<identifier>", methods=["GET"])
 def get_product(identifier):
     try:
         token = request.headers.get("Authorization")
 
         if token is None:
-            return jsonify(error_message="Invalid credentials"), 403
+            return jsonify(error_message="Invalid token"), 403
 
         product = ioc.products_repo.get_product_by_id(identifier)
 
         if product is None:
-            return jsonify(error_message=f"Error getting product ID {identifier}: {error}"), 403
+            return jsonify(error_message=f"Product ID {identifier} not found"), 403
 
         return jsonify(id=identifier, name=product[1], price=product[2], entry_date=product[3], stock=product[4])
 
@@ -180,6 +308,160 @@ def get_product(identifier):
         return jsonify(error_message=f"Error getting product ID {identifier}: {error}"), 403
 
 
+@app.route("/products/<identifier>", methods=["PATCH"])
+def update_product(identifier):
+    try:
+        token = request.headers.get("Authorization")
+
+        if token is None:
+            return jsonify(error_message="Invalid token"), 403
+
+        # Podría convertir este role validation en una función, un método o un decorator. Cuál sería mejor?
+        test_token = token.replace("Bearer ","")
+        decoded = ioc.jwt_manager.decode(test_token)
+
+        if decoded is None:
+            return jsonify(error_message="Error decoding token"), 403
+
+        user_id = decoded['id']
+        user = ioc.users_repo.get_user_by_id(user_id)
+
+        if user is None:
+            return jsonify(error_message="User not found"), 403
+
+        user_role = user[3]
+
+        if user_role != "Administrator":
+            return jsonify(error_message="Cannot access page"), 403
+
+        product = ioc.products_repo.get_product_by_id(identifier)
+
+        if product is None:
+            return jsonify(error_message=f"Product ID {identifier} not found"), 403 
+
+        data = request.get_json()
+        name = data.get('name')
+        price = data.get('price')
+        entry_date = data.get('entry_date')
+        stock = data.get('stock')
+
+        result = ioc.products_repo.update(identifier, name=name, price=price, entry_date=entry_date, stock=stock)
+
+        if result is None:
+            return jsonify(error_message=f"Error updating product ID {identifier}"), 403
+
+        return jsonify(message=f"Product ID {identifier} updated successfully")
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error updating product ID {identifier}: {error}"), 403
+
+
+@app.route("/products/<identifier>", methods=["DELETE"])
+def delete_product(identifier):
+    try:
+        token = request.headers.get("Authorization")
+
+        if token is None:
+            return jsonify(error_message="Invalid token"), 403
+
+        # Podría convertir este role validation en una función, un método o un decorator. Cuál sería mejor?
+        test_token = token.replace("Bearer ","")
+        decoded = ioc.jwt_manager.decode(test_token)
+
+        if decoded is None:
+            return jsonify(error_message="Error decoding token"), 403
+
+        user_id = decoded['id']
+        user = ioc.users_repo.get_user_by_id(user_id)
+
+        if user is None:
+            return jsonify(error_message="User not found"), 403
+
+        user_role = user[3]
+
+        if user_role != "Administrator":
+            return jsonify(error_message="Cannot access page"), 403
+
+        product = ioc.products_repo.get_product_by_id(identifier)
+
+        if product is None:
+            return jsonify(error_message=f"Product ID {identifier} not found"), 403
+
+        result = ioc.products_repo.delete(identifier)
+
+        if result is None:
+            return jsonify(error_message=f"Error deleting product ID {identifier}"), 403
+
+        return jsonify(message=f"Product ID {identifier} deleted successfully")
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error deleting product ID {identifier}: {error}"), 403
+
+# ------------------- end PRODUCTS: -------------------
+
+# ------------------- start STORE: -------------------
+@app.route("/store", methods=["POST"]) # También PATCH? Por hacer un update del stock, o nada que ver?
+def make_purchase():
+    try:
+        token = request.headers.get("Authorization")
+
+        if token is None:
+            return jsonify(error_message="Invalid token"), 403
+
+        test_token = token.replace("Bearer ","")
+        decoded = ioc.jwt_manager.decode(test_token)
+
+        if decoded is None:
+            return jsonify(error_message="Error decoding token"), 403
+
+        # Data retrieval:
+        data = request.get_json()
+        user_id = decoded['id']
+        purchase_date = data.get('purchase_date')
+        invoice_products = data.get('invoice_products') # lista de diccionarios
+
+        if purchase_date is None:
+            purchase_date = date.today()
+
+        # Este proceso se hace aquí o debería hacerse en algún repositorio? (TransactionsRepo?):
+
+        # Verifico stock:
+        for product in invoice_products:
+            product_id = product.get('product_id')
+            purchase_quantity = product.get('quantity')
+            got_product = ioc.products_repo.get_product_by_id(product_id)
+            available_stock = got_product[4]
+
+            if available_stock < purchase_quantity:
+                raise Exception(f"Insufficient stock (product ID {product_id})")
+
+        # Si todo el stock está bien, creo el invoice:
+        invoice_id = ioc.invoices_repo.insert(user_id, purchase_date)
+
+        if invoice_id is None:
+            raise Exception("Error retrieving new invoice ID")
+
+        # Insert en loop en tabla invoice_products:
+        for product in invoice_products:
+            insert_result = ioc.inv_products_repo.insert(invoice_id, product.get('product_id'), product.get('quantity'), product.get('total_price'))
+
+            if insert_result is None:
+                raise Exception(f"Error inserting product ID {product.get('product_id')} into invoice")
+
+            got_product = ioc.products_repo.get_product_by_id(product.get('product_id'))
+            available_stock = got_product[4]
+            stock_result = ioc.products_repo.update(product.get('product_id'), stock=(available_stock-product.get('quantity'))) # Este update solo debería poder hacerlo el Administrator? El role validation se hace en el endpoint, no en el repository - Eso está bien?
+
+            if stock_result is None:
+                raise Exception(f"Error subtracting purchased quantity from available stock")
+
+        return jsonify(message="Purchase successful")
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error making purchase: {error}"), 403
 
 
 if __name__ == "__main__":
