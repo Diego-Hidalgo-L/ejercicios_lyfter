@@ -18,6 +18,19 @@ class DBContext:
             Column("role", String(20), CheckConstraint("role in ('Administrator', 'User')"), nullable=False)
         )
 
+        # ------------- EXTRA: -------------
+        # Las columnas de esta tabla no debería estar incluida en 'users'? Todas las relaciones son 1:1?
+        self.contacts = Table(
+            "contacts",
+            self.metadata_obj,
+            Column("id", Integer, Identity(), primary_key=True),
+            Column("user_id", Integer, ForeignKey("users.id"), nullable=False), # Un user puede tener más de un contacto?
+            Column("name", String(30), nullable=False),
+            Column("phone", String(8), nullable=False),
+            Column("email", String(30), nullable=False) # esta columna podría ir en la tabla de users porque debería ser una relación 1:1
+        )
+        # ------------- FIN EXTRA -------------
+
         self.products = Table(
             "products",
             self.metadata_obj,

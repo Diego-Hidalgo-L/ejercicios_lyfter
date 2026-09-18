@@ -101,6 +101,87 @@ class UsersRepository:
                 return None
 
 
+# ------------- EXTRA: -------------
+class ContactsRepository:
+    def __init__(self, engine):
+        self.engine = engine
+
+    def insert(self, name, user_id, phone, email):
+        with self.engine.connect() as conn:
+            try:
+                stmt = insert(db_context.contacts).returning(db_context.contacts.c.user_id).values(name=name, user_id=user_id, phone=phone, email=email)
+                result = conn.execute(stmt)
+                new_contact_user_id = result.all()[0][0]
+
+                conn.commit()
+                print("Contact inserted successfully")
+
+                return new_contact_user_id
+
+            except Exception as error:
+                conn.rollback()
+                print(f"Error inserting contact: {error}")
+                return None
+
+    def get_contact_by_user_id(self, user_id):
+        with self.engine.connect as conn:
+            try:
+                stmt = select(db_context.contacts).where(db_context.contacts.c.user_id==user_id)
+                result = conn.execute(stmt)
+                contact = result.all()[0]
+
+                if len(contact) == 0:
+                    return None
+                else:
+                    format_contact = {"id":contact[0], "user_id":contact[1], "name":contact[2], "phone":contact[3], "email":contact[4]}
+                    return format_contact
+
+            except Exception as error:
+                print(f"Error getting contact from user ID {user_id}: {error}")
+                return None
+
+    def update(self, contact_id, name=None, phone=None, email=None):
+        with self.engine.connect() as conn:
+            try:
+                if name is not None:
+                    stmt = update(db_context.contacts).where(db_context.contacts.c.id==contact_id).values(name=name)
+                    conn.execute(stmt)
+
+                if phone is not None:
+                    stmt = update(db_context.contacts).where(db_context.contacts.c.id==contact_id).values(phone=phone)
+                    conn.execute(stmt)
+
+                if email is not None:
+                    stmt = update(db_context.contacts).where(db_context.contacts.c.id==contact_id).values(email=email)
+                    conn.execute(stmt)
+
+                conn.commit()
+                print(f"Contact ID {contact_id} updated successfully")
+                return True
+
+            except Exception as error:
+                conn.rollback()
+                print(f"Error updating contact ID {contact_id}: {error}")
+                return None
+
+    def delete(self, contact_id):
+        with self.engine.connect() as conn:
+            try:
+                stmt = delete(db_context.contacts).where(db_context.c.id==contact_id)
+                conn.execute(stmt)
+
+                conn.commit()
+                print(f"Contact ID {contact_id} deleted successfully")
+                return True
+
+            except Exception as error:
+                conn.rollback()
+                print(f"Error deleting contact ID {contact_id}: {error}")
+                return None
+
+# ------------- FIN EXTRA -------------
+
+
 class ProductsRepository:
     def __init__(self, engine):
         self.engine = engine

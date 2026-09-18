@@ -241,6 +241,147 @@ def delete_user(identifier):
 
 # ------------------- end USERS: -------------------
 
+# ------------------- start CONTACTS (EXTRA): -------------------
+@app.route("/contacts/<identifier>", methods=["POST"])
+def insert_contact(identifier):
+    try:
+        token = request.headers.get("Authorization")
+        
+        if token is None:
+            return jsonify(error_message="Invalid token"), 422
+
+        user_id = ioc.users_repo.get_user_by_id(identifier)[0]
+
+        if user_id is None:
+            return jsonify(error_message=f"User ID {identifier} not found"), 404
+
+        test_token = token.replace("Bearer ", "")
+        decoded_user_id = ioc.jwt_manager.decode(test_token)['id']
+        decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
+
+        if user_id != decoded_user_id and decoded_user_role != "Administrator":
+            return jsonify(error_message="Cannot access page"), 401
+
+        data = request.get_json()
+        name = data.get('name')
+        phone = data.get('phone')
+        email = data.get('email')
+
+        new_contact_user_id = ioc.contacts_repo.insert(name, identifier, phone, email)
+
+        if new_contact_user_id is None:
+            return jsonify(error_message=f"Error inserting contact into the database"), 500
+
+        return jsonify(message=f"Contact created successfully for user ID {identifier}"), 201
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error creating contact for user ID {user_id}: {error}"), 500
+
+
+@app.route("/contacts/<identifier>", methods=["GET"])
+def get_contact(identifier):
+    try:
+        token = request.headers.get("Authorization")
+        
+        if token is None:
+            return jsonify(error_message="Invalid token"), 422
+
+        user_id = ioc.users_repo.get_user_by_id(identifier)[0]
+
+        if user_id is None:
+            return jsonify(error_message=f"User ID {identifier} not found"), 404
+
+        test_token = token.replace("Bearer ", "")
+        decoded_user_id = ioc.jwt_manager.decode(test_token)['id']
+        decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
+
+        if user_id != decoded_user_id and decoded_user_role != "Administrator":
+            return jsonify(error_message="Cannot access page"), 401
+
+        contact = ioc.contacts_repo.get_contact_by_user_id(identifier)
+
+        if contact is None:
+            return jsonify(message=f"Error getting contact for user ID {identifier} from the database"), 500
+
+        return jsonify(contact), 202
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error getting contact for user ID {identifier}: {error}"), 500
+
+# Debería hacer un endpoint+method para que el Administrator obtenga TODOS los contacts? "/contacts/all"
+
+@app.route("/contacts/<identifier>", methods=["PATCH"])
+def update_contact(identifier):
+    try:
+        token = request.headers.get("Authorization")
+        
+        if token is None:
+            return jsonify(error_message="Invalid token"), 422
+
+        user_id = ioc.users_repo.get_user_by_id(identifier)[0]
+
+        if user_id is None:
+            return jsonify(error_message=f"User ID {identifier} not found"), 404
+
+        test_token = token.replace("Bearer ", "")
+        decoded_user_id = ioc.jwt_manager.decode(test_token)['id']
+        decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
+
+        if user_id != decoded_user_id and decoded_user_role != "Administrator":
+            return jsonify(error_message="Cannot access page"), 401
+
+        data = request.get_json()
+        name = data.get('name')
+        phone = data.get('phone')
+        email = data.get('email')
+
+        result = ioc.contacts_repo.update(identifier, name, phone, email)
+
+        if result is None:
+            return jsonify(error_message=f"Error updating contact for user ID {identifier} in the database"), 500
+
+        return jsonify(message=f"Contact for user ID {identifier} updated successfully"), 202
+
+    except Exception as error:
+        print(error)
+        return jsonify(f"Error updating contact for user ID {identifier}: {error}"), 500
+
+
+@app.route("/contacts/<identifier", methods=["DELETE"])
+def delete_contact(identifier):
+    try:
+        token = request.headers.get("Authorization")
+        
+        if token is None:
+            return jsonify(error_message="Invalid token"), 422
+
+        user_id = ioc.users_repo.get_user_by_id(identifier)[0]
+
+        if user_id is None:
+            return jsonify(error_message=f"User ID {identifier} not found"), 404
+
+        test_token = token.replace("Bearer ", "")
+        decoded_user_id = ioc.jwt_manager.decode(test_token)['id']
+        decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
+
+        if user_id != decoded_user_id and decoded_user_role != "Administrator":
+            return jsonify(error_message="Cannot access page"), 401
+
+        result = ioc.contacts_repo.delete(identifier)
+
+        if result is None:
+            return jsonify(error_message=f"Error deleting contact for user ID {identifier} from the database"), 500
+
+        return jsonify(message=f"Contact for user ID {identifier} deleted successfully"), 202
+
+    except Exception as error:
+        print(error)
+        return jsonify(f"Error deleting contact for user ID {identifier}: {error}"), 500
+
+# ------------------- end CONTACTS (EXTRA): -------------------
+
 # ------------------- start PRODUCTS: -------------------
 @app.route("/products", methods=["POST"])
 def insert_product():
