@@ -15,3 +15,5 @@ class IocContainer:
         self.products_repo = ProductsRepository(self.db_context.engine)
         self.invoices_repo = InvoicesRepository(self.db_context.engine)
         self.inv_products_repo = InvoiceProductsRepository(self.db_context.engine)
+
+ioc = IocContainer()
