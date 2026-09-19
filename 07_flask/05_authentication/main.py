@@ -1,6 +1,6 @@
 from ioc_container import ioc
 from validations import validate_if_admin, validate_if_same_user_or_admin
-from flask import Flask, request, jsonify
+from flask import Flask, Response, request, jsonify
 from datetime import date
 
 app = Flask("user-service")
