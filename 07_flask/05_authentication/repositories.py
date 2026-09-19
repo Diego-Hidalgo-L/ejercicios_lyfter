@@ -78,7 +78,7 @@ class UsersRepository:
 
                 conn.commit()
                 print(f"User ID {user_id} updated successfully")
-                return True # Cambio a un mejor return?
+                return True
 
             except Exception as error:
                 conn.rollback()
@@ -93,7 +93,7 @@ class UsersRepository:
 
                 conn.commit()
                 print(f"User ID {user_id} deleted successfully")
-                return True # Cambio a un mejor return?
+                return True
 
             except Exception as error:
                 conn.rollback()
@@ -208,12 +208,12 @@ class ProductsRepository:
             try:
                 stmt = select(db_context.products).where(db_context.products.c.id == product_id)
                 result = conn.execute(stmt)
-                product = result.all()[0] # Sacamos la tupla de la lista retornada
+                product = result.all()
 
                 if len(product) == 0:
                     return None
                 else:
-                    return product
+                    return product[0] # Sacamos la tupla de la lista retornada
 
             except Exception as error:
                 print(f"Error getting product ID {product_id}: {error}")
@@ -240,7 +240,7 @@ class ProductsRepository:
 
                 conn.commit()
                 print(f"Product ID {product_id} updated successfully")
-                return True # Cambio a un mejor return?
+                return True
 
             except Exception as error:
                 conn.rollback()
@@ -255,7 +255,7 @@ class ProductsRepository:
 
                 conn.commit()
                 print(f"Product ID {product_id} deleted successfully")
-                return True # Cambio a un mejor return?
+                return True
 
             except Exception as error:
                 conn.rollback()
@@ -291,23 +291,22 @@ class InvoicesRepository:
         with self.engine.connect() as conn:
             try:
                 stmt = select(db_context.invoices).where(db_context.invoices.c.user_id==user_id)
-                results = conn.execute(stmt) # tengo que convertir este resultado en una lista de diccionarios
+                results = conn.execute(stmt) # tengo que convertir este resultado (lista de tuplas) en una lista de diccionarios
 
-                invoices = []
-                for invoice in results: # Hay algún lugar de donde pueda obtener estos keys sin tener que hacerles hardcode?
-                    inv_dict = { # Podría hacer un nesting de otro loop para iterar los valores dentro de la tupla
-                        "id": invoice[0],
-                        "user_id": invoice[1],
-                        "purchase_date": invoice[2]
-                    }
-                    invoices.append(inv_dict)
-
-                print(invoices)
-
-                if len(invoices) == 0:
+                if len(results) == 0:
                     return None
                 else:
-                    return invoices
+                    invoices = []
+
+                    for invoice in results: # Hay algún lugar de donde pueda obtener estos keys sin tener que hacerles hardcode?
+                        inv_dict = { # Podría hacer un nesting de otro loop para iterar los valores dentro de la tupla
+                            "id": invoice[0],
+                            "user_id": invoice[1],
+                            "purchase_date": invoice[2]
+                        }
+                        invoices.append(inv_dict)
+
+                        return invoices
 
                 # Debería agregar la info de invoice_products? Si sí, debería ser un método de InvoicesRepo o InvoiceProductsRepo?
 
