@@ -193,21 +193,10 @@ def delete_user(identifier):
 def insert_contact(identifier):
     try:
         token = request.headers.get("Authorization")
-        
-        if token is None:
-            return jsonify(error_message="Invalid token"), 422
+        validation_result = validate_if_admin(token)
 
-        user_id = ioc.users_repo.get_user_by_id(identifier)[0]
-
-        if user_id is None:
-            return jsonify(error_message=f"User ID {identifier} not found"), 404
-
-        test_token = token.replace("Bearer ", "")
-        decoded_user_id = ioc.jwt_manager.decode(test_token)['id']
-        decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
-
-        if user_id != decoded_user_id and decoded_user_role != "Administrator":
-            return jsonify(error_message="Cannot access page"), 401
+        if validation_result is not True:
+            return validation_result
 
         data = request.get_json()
         name = data.get('name')
@@ -223,28 +212,17 @@ def insert_contact(identifier):
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error creating contact for user ID {user_id}: {error}"), 500
+        return jsonify(error_message=f"Error creating contact for user ID {identifier}: {error}"), 500
 
 
 @app.route("/contacts/<identifier>", methods=["GET"])
 def get_contact(identifier):
     try:
         token = request.headers.get("Authorization")
-        
-        if token is None:
-            return jsonify(error_message="Invalid token"), 422
+        validation, result = validate_if_same_user_or_admin(token, identifier)
 
-        user_id = ioc.users_repo.get_user_by_id(identifier)[0]
-
-        if user_id is None:
-            return jsonify(error_message=f"User ID {identifier} not found"), 404
-
-        test_token = token.replace("Bearer ", "")
-        decoded_user_id = ioc.jwt_manager.decode(test_token)['id']
-        decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
-
-        if user_id != decoded_user_id and decoded_user_role != "Administrator":
-            return jsonify(error_message="Cannot access page"), 401
+        if validation is not True:
+            return result
 
         contact = ioc.contacts_repo.get_contact_by_user_id(identifier)
 
@@ -263,21 +241,10 @@ def get_contact(identifier):
 def update_contact(identifier):
     try:
         token = request.headers.get("Authorization")
-        
-        if token is None:
-            return jsonify(error_message="Invalid token"), 422
+        validation, result = validate_if_same_user_or_admin(token, identifier)
 
-        user_id = ioc.users_repo.get_user_by_id(identifier)[0]
-
-        if user_id is None:
-            return jsonify(error_message=f"User ID {identifier} not found"), 404
-
-        test_token = token.replace("Bearer ", "")
-        decoded_user_id = ioc.jwt_manager.decode(test_token)['id']
-        decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
-
-        if user_id != decoded_user_id and decoded_user_role != "Administrator":
-            return jsonify(error_message="Cannot access page"), 401
+        if validation is not True:
+            return result
 
         data = request.get_json()
         name = data.get('name')
@@ -300,21 +267,10 @@ def update_contact(identifier):
 def delete_contact(identifier):
     try:
         token = request.headers.get("Authorization")
-        
-        if token is None:
-            return jsonify(error_message="Invalid token"), 422
+        validation, result = validate_if_same_user_or_admin(token, identifier)
 
-        user_id = ioc.users_repo.get_user_by_id(identifier)[0]
-
-        if user_id is None:
-            return jsonify(error_message=f"User ID {identifier} not found"), 404
-
-        test_token = token.replace("Bearer ", "")
-        decoded_user_id = ioc.jwt_manager.decode(test_token)['id']
-        decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
-
-        if user_id != decoded_user_id and decoded_user_role != "Administrator":
-            return jsonify(error_message="Cannot access page"), 401
+        if validation is not True:
+            return result
 
         result = ioc.contacts_repo.delete(identifier)
 
