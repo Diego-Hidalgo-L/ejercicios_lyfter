@@ -7,13 +7,13 @@ from flask import jsonify
 
 def validate_if_admin(token):
     if token is None:
-        return jsonify(error_message="Invalid token"), 422       # 422 o 400?
+        return jsonify(error_message="Invalid token"), 401
 
     test_token = token.replace("Bearer ","")
     decoded = ioc.jwt_manager.decode(test_token)
 
     if decoded is None:
-        return jsonify(error_message="Error decoding token"), 500
+        return jsonify(error_message="Error decoding token"), 401
 
     user_id = decoded['id']
     user = ioc.users_repo.get_user_by_id(user_id)
@@ -24,14 +24,14 @@ def validate_if_admin(token):
     user_role = user[3]
 
     if user_role != "Administrator":
-        return jsonify(error_message="Cannot access page"), 401
+        return jsonify(error_message="Cannot access page"), 403
 
     return True
 
 
 def validate_if_same_user_or_admin(token, identifier):
     if token is None:
-        return False, (jsonify(error_message="Invalid token"), 422 )     # 422 o 400?
+        return False, (jsonify(error_message="Invalid token"), 401)
 
     user_id = ioc.users_repo.get_user_by_id(identifier)[0]
 
@@ -43,6 +43,6 @@ def validate_if_same_user_or_admin(token, identifier):
     decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
 
     if user_id != decoded_user_id and decoded_user_role != "Administrator":
-        return False, (jsonify(error_message="Cannot access page"), 401)
+        return False, (jsonify(error_message="Cannot access page"), 403)
 
     return True, user_id

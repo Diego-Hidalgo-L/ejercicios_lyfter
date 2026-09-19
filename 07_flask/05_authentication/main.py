@@ -54,7 +54,7 @@ def register():
         token = ioc.jwt_manager.encode({'id':user_id})
 
         if token is None:
-            return jsonify(error_message="Error encoding token"), 500
+            return jsonify(error_message="Error encoding token"), 401
         
         return jsonify(token=token), 201
 
@@ -88,7 +88,7 @@ def login():
         token = ioc.jwt_manager.encode({'id':user_id})
 
         if token is None:
-            return jsonify(error_message="Error encoding token"), 500
+            return jsonify(error_message="Error encoding token"), 401
         # Hacemos un login validation?
     
         return jsonify(token=token), 200
@@ -303,13 +303,13 @@ def make_purchase():
         token = request.headers.get("Authorization")
 
         if token is None:
-            return jsonify(error_message="Invalid token"), 422
+            return jsonify(error_message="Invalid token"), 401
 
         test_token = token.replace("Bearer ","")
         decoded = ioc.jwt_manager.decode(test_token)
 
         if decoded is None:
-            return jsonify(error_message="Error decoding token"), 500
+            return jsonify(error_message="Error decoding token"), 401
 
         # Data retrieval:
         data = request.get_json()
