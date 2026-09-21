@@ -1,5 +1,5 @@
 from ioc_container import ioc
-from flask import jsonify
+from flask import Response, jsonify
 
 # Podría convertir este role validation en una función, un método o un decorator. Cuál sería mejor?
     # No lo hice decorator, porque los decorators reciben los mismos parámetros de la función que están decorando.

@@ -450,7 +450,7 @@ def make_purchase():
         token = request.headers.get("Authorization")
 
         if token is None:
-            return jsonify(error_message="Invalid token"), 422
+            return jsonify(error_message="Invalid token"), 401
 
         test_token = token.replace("Bearer ","")
         decoded = ioc.jwt_manager.decode(test_token)
