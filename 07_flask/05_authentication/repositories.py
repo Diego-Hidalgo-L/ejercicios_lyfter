@@ -24,7 +24,7 @@ class UsersRepository:
 
             except Exception as error:
                 conn.rollback()
-                print("Error adding user to database:", error)
+                print("Error inserting user into the database:", error)
                 return None
 
     def get_user_by_username(self, username):
@@ -120,7 +120,7 @@ class ContactsRepository:
 
             except Exception as error:
                 conn.rollback()
-                print(f"Error inserting contact: {error}")
+                print(f"Error inserting contact into the database: {error}")
                 return None
 
     def get_contact_by_user_id(self, user_id):
@@ -179,6 +179,56 @@ class ContactsRepository:
                 print(f"Error deleting contact ID {contact_id}: {error}")
                 return None
 
+
+class LoginHistory:
+    def __init__(self, engine):
+        self.engine = engine
+
+    def register_login(self, user_id, ip, status):
+        with self.engine.connect() as conn:
+            try:
+                stmt = insert(db_context.login_history).returning(db_context.login_history.c.id).values(user_id=user_id, ip=ip, status=status)
+                result = conn.execute(stmt)
+                new_login_id = result.all()[0][0]
+
+                conn.commit()
+                print("Login registered successfully")
+
+                return new_login_id
+
+            except Exception as error:
+                conn.rollback()
+                print(f"Error registering login into the database: {error}")
+                return None
+
+    def get_history(self):
+        with self.engine.connect() as conn:
+            try:
+                stmt = select(db_context.login_history)
+                result = conn.execute(stmt)
+                history_raw = result.all()
+
+                if len(history_raw) == 0:
+                    return None
+
+                history = []
+
+                for record in history_raw:
+                    record_dict = {
+                        "id": record[0],
+                        "user_id": record[1],
+                        "ip": record[2],
+                        "status": record[3]
+                    }
+                    history.append(record_dict)
+
+                return history
+
+            except Exception as error:
+                conn.rollback()
+                print(f"Error getting login history from the database: {error}")
+                return None
+
 # ------------- FIN EXTRA -------------
 
 
@@ -200,7 +250,7 @@ class ProductsRepository:
 
             except Exception as error:
                 conn.rollback()
-                print(f"Error inserting product to database: {error}")
+                print(f"Error inserting product into the database: {error}")
                 return None
 
     def get_product_by_id(self, product_id):
@@ -284,7 +334,7 @@ class InvoicesRepository:
 
             except Exception as error:
                 conn.rollback()
-                print(f"Error inserting invoice into database: {error}")
+                print(f"Error inserting invoice into the database: {error}")
                 return None
 
     def get_invoices(self, user_id): # Después implementar filters
@@ -332,5 +382,5 @@ class InvoiceProductsRepository:
 
             except Exception as error:
                 conn.rollback()
-                print(f"Error insert invoice products into database: {error}")
+                print(f"Error insert invoice products into the database: {error}")
                 return None

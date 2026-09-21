@@ -5,7 +5,7 @@ DROP TABLE invoices;
 DROP TABLE products;
 DROP TABLE users;
 
-SELECT * FROM authentication.users;
+SELECT * FROM authentication.login_history;
 
 DELETE FROM authentication.invoice_products;
 DELETE FROM authentication.invoices;
