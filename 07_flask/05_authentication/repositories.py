@@ -124,15 +124,16 @@ class ContactsRepository:
                 return None
 
     def get_contact_by_user_id(self, user_id):
-        with self.engine.connect as conn:
+        with self.engine.connect() as conn:
             try:
                 stmt = select(db_context.contacts).where(db_context.contacts.c.user_id==user_id)
                 result = conn.execute(stmt)
-                contact = result.all()[0]
+                contact_result = result.all()
 
-                if len(contact) == 0:
+                if len(contact_result) == 0:
                     return None
                 else:
+                    contact = contact_result[0]
                     format_contact = {"id":contact[0], "user_id":contact[1], "name":contact[2], "phone":contact[3], "email":contact[4]}
                     return format_contact
 
@@ -167,7 +168,7 @@ class ContactsRepository:
     def delete(self, contact_id):
         with self.engine.connect() as conn:
             try:
-                stmt = delete(db_context.contacts).where(db_context.c.id==contact_id)
+                stmt = delete(db_context.contacts).where(db_context.contacts.c.id==contact_id)
                 conn.execute(stmt)
 
                 conn.commit()
@@ -184,10 +185,10 @@ class LoginHistory:
     def __init__(self, engine):
         self.engine = engine
 
-    def register_login(self, user_id, ip, status):
+    def register_login(self, user_id, now, ip, status):
         with self.engine.connect() as conn:
             try:
-                stmt = insert(db_context.login_history).returning(db_context.login_history.c.id).values(user_id=user_id, ip=ip, status=status)
+                stmt = insert(db_context.login_history).returning(db_context.login_history.c.id).values(user_id=user_id, datetime=now, ip=ip, status=status)
                 result = conn.execute(stmt)
                 new_login_id = result.all()[0][0]
 
@@ -208,6 +209,7 @@ class LoginHistory:
                 result = conn.execute(stmt)
                 history_raw = result.all()
 
+                print()
                 if len(history_raw) == 0:
                     return None
 
@@ -217,8 +219,9 @@ class LoginHistory:
                     record_dict = {
                         "id": record[0],
                         "user_id": record[1],
-                        "ip": record[2],
-                        "status": record[3]
+                        "datetime": record[2],
+                        "ip": record[3],
+                        "status": record[4]
                     }
                     history.append(record_dict)
 

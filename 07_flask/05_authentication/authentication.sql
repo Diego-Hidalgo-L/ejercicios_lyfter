@@ -1,5 +1,6 @@
 SET search_path TO authentication;
 
+DROP TABLE login_history;
 DROP TABLE invoice_products;
 DROP TABLE invoices;
 DROP TABLE products;

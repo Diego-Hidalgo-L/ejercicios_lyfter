@@ -2,7 +2,7 @@ from ioc_container import ioc
 from validations import validate_if_admin, validate_if_same_user_or_admin
 from functions import generate_fake_ip
 from flask import Flask, request, jsonify
-from datetime import date
+from datetime import date, datetime, timezone
 
 app = Flask("user-service")
 
@@ -114,15 +114,17 @@ def login():
         access_token = ioc.jwt_manager.encode(user_id, "access")
 
         if access_token is None:
-            ioc.login_repo.register_login(user_id, fake_ip, "failed")
+            ioc.login_repo.register_login(user_id, now, fake_ip, "failed")
             return jsonify(error_message="Error encoding access token"), 401
         # Hacemos un login validation?
-    
-        ioc.login_repo.register_login(user_id, fake_ip, "successful")
+
+        now = datetime.now(tz=timezone.utc)
+        ioc.login_repo.register_login(user_id, now, fake_ip, "successful")
+
         return jsonify(access_token=access_token), 200
 
     except Exception as error:
-        ioc.login_repo.register_login(user_id, fake_ip, "failed")
+        ioc.login_repo.register_login(user_id, now, fake_ip, "failed")
         print(error)
         return jsonify(error_message=f"Error logging in: {error}"), 500
 
@@ -139,9 +141,9 @@ def get_login_history():
         login_history = ioc.login_repo.get_history()
 
         if login_history is None:
-            return jsonify(error_message="Error getting login history from the database")
+            return jsonify(error_message="Error getting login history from the database"), 500
 
-        return login_history
+        return login_history, 200
 
     except Exception as error:
         print(error)
@@ -243,10 +245,10 @@ def delete_user(identifier):
 def insert_contact(identifier):
     try:
         token = request.headers.get("Authorization")
-        validation_result = validate_if_admin(token)
+        validation, result = validate_if_same_user_or_admin(token, identifier)
 
-        if validation_result is not True:
-            return validation_result
+        if validation is not True:
+            return result
 
         data = request.get_json()
         name = data.get('name')
