@@ -5,7 +5,8 @@ DROP TABLE invoices;
 DROP TABLE products;
 DROP TABLE users;
 
-SELECT * FROM authentication.users;
+SELECT * FROM authentication.invoices
+ORDER BY id ASC;
 
 DELETE FROM authentication.invoice_products;
 DELETE FROM authentication.invoices;

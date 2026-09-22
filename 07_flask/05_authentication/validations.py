@@ -33,12 +33,7 @@ def validate_if_same_user_or_admin(token, identifier):
     if token is None:
         return False, (jsonify(error_message="Invalid token"), 401)
 
-    user = ioc.users_repo.get_user_by_id(identifier)
-
-    if user is None:
-        return False, (jsonify(error_message=f"User ID {identifier} not found"), 404)
-
-    user_id = user[0]
+    # with token
     test_token = token.replace("Bearer ", "")
     decoded = ioc.jwt_manager.decode(test_token)
 
@@ -46,7 +41,15 @@ def validate_if_same_user_or_admin(token, identifier):
         return False, (jsonify(error_message="Error decoding token"), 401)
 
     decoded_user_id = decoded['id']
-    decoded_user_role = user[3]
+    decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
+
+    # with identifier
+    user = ioc.users_repo.get_user_by_id(identifier)
+
+    if user is None:
+        return False, (jsonify(error_message=f"User ID {identifier} not found"), 404)
+
+    user_id = user[0]
 
     if user_id != decoded_user_id and decoded_user_role != "Administrator":
         return False, (jsonify(error_message="Cannot access page"), 403)

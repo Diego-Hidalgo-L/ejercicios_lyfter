@@ -13,7 +13,7 @@ class DBContext:
             "users",
             self.metadata_obj,
             Column("id", Integer, Identity(), primary_key=True),
-            Column("username", String(30), nullable=False),
+            Column("username", String(30), unique=True, nullable=False),
             Column("password", String, nullable=False),
             Column("role", String(20), CheckConstraint("role in ('Administrator', 'User')"), nullable=False)
         )

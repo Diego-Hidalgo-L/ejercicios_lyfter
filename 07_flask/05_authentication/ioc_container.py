@@ -1,6 +1,6 @@
 from db import db_context
 from jwt_manager import JWTManager
-from repositories import UsersRepository, ProductsRepository, InvoicesRepository, InvoiceProductsRepository
+from repositories import UsersRepository, ProductsRepository, InvoicesRepository, InvoiceProductsRepository, TransactionsRepository
 from argon2 import PasswordHasher
 
 # Se encarga de todas las DEPENDENCIAS
@@ -15,5 +15,6 @@ class IocContainer:
         self.products_repo = ProductsRepository(self.db_context.engine)
         self.invoices_repo = InvoicesRepository(self.db_context.engine)
         self.inv_products_repo = InvoiceProductsRepository(self.db_context.engine)
+        self.transactions_repo = TransactionsRepository(self.db_context.engine)
 
 ioc = IocContainer()

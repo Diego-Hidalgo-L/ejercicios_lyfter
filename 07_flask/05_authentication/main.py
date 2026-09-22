@@ -33,19 +33,13 @@ def register():
         data = request.get_json()
         username = data.get('username')
         password = data.get('password')
-        role = data.get('role')
 
-        # Hacemos un registration validation?
         if username is None or password is None:
             return jsonify(error_message="Invalid credentials"), 400
-
-        if role is None:
-            return jsonify(error_message="Role is empty"), 400
         
         hashed_password = ioc.ph.hash(password)
-        # Hacemos un registration validation?
 
-        result = ioc.users_repo.insert(username, hashed_password, role)
+        result = ioc.users_repo.insert(username, hashed_password)
 
         if result is None:
             return jsonify(error_message="Error inserting user into the database"), 500
@@ -70,7 +64,6 @@ def login():
         username = data.get('username')
         password = data.get('password')
 
-        # Hacemos un login validation?
         if username is None or password is None:
             return jsonify(error_message="Invalid credentials"), 400
         
@@ -89,8 +82,7 @@ def login():
 
         if token is None:
             return jsonify(error_message="Error encoding token"), 401
-        # Hacemos un login validation?
-    
+
         return jsonify(token=token), 200
 
     except Exception as error:
@@ -108,9 +100,11 @@ def me(identifier):
             return result
 
         user_id = result
-        user_name = ioc.users_repo.get_user_by_id(identifier)[1]
+        user = ioc.users_repo.get_user_by_id(identifier)
+        username = user[1]
+        role = user[3]
 
-        return jsonify(id=user_id, username=user_name), 200
+        return jsonify(id=user_id, username=username, role=role), 200
 
     except Exception as error:
         print(error)
@@ -320,39 +314,12 @@ def make_purchase():
         if purchase_date is None:
             purchase_date = date.today()
 
-        # Este proceso se hace aquí o debería hacerse en algún repositorio? (TransactionsRepo?):
+        result, status = ioc.transactions_repo.purchase(user_id, purchase_date, invoice_products)
 
-        # Verifico stock:
-        for product in invoice_products:
-            product_id = product.get('product_id')
-            purchase_quantity = product.get('quantity')
-            got_product = ioc.products_repo.get_product_by_id(product_id)
-            available_stock = got_product[4]
+        if result is not True:
+            return jsonify(error_message=result), status
 
-            if available_stock < purchase_quantity:
-                return jsonify(error_message=f"Insufficient stock for product ID {product_id} (Desired purchase quantity: {purchase_quantity} - Available stock: {available_stock})."), 400
-
-        # Si todo el stock está bien, creo el invoice:
-        invoice_id = ioc.invoices_repo.insert(user_id, purchase_date)
-
-        if invoice_id is None:
-            return jsonify(error_message="Error creating invoice"), 500
-
-        # Insert en loop en tabla invoice_products:
-        for product in invoice_products:
-            insert_result = ioc.inv_products_repo.insert(invoice_id, product.get('product_id'), product.get('quantity'), product.get('total_price'))
-
-            if insert_result is None:
-                return jsonify(f"Error inserting product ID {product.get('product_id')} into invoice"), 500
-
-            got_product = ioc.products_repo.get_product_by_id(product.get('product_id'))
-            available_stock = got_product[4]
-            stock_result = ioc.products_repo.update(product.get('product_id'), stock=(available_stock-product.get('quantity')))
-
-            if stock_result is None:
-                return jsonify(error_message="Error subtracting purchased quantity from available stock"), 500
-
-        return jsonify(message="Purchase successful"), 200
+        return jsonify(message="Purchase successful"), status
 
     except Exception as error:
         print(error)
