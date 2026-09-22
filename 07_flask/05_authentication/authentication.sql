@@ -11,8 +11,11 @@ SELECT * FROM authentication.login_history;
 DELETE FROM authentication.invoice_products;
 DELETE FROM authentication.invoices;
 
-ALTER TABLE authentication.invoices
-ALTER COLUMN id RESTART WITH 1;
+DELETE FROM authentication.users
+WHERE id = 9;
+
+ALTER TABLE authentication.users
+ALTER COLUMN id RESTART WITH 7;
 
 ALTER TABLE authentication.invoice_products
 ALTER COLUMN id RESTART WITH 1;

@@ -1,5 +1,6 @@
 from db import db_context
 from sqlalchemy import select, insert, update, delete
+from datetime import date
 
 # Se encarga de los queries de las tablas de nuestra base de datos.
 
@@ -7,10 +8,32 @@ class UsersRepository:
     def __init__(self, engine):
         self.engine = engine
 
-    def insert(self, username, password, role):
+    def create_initial_admin(self, username, password):
         with self.engine.connect() as conn:
             try:
-                stmt = insert(db_context.users).returning(db_context.users.c.id).values(username=username, password=password, role=role)
+                stmt = insert(db_context.users).returning(db_context.users.c.id).values(username=username, password=password, role="Administrator")
+                result = conn.execute(stmt)
+                admin_id = result.scalar_one_or_none()
+                # 'result' es una lista con una tupla adentro, por eso antes usaba admin_id = result.all()[0][0]
+                # result.scalar_one_or_none() --> "Dame el único valor escalar que devolvió esta consulta, o None si no hubo ninguno."
+                
+                if admin_id is None:
+                    return None
+                
+                conn.commit()
+                print("User inserted successfully")
+
+                return admin_id
+
+            except Exception as error:
+                conn.rollback()
+                print("Error inserting initial Administrator into the database:", error)
+                return None
+
+    def insert(self, username, password):
+        with self.engine.connect() as conn:
+            try:
+                stmt = insert(db_context.users).returning(db_context.users.c.id).values(username=username, password=password, role="User")
                 result = conn.execute(stmt)
                 new_user_id = result.scalar_one_or_none()
                 
@@ -244,7 +267,7 @@ class ProductsRepository:
             try:
                 stmt = insert(db_context.products).returning(db_context.products.c.name).values(name=name, price=price, entry_date=entry_date, stock=stock)
                 result = conn.execute(stmt)
-                new_product_name = result.all()[0][0] # 'result' es una lista con una tupla adentro, por eso [0][0]
+                new_product_name = result.scalar_one_or_none()
 
                 conn.commit()
                 print("Product inserted successfully")
@@ -325,7 +348,7 @@ class InvoicesRepository:
             try:
                 stmt = insert(db_context.invoices).returning(db_context.invoices.c.id).values(user_id=user_id, purchase_date=purchase_date)
                 result = conn.execute(stmt)
-                invoice_id = result.all()[0][0]
+                invoice_id = result.scalar_one_or_none()
 
                 if invoice_id is None:
                     return None
@@ -344,24 +367,25 @@ class InvoicesRepository:
         with self.engine.connect() as conn:
             try:
                 stmt = select(db_context.invoices).where(db_context.invoices.c.user_id==user_id)
-                results = conn.execute(stmt) # tengo que convertir este resultado (lista de tuplas) en una lista de diccionarios
+                result = conn.execute(stmt) # tengo que convertir este resultado (lista de tuplas) en una lista de diccionarios
+                invoices_result = result.all()
 
-                if len(results) == 0:
+                if len(invoices_result) == 0:
                     return None
                 else:
-                    invoices = []
+                    invoices_list = []
 
-                    for invoice in results: # Hay algún lugar de donde pueda obtener estos keys sin tener que hacerles hardcode?
+                    for invoice in invoices_result: # Hay algún lugar de donde pueda obtener estos keys sin tener que hacerles hardcode?
+                        invoice_products = InvoiceProductsRepository.get_invoice_products_by_id(self, invoice[0])
                         inv_dict = { # Podría hacer un nesting de otro loop para iterar los valores dentro de la tupla
                             "id": invoice[0],
                             "user_id": invoice[1],
-                            "purchase_date": invoice[2]
+                            "purchase_date": invoice[2],
+                            "invoice_products": invoice_products
                         }
-                        invoices.append(inv_dict)
+                        invoices_list.append(inv_dict)
 
-                        return invoices
-
-                # Debería agregar la info de invoice_products? Si sí, debería ser un método de InvoicesRepo o InvoiceProductsRepo?
+                    return invoices_list
 
             except Exception as error:
                 conn.rollback()
