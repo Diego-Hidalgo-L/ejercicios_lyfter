@@ -35,20 +35,23 @@ def refresh_token():
         test_token = token.replace("Bearer ","")
         decoded = ioc.jwt_manager.decode(test_token)
 
-        if decoded['token_type'] == "refresh":
-            return jsonify(error_message="Token has already been refreshed"), 400
+        if decoded is None:
+            return jsonify(error_message="Error decoding token"), 401
+
+        if decoded['token_type'] != "refresh":
+            return jsonify(error_message="Invalid token type provided"), 400
 
         user_id = decoded['id']
-        refresh_token = ioc.jwt_manager.encode(user_id, "refresh")
+        access_token = ioc.jwt_manager.encode(user_id, "access")
 
-        if refresh_token is None:
-            return jsonify(error_message="Error encoding fresh token"), 401
+        if access_token is None:
+            return jsonify(error_message="Error encoding access token"), 401
 
-        return jsonify(refresh_token=refresh_token), 201
+        return jsonify(access_token=access_token), 200
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error creating refresh token: {error}"), 500
+        return jsonify(error_message=f"Error creating access token: {error}"), 500
 
 
 # ------------------- start USERS: -------------------
