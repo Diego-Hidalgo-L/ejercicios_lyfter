@@ -6,8 +6,6 @@ from datetime import date, datetime, timezone
 
 app = Flask("user-service")
 
-# Cómo hago para que solo pueda haber un 'Administrator'? Chequeo el registro de roles como si fuera una lista?
-
 @app.route("/liveness", methods=["GET"])
 def liveness():
     try:
@@ -74,18 +72,22 @@ def register():
 
         user_id = result
         access_token = ioc.jwt_manager.encode(user_id, "access")
+        refresh_token = ioc.jwt_manager.encode(user_id, "refresh")
 
         if access_token is None:
             return jsonify(error_message="Error encoding token"), 401
+
+        elif refresh_token is None:
+            return jsonify(error_message="Error encoding refresh token"), 401
         
-        return jsonify(access_token=access_token), 201
+        return jsonify(access_token=access_token, refresh_token=refresh_token), 200
 
     except Exception as error:
         print(error)
         return jsonify(error_message=f"Error registering user: {error}"), 500
 
 
-@app.route("/login", methods=['POST']) # Por qué esto es un POST y no un GET? Qué estoy creando?
+@app.route("/login", methods=['POST'])
 def login():
     try:
         data = request.get_json()
@@ -100,27 +102,31 @@ def login():
         if user is None:
             return jsonify(error_message="User not found"), 404
 
+        user_id = user[0]
         stored_hash = user[2]
+        fake_ip = generate_fake_ip()
+        now = datetime.now(tz=timezone.utc)
 
         if not ioc.ph.verify(stored_hash, password):
+            ioc.login_repo.register_login(user_id, now, fake_ip, "failed")
             return jsonify(error_message="Invalid credentials"), 400
 
-        user_id = user[0]
-        fake_ip = generate_fake_ip()
         access_token = ioc.jwt_manager.encode(user_id, "access")
+        refresh_token = ioc.jwt_manager.encode(user_id, "refresh")
 
         if access_token is None:
             ioc.login_repo.register_login(user_id, now, fake_ip, "failed")
             return jsonify(error_message="Error encoding access token"), 401
-        # Hacemos un login validation?
+        
+        elif refresh_token is None:
+            ioc.login_repo.register_login(user_id, now, fake_ip, "failed")
+            return jsonify(error_message="Error encoding refresh token"), 401
 
-        now = datetime.now(tz=timezone.utc)
         ioc.login_repo.register_login(user_id, now, fake_ip, "successful")
 
-        return jsonify(access_token=access_token), 200
+        return jsonify(access_token=access_token, refresh_token=refresh_token), 200
 
     except Exception as error:
-        ioc.login_repo.register_login(user_id, now, fake_ip, "failed")
         print(error)
         return jsonify(error_message=f"Error logging in: {error}"), 500
 
@@ -238,7 +244,7 @@ def delete_user(identifier):
 
 # ------------------- end USERS: -------------------
 
-# ------------------- start CONTACTS (EXTRA): -------------------
+# ------------------- start CONTACTS: -------------------
 @app.route("/contacts/<identifier>", methods=["POST"])
 def insert_contact(identifier):
     try:
@@ -277,22 +283,47 @@ def get_contact(identifier):
         contact = ioc.contacts_repo.get_contact_by_user_id(identifier)
 
         if contact is None:
-            return jsonify(message=f"Error getting contact for user ID {identifier} from the database"), 500
+            return jsonify(message=f"Error getting contact for user ID {identifier} from the database"), 404
 
-        return jsonify(contact), 202
+        return jsonify(contact), 200
 
     except Exception as error:
         print(error)
         return jsonify(error_message=f"Error getting contact for user ID {identifier}: {error}"), 500
 
-# Debería hacer un endpoint+method para que el Administrator obtenga TODOS los contacts? "/contacts/all"
-    # SÍ
 
-@app.route("/contacts/<identifier>", methods=["PATCH"]) # Puedo sacar el user del token y que el identifier sea del contact.id
-def update_contact(identifier):
+@app.route("/contacts/all", methods=["GET"])
+def get_all_contacts():
     try:
         token = request.headers.get("Authorization")
-        validation, result = validate_if_same_user_or_admin(token, identifier)
+        validation_result = validate_if_admin(token)
+
+        if validation_result is not True:
+            return validation_result
+
+        all_contacts = ioc.contacts_repo.get_all()
+
+        if all_contacts is None:
+            return jsonify(error_message="Error getting all contacts from the database"), 500
+
+        return all_contacts, 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error getting all contacts: {error}"), 500
+
+
+@app.route("/contacts/<contact_id>", methods=["PATCH"])
+def update_contact(contact_id):
+    try:
+        token = request.headers.get("Authorization")
+        contact = ioc.contacts_repo.get_by_contact_id(contact_id)
+
+        if contact is None:
+            return jsonify(error_message="Invalid contact ID"), 400
+        
+        user_id = contact["user_id"]
+        validation, result = validate_if_same_user_or_admin(token, user_id)
 
         if validation is not True:
             return result
@@ -302,37 +333,43 @@ def update_contact(identifier):
         phone = data.get('phone')
         email = data.get('email')
 
-        result = ioc.contacts_repo.update(identifier, name, phone, email)
+        result = ioc.contacts_repo.update(contact_id, name, phone, email)
 
         if result is None:
-            return jsonify(error_message=f"Error updating contact for user ID {identifier} in the database"), 500
+            return jsonify(error_message=f"Error updating contact ID {contact_id} in the database"), 500
 
-        return jsonify(message=f"Contact for user ID {identifier} updated successfully"), 202
+        return jsonify(message=f"Contact ID {contact_id} updated successfully"), 200
 
     except Exception as error:
         print(error)
-        return jsonify(f"Error updating contact for user ID {identifier}: {error}"), 500
+        return jsonify(f"Error updating contact ID {contact_id}: {error}"), 500
 
 
-@app.route("/contacts/<identifier>", methods=["DELETE"])
-def delete_contact(identifier):
+@app.route("/contacts/<contact_id>", methods=["DELETE"])
+def delete_contact(contact_id):
     try:
         token = request.headers.get("Authorization")
-        validation, result = validate_if_same_user_or_admin(token, identifier)
+        contact = ioc.contacts_repo.get_by_contact_id(contact_id)
+
+        if contact is None:
+            return jsonify(error_message="Invalid contact ID"), 400
+        
+        user_id = contact["user_id"]
+        validation, result = validate_if_same_user_or_admin(token, user_id)
 
         if validation is not True:
             return result
 
-        result = ioc.contacts_repo.delete(identifier)
+        result = ioc.contacts_repo.delete(contact_id)
 
         if result is None:
-            return jsonify(error_message=f"Error deleting contact for user ID {identifier} from the database"), 500
+            return jsonify(error_message=f"Error deleting contact ID {contact_id} from the database"), 500
 
-        return jsonify(message=f"Contact for user ID {identifier} deleted successfully"), 202
+        return jsonify(message=f"Contact ID {contact_id} deleted successfully"), 200
 
     except Exception as error:
         print(error)
-        return jsonify(f"Error deleting contact for user ID {identifier}: {error}"), 500
+        return jsonify(f"Error deleting contact ID {contact_id}: {error}"), 500
 
 # ------------------- end CONTACTS (EXTRA): -------------------
 
