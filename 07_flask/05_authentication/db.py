@@ -23,10 +23,10 @@ class DBContext:
             "contacts",
             self.metadata_obj,
             Column("id", Integer, Identity(), primary_key=True),
-            Column("user_id", Integer, ForeignKey("users.id"), nullable=False), # Un user puede tener más de un contacto?
+            Column("user_id", Integer, ForeignKey("users.id"), nullable=False),
             Column("name", String(30), nullable=False),
             Column("phone", String(8), nullable=False),
-            Column("email", String(30), nullable=False) # esta columna podría ir en la tabla de users porque debería ser una relación 1:1
+            Column("email", String(30), nullable=False)
         )
 
         self.login_history = Table(

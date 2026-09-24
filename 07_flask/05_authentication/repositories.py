@@ -50,7 +50,7 @@ class UsersRepository:
                 print("Error inserting user into the database:", error)
                 return None
 
-    def get_user_by_username(self, username):
+    def get_by_username(self, username):
         with self.engine.connect() as conn:
             try:
                 stmt = select(db_context.users).where(db_context.users.c.username == username)
@@ -67,7 +67,7 @@ class UsersRepository:
                 print(f"Error getting user by username: {error}")
                 return None
 
-    def get_user_by_id(self, user_id):
+    def get_by_user_id(self, user_id):
         with self.engine.connect() as conn:
             try:
                 stmt = select(db_context.users).where(db_context.users.c.id == user_id)
@@ -146,7 +146,11 @@ class ContactsRepository:
                 print(f"Error inserting contact into the database: {error}")
                 return None
 
-    def get_contact_by_user_id(self, user_id):
+    def get_by_contact_id(self, contact_id):
+        pass
+
+
+    def get_by_user_id(self, user_id):
         with self.engine.connect() as conn:
             try:
                 stmt = select(db_context.contacts).where(db_context.contacts.c.user_id==user_id)
@@ -168,7 +172,7 @@ class ContactsRepository:
         with self.engine.connect() as conn:
             try:
                 if name is not None:
-                    stmt = update(db_context.contacts).where(db_context.contacts.c.id==contact_id).values(name=name)
+                    stmt = update(db_context.contacts).where(db_context.contacts.c.user_id==contact_id).values(name=name)
                     conn.execute(stmt)
 
                 if phone is not None:
@@ -279,7 +283,7 @@ class ProductsRepository:
                 print(f"Error inserting product into the database: {error}")
                 return None
 
-    def get_product_by_id(self, product_id):
+    def get_by_product_id(self, product_id):
         with self.engine.connect() as conn:
             try:
                 stmt = select(db_context.products).where(db_context.products.c.id == product_id)
@@ -376,7 +380,7 @@ class InvoicesRepository:
                     invoices_list = []
 
                     for invoice in invoices_result: # Hay algún lugar de donde pueda obtener estos keys sin tener que hacerles hardcode?
-                        invoice_products = InvoiceProductsRepository.get_invoice_products_by_id(self, invoice[0])
+                        invoice_products = InvoiceProductsRepository.get_by_invoice_id(self, invoice[0])
                         inv_dict = { # Podría hacer un nesting de otro loop para iterar los valores dentro de la tupla
                             "id": invoice[0],
                             "user_id": invoice[1],

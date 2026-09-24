@@ -286,8 +286,9 @@ def get_contact(identifier):
         return jsonify(error_message=f"Error getting contact for user ID {identifier}: {error}"), 500
 
 # Debería hacer un endpoint+method para que el Administrator obtenga TODOS los contacts? "/contacts/all"
+    # SÍ
 
-@app.route("/contacts/<identifier>", methods=["PATCH"])
+@app.route("/contacts/<identifier>", methods=["PATCH"]) # Puedo sacar el user del token y que el identifier sea del contact.id
 def update_contact(identifier):
     try:
         token = request.headers.get("Authorization")
