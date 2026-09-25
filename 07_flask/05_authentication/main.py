@@ -2,6 +2,7 @@ from ioc_container import ioc
 from validations import validate_if_admin, validate_if_same_user_or_admin
 from functions import generate_fake_ip
 from flask import Flask, request, jsonify
+from argon2.exceptions import VerifyMismatchError
 from datetime import date, datetime, timezone
 
 app = Flask("user-service")
@@ -97,7 +98,7 @@ def login():
         if username is None or password is None:
             return jsonify(error_message="Invalid credentials"), 400
         
-        user = ioc.users_repo.get_user_by_username(username)
+        user = ioc.users_repo.get_by_username(username)
 
         if user is None:
             return jsonify(error_message="User not found"), 404
@@ -107,7 +108,10 @@ def login():
         fake_ip = generate_fake_ip()
         now = datetime.now(tz=timezone.utc)
 
-        if not ioc.ph.verify(stored_hash, password):
+        try:
+            ioc.ph.verify(stored_hash, password)
+
+        except VerifyMismatchError:
             ioc.login_repo.register_login(user_id, now, fake_ip, "failed")
             return jsonify(error_message="Invalid credentials"), 400
 
@@ -162,7 +166,7 @@ def me(identifier):
             return result
 
         user_id = result
-        user = ioc.users_repo.get_user_by_id(identifier)
+        user = ioc.users_repo.get_by_id(identifier)
         username = user[1]
         role = user[3]
 
@@ -280,10 +284,10 @@ def get_contact(identifier):
         if validation is not True:
             return result
 
-        contact = ioc.contacts_repo.get_contact_by_user_id(identifier)
+        contact = ioc.contacts_repo.get_by_user_id(identifier)
 
         if contact is None:
-            return jsonify(message=f"Error getting contact for user ID {identifier} from the database"), 404
+            return jsonify(message=f"No contact found in the database for user ID {identifier}"), 404
 
         return jsonify(contact), 200
 
@@ -410,7 +414,7 @@ def get_product(identifier):
         if validation_result is not True:
             return validation_result
 
-        product = ioc.products_repo.get_product_by_id(identifier)
+        product = ioc.products_repo.get_by_product_id(identifier)
 
         if product is None:
             return jsonify(error_message=f"Product ID {identifier} not found"), 404
@@ -431,7 +435,7 @@ def update_product(identifier):
         if validation_result is not True:
             return validation_result
 
-        product = ioc.products_repo.get_product_by_id(identifier)
+        product = ioc.products_repo.get_by_product_id(identifier)
 
         if product is None:
             return jsonify(error_message=f"Product ID {identifier} not found"), 404
@@ -463,7 +467,7 @@ def delete_product(identifier):
         if validation_result is not True:
             return validation_result
 
-        product = ioc.products_repo.get_product_by_id(identifier)
+        product = ioc.products_repo.get_by_product_id(identifier)
 
         if product is None:
             return jsonify(error_message=f"Product ID {identifier} not found"), 404

@@ -19,5 +19,6 @@
         "**/*.pyc": true,
         "**/node_modules": true,
         "**/.DS_Store": true
-    }
+    },
+    "python-envs.defaultEnvManager": "ms-python.python:system"
 }

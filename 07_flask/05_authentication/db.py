@@ -18,7 +18,6 @@ class DBContext:
             Column("role", String(20), CheckConstraint("role in ('Administrator', 'User')"), nullable=False)
         )
 
-        # ------------- EXTRA: -------------
         self.contacts = Table(
             "contacts",
             self.metadata_obj,
@@ -38,7 +37,6 @@ class DBContext:
             Column("ip", String, nullable=False),
             Column("status", String, CheckConstraint("status in ('successful', 'failed')"))
         )
-        # ------------- FIN EXTRA -------------
 
         self.products = Table(
             "products",

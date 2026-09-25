@@ -200,7 +200,7 @@ class ContactsRepository:
                 contacts_raw = result.all()
 
                 if len(contacts_raw) == 0:
-                    return None
+                    return []
                 else:
                     all_contacts = []
 
@@ -290,7 +290,7 @@ class LoginHistory:
                 history_raw = result.all()
 
                 if len(history_raw) == 0:
-                    return None
+                    return []
                 else:
                     history = []
 

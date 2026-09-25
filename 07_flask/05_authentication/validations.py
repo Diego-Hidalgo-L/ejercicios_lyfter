@@ -16,7 +16,7 @@ def validate_if_admin(token):
         return jsonify(error_message="Error decoding token"), 401
 
     user_id = decoded['id']
-    user = ioc.users_repo.get_user_by_id(user_id)
+    user = ioc.users_repo.get_by_user_id(user_id)
 
     if user is None:
         return jsonify(error_message="User not found"), 404
@@ -41,10 +41,10 @@ def validate_if_same_user_or_admin(token, identifier):
         return False, (jsonify(error_message="Error decoding token"), 401)
 
     decoded_user_id = decoded['id']
-    decoded_user_role = ioc.users_repo.get_user_by_id(decoded_user_id)[3]
+    decoded_user_role = ioc.users_repo.get_by_user_id(decoded_user_id)[3]
 
     # with identifier
-    user = ioc.users_repo.get_user_by_id(identifier)
+    user = ioc.users_repo.get_by_user_id(identifier)
 
     if user is None:
         return False, (jsonify(error_message=f"User ID {identifier} not found"), 404)
