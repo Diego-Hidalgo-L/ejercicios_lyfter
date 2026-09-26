@@ -1,12 +1,12 @@
 SET search_path TO authentication;
 
+DROP TABLE login_history;
 DROP TABLE invoice_products;
 DROP TABLE invoices;
 DROP TABLE products;
 DROP TABLE users;
 
-SELECT * FROM authentication.users
-ORDER BY id ASC;
+SELECT * FROM authentication.login_history;
 
 DELETE FROM authentication.invoice_products;
 DELETE FROM authentication.invoices;

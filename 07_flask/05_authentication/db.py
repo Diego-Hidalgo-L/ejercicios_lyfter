@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
-from sqlalchemy import Table, Column, Identity, ForeignKey, Integer, Float, String, Date, CheckConstraint
-from datetime import date
+from sqlalchemy import Table, Column, Identity, ForeignKey, Integer, Float, String, Date, DateTime, CheckConstraint
+from datetime import date, timezone
 
 # Se encarga de crear las tablas y el engine
 
@@ -16,6 +16,26 @@ class DBContext:
             Column("username", String(30), unique=True, nullable=False),
             Column("password", String, nullable=False),
             Column("role", String(20), CheckConstraint("role in ('Administrator', 'User')"), nullable=False)
+        )
+
+        self.contacts = Table(
+            "contacts",
+            self.metadata_obj,
+            Column("id", Integer, Identity(), primary_key=True),
+            Column("user_id", Integer, ForeignKey("users.id"), nullable=False),
+            Column("name", String(30), nullable=False),
+            Column("phone", String(8), nullable=False),
+            Column("email", String(30), nullable=False)
+        )
+
+        self.login_history = Table(
+            "login_history",
+            self.metadata_obj,
+            Column("id", Integer, Identity(), primary_key=True),
+            Column("user_id", Integer, ForeignKey("users.id"), nullable=False),
+            Column("datetime", DateTime(timezone=True), nullable=False),
+            Column("ip", String, nullable=False),
+            Column("status", String, CheckConstraint("status in ('successful', 'failed')"))
         )
 
         self.products = Table(

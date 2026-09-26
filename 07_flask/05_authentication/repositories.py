@@ -47,10 +47,10 @@ class UsersRepository:
 
             except Exception as error:
                 conn.rollback()
-                print("Error inserting user into database:", error)
+                print("Error inserting user into the database:", error)
                 return None
 
-    def get_user_by_username(self, username):
+    def get_by_username(self, username):
         with self.engine.connect() as conn:
             try:
                 stmt = select(db_context.users).where(db_context.users.c.username == username)
@@ -67,7 +67,7 @@ class UsersRepository:
                 print(f"Error getting user by username: {error}")
                 return None
 
-    def get_user_by_id(self, user_id):
+    def get_by_user_id(self, user_id):
         with self.engine.connect() as conn:
             try:
                 stmt = select(db_context.users).where(db_context.users.c.id == user_id)
@@ -124,6 +124,196 @@ class UsersRepository:
                 return None
 
 
+# ------------- EXTRA: -------------
+class ContactsRepository:
+    def __init__(self, engine):
+        self.engine = engine
+
+    def insert(self, name, user_id, phone, email):
+        with self.engine.connect() as conn:
+            try:
+                stmt = insert(db_context.contacts).returning(db_context.contacts.c.user_id).values(name=name, user_id=user_id, phone=phone, email=email)
+                result = conn.execute(stmt)
+                new_contact_user_id = result.all()[0][0]
+
+                conn.commit()
+                print("Contact inserted successfully")
+
+                return new_contact_user_id
+
+            except Exception as error:
+                conn.rollback()
+                print(f"Error inserting contact into the database: {error}")
+                return None
+
+    def get_by_contact_id(self, contact_id):
+        with self.engine.connect() as conn:
+            try:
+                stmt = select(db_context.contacts).where(db_context.contacts.c.id==contact_id)
+                result = conn.execute(stmt)
+                contact_result = result.all()
+
+                if len(contact_result) == 0:
+                    return None
+                else:
+                    contact = contact_result[0]
+                    format_contact = {"id":contact[0], "user_id":contact[1], "name":contact[2], "phone":contact[3], "email":contact[4]}
+                    return format_contact
+
+            except Exception as error:
+                print(f"Error getting contact ID {contact_id}: {error}")
+                return None
+
+    def get_by_user_id(self, user_id):
+        with self.engine.connect() as conn:
+            try:
+                stmt = select(db_context.contacts).where(db_context.contacts.c.user_id==user_id)
+                result = conn.execute(stmt)
+                contact_result = result.all()
+
+                if len(contact_result) == 0:
+                    return None
+                else:
+                    contact_list = []
+
+                    for contact in contact_result:
+                        contact_dict = {
+                            "id":contact[0],
+                            "user_id":contact[1],
+                            "name":contact[2],
+                            "phone":contact[3],
+                            "email":contact[4]
+                        }
+                        contact_list.append(contact_dict)
+
+                    return contact_list
+
+            except Exception as error:
+                print(f"Error getting contact from user ID {user_id}: {error}")
+                return None
+
+    def get_all(self):
+        with self.engine.connect() as conn:
+            try:
+                stmt = select(db_context.contacts)
+                result = conn.execute(stmt)
+                contacts_raw = result.all()
+
+                if len(contacts_raw) == 0:
+                    return []
+                else:
+                    all_contacts = []
+
+                    for contact in contacts_raw:
+                        contact_dict = {
+                            "id": contact[0],
+                            "user_id": contact[1],
+                            "name": contact[2],
+                            "phone": contact[3],
+                            "email": contact[4]
+                        }
+                        all_contacts.append(contact_dict)
+
+                return all_contacts
+
+            except Exception as error:
+                conn.rollback()
+                print(f"Error getting all contacts from the database: {error}")
+                return None
+
+    def update(self, contact_id, name=None, phone=None, email=None):
+        with self.engine.connect() as conn:
+            try:
+                if name is not None:
+                    stmt = update(db_context.contacts).where(db_context.contacts.c.id==contact_id).values(name=name)
+                    conn.execute(stmt)
+
+                if phone is not None:
+                    stmt = update(db_context.contacts).where(db_context.contacts.c.id==contact_id).values(phone=phone)
+                    conn.execute(stmt)
+
+                if email is not None:
+                    stmt = update(db_context.contacts).where(db_context.contacts.c.id==contact_id).values(email=email)
+                    conn.execute(stmt)
+
+                conn.commit()
+                print(f"Contact ID {contact_id} updated successfully")
+                return True
+
+            except Exception as error:
+                conn.rollback()
+                print(f"Error updating contact ID {contact_id}: {error}")
+                return None
+
+    def delete(self, contact_id):
+        with self.engine.connect() as conn:
+            try:
+                stmt = delete(db_context.contacts).where(db_context.contacts.c.id==contact_id)
+                conn.execute(stmt)
+
+                conn.commit()
+                print(f"Contact ID {contact_id} deleted successfully")
+                return True
+
+            except Exception as error:
+                conn.rollback()
+                print(f"Error deleting contact ID {contact_id}: {error}")
+                return None
+
+
+class LoginHistory:
+    def __init__(self, engine):
+        self.engine = engine
+
+    def register_login(self, user_id, now, ip, status):
+        with self.engine.connect() as conn:
+            try:
+                stmt = insert(db_context.login_history).returning(db_context.login_history.c.id).values(user_id=user_id, datetime=now, ip=ip, status=status)
+                result = conn.execute(stmt)
+                new_login_id = result.all()[0][0]
+
+                conn.commit()
+                print("Login registered successfully")
+
+                return new_login_id
+
+            except Exception as error:
+                conn.rollback()
+                print(f"Error registering login into the database: {error}")
+                return None
+
+    def get_history(self):
+        with self.engine.connect() as conn:
+            try:
+                stmt = select(db_context.login_history)
+                result = conn.execute(stmt)
+                history_raw = result.all()
+
+                if len(history_raw) == 0:
+                    return []
+                else:
+                    history = []
+
+                    for record in history_raw:
+                        record_dict = {
+                            "id": record[0],
+                            "user_id": record[1],
+                            "datetime": record[2],
+                            "ip": record[3],
+                            "status": record[4]
+                        }
+                        history.append(record_dict)
+
+                return history
+
+            except Exception as error:
+                conn.rollback()
+                print(f"Error getting login history from the database: {error}")
+                return None
+
+# ------------- FIN EXTRA -------------
+
+
 class ProductsRepository:
     def __init__(self, engine):
         self.engine = engine
@@ -142,10 +332,10 @@ class ProductsRepository:
 
             except Exception as error:
                 conn.rollback()
-                print(f"Error inserting product to database: {error}")
+                print(f"Error inserting product into the database: {error}")
                 return None
 
-    def get_product_by_id(self, product_id):
+    def get_by_product_id(self, product_id):
         with self.engine.connect() as conn:
             try:
                 stmt = select(db_context.products).where(db_context.products.c.id == product_id)
@@ -226,7 +416,7 @@ class InvoicesRepository:
 
             except Exception as error:
                 conn.rollback()
-                print(f"Error inserting invoice into database: {error}")
+                print(f"Error inserting invoice into the database: {error}")
                 return None
 
     def get_invoices(self, user_id): # Después implementar filters
@@ -242,7 +432,7 @@ class InvoicesRepository:
                     invoices_list = []
 
                     for invoice in invoices_result: # Hay algún lugar de donde pueda obtener estos keys sin tener que hacerles hardcode?
-                        invoice_products = InvoiceProductsRepository.get_invoice_products_by_id(self, invoice[0])
+                        invoice_products = InvoiceProductsRepository.get_by_invoice_id(self, invoice[0])
                         inv_dict = { # Podría hacer un nesting de otro loop para iterar los valores dentro de la tupla
                             "id": invoice[0],
                             "user_id": invoice[1],
@@ -278,7 +468,7 @@ class InvoiceProductsRepository:
                 print(f"Error insert invoice products into the database: {error}")
                 return None
 
-    def get_invoice_products_by_id(self, invoice_id):
+    def get_by_invoice_id(self, invoice_id):
         with self.engine.connect() as conn:
             try:
                 stmt = select(db_context.invoice_products).where(db_context.invoice_products.c.invoice_id==invoice_id)
@@ -319,7 +509,7 @@ class TransactionsRepository:
             for product in invoice_products:
                 product_id = product.get('product_id')
                 purchase_quantity = product.get('quantity')
-                got_product = ProductsRepository.get_product_by_id(self, product_id)
+                got_product = ProductsRepository.get_by_product_id(self, product_id)
                 available_stock = got_product[4]
 
                 if available_stock < purchase_quantity:
