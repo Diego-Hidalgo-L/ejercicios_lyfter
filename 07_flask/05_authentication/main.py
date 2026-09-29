@@ -111,7 +111,7 @@ def login():
         try:
             ioc.ph.verify(stored_hash, password)
 
-        except VerifyMismatchError:
+        except VerifyMismatchError: # Esto también se podría escribir como argon2.VerifyMismatchError y no importar argon2.exceptions arriba, verdad? (Lo saqué de la lección de Redis)
             ioc.login_repo.register_login(user_id, now, fake_ip, "failed")
             return jsonify(error_message="Invalid credentials"), 400
 
@@ -375,7 +375,7 @@ def delete_contact(contact_id):
         print(error)
         return jsonify(f"Error deleting contact ID {contact_id}: {error}"), 500
 
-# ------------------- end CONTACTS (EXTRA): -------------------
+# ------------------- end CONTACTS: -------------------
 
 # ------------------- start PRODUCTS: -------------------
 @app.route("/products", methods=["POST"])

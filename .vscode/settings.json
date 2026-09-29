@@ -12,7 +12,8 @@
         "nullable",
         "orms",
         "unrelate",
-        "ilike"
+        "ilike",
+        "setex"
     ],
     "files.exclude": {
         "**/__pycache__": true,
