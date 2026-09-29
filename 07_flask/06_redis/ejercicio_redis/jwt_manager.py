@@ -41,7 +41,8 @@ class JWTManager:
 
     def decode(self, token):
         try:
-            decoded = jwt.decode(token, self.public_key, algorithms=[self.algorithm])
+            strip_token = token.replace("Bearer ","")
+            decoded = jwt.decode(strip_token, self.public_key, algorithms=[self.algorithm])
             return decoded
         
         except Exception as error:

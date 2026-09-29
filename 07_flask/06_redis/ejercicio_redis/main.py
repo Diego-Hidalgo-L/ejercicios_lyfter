@@ -32,8 +32,7 @@ def refresh_token():
         if token is None:
             return jsonify(error_message="Invalid token"), 401
 
-        test_token = token.replace("Bearer ","")
-        decoded = ioc.jwt_manager.decode(test_token)
+        decoded = ioc.jwt_manager.decode(token)
 
         if decoded is None:
             return jsonify(error_message="Error decoding token"), 401
@@ -112,7 +111,7 @@ def login():
         try:
             ioc.ph.verify(stored_hash, password)
 
-        except VerifyMismatchError: # Esto también se podría escribir como argon2.VerifyMismatchError y no importar argon2.exceptions arriba, verdad? (Lo saqué de la lección de Redis)
+        except VerifyMismatchError: # Esto también se podría escribir como argon2.VerifyMismatchError y no importar argon2.exceptions arriba (Lo saqué de la lección de Redis)
             ioc.login_repo.register_login(user_id, now, fake_ip, "failed")
             return jsonify(error_message="Invalid credentials"), 400
 
@@ -425,7 +424,7 @@ def get_all_products():
             return validation_result
 
         # CACHE:
-        all_key = ioc.cache_manager.generate_product_key("all")
+        all_key = ioc.cache_manager.generate_key("product","all")
         
         if ioc.cache_manager.check_key(all_key)[0]:
             cached_data = json.loads(ioc.cache_manager.get_data(all_key))
@@ -445,7 +444,7 @@ def get_all_products():
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error getting all products: {error}")
+        return jsonify(error_message=f"Error getting all products: {error}"), 500
 
 
 @app.route("/products/<identifier>", methods=["GET"])
@@ -457,8 +456,8 @@ def get_product(identifier):
         if validation_result is not True:
             return validation_result
 
-        # CACHE:
-        product_key = ioc.cache_manager.generate_product_key(identifier)
+        # SINGLE PRODUCT CACHE:
+        product_key = ioc.cache_manager.generate_key("product", identifier)
 
         if ioc.cache_manager.check_key(product_key)[0]:
             cached_data = json.loads(ioc.cache_manager.get_data(product_key))
@@ -477,7 +476,14 @@ def get_product(identifier):
             if product is None:
                 return jsonify(error_message=f"Product ID {identifier} not found"), 404
 
-            ioc.cache_manager.store_product_data(product_key, product, 600)
+            data = {
+                    "id": product[0],
+                    "name": product[1],
+                    "price": product[2],
+                    "entry_date": str(product[3]),
+                    "stock": product[4]
+                }
+            ioc.cache_manager.store_data(product_key, json.dumps(data), 600)
 
             return jsonify(id=identifier, name=product[1], price=product[2], entry_date=product[3], stock=product[4]), 200
 
@@ -511,8 +517,8 @@ def update_product(identifier):
         if result is None:
             return jsonify(error_message=f"Error updating product ID {identifier}"), 500
 
-        # CACHE:
-        product_key = ioc.cache_manager.generate_product_key(identifier)
+        # SINGLE PRODUCT CACHE:
+        product_key = ioc.cache_manager.generate_key("product", identifier)
         key_check = ioc.cache_manager.check_key(product_key)
 
         if key_check[0]:
@@ -522,7 +528,7 @@ def update_product(identifier):
             print("No cache to invalidate")
 
         # CHECK AND INVALIDATE 'ALL' CACHE:
-        all_key = ioc.cache_manager.generate_product_key("all")
+        all_key = ioc.cache_manager.generate_key("product", "all")
         all_check = ioc.cache_manager.check_key(all_key)
 
         if all_check[0]:
@@ -557,8 +563,8 @@ def delete_product(identifier):
         if result is None:
             return jsonify(error_message=f"Error deleting product ID {identifier} from the database"), 500
 
-        # CACHE:
-        product_key = ioc.cache_manager.generate_product_key(identifier)
+        # SINGLE PRODUCT CACHE:
+        product_key = ioc.cache_manager.generate_key("product", identifier)
         key_check = ioc.cache_manager.check_key(product_key)
 
         if key_check[0]:
@@ -568,7 +574,7 @@ def delete_product(identifier):
             print("No cache to invalidate")
 
         # CHECK AND INVALIDATE 'ALL' CACHE:
-        all_key = ioc.cache_manager.generate_product_key("all")
+        all_key = ioc.cache_manager.generate_key("product", "all")
         all_check = ioc.cache_manager.check_key(all_key)
 
         if all_check[0]:
@@ -585,8 +591,8 @@ def delete_product(identifier):
 
 # ------------------- end PRODUCTS: -------------------
 
-# ------------------- start STORE: -------------------
-@app.route("/store", methods=["POST"])
+# ------------------- start SHOP: -------------------
+@app.route("/shop", methods=["POST"])
 def make_purchase():
     try:
         token = request.headers.get("Authorization")
@@ -594,8 +600,7 @@ def make_purchase():
         if token is None:
             return jsonify(error_message="Invalid token"), 401
 
-        test_token = token.replace("Bearer ","")
-        decoded = ioc.jwt_manager.decode(test_token)
+        decoded = ioc.jwt_manager.decode(token)
 
         if decoded is None:
             return jsonify(error_message="Error decoding token"), 401
@@ -613,6 +618,27 @@ def make_purchase():
 
         if result is not True:
             return jsonify(error_message=result), status
+
+        # SINGLE PRODUCT CACHE:
+        for product in invoice_products:
+            product_key = ioc.cache_manager.generate_key("product", product["product_id"])
+            key_check = ioc.cache_manager.check_key(product_key)
+
+            if key_check[0]:
+                delete_cache = ioc.cache_manager.delete_data(product_key)
+                print("Cache invalidated successfully:", delete_cache)
+            else:
+                print("No cache to invalidate")
+
+        # CHECK AND INVALIDATE 'ALL' CACHE:
+        all_key = ioc.cache_manager.generate_key("product", "all")
+        all_check = ioc.cache_manager.check_key(all_key)
+
+        if all_check[0]:
+            delete_cache = ioc.cache_manager.delete_data(all_key)
+            print("Cache invalidated successfully:", delete_cache)
+        else:
+            print("No cache to invalidate")
 
         return jsonify(message="Purchase successful"), status
 

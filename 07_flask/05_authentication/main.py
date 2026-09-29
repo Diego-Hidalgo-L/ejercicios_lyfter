@@ -31,8 +31,7 @@ def refresh_token():
         if token is None:
             return jsonify(error_message="Invalid token"), 401
 
-        test_token = token.replace("Bearer ","")
-        decoded = ioc.jwt_manager.decode(test_token)
+        decoded = ioc.jwt_manager.decode(token)
 
         if decoded is None:
             return jsonify(error_message="Error decoding token"), 401
@@ -111,7 +110,7 @@ def login():
         try:
             ioc.ph.verify(stored_hash, password)
 
-        except VerifyMismatchError: # Esto también se podría escribir como argon2.VerifyMismatchError y no importar argon2.exceptions arriba, verdad? (Lo saqué de la lección de Redis)
+        except VerifyMismatchError: # Esto también se podría escribir como argon2.VerifyMismatchError y no importar argon2.exceptions arriba (Lo saqué de la lección de Redis)
             ioc.login_repo.register_login(user_id, now, fake_ip, "failed")
             return jsonify(error_message="Invalid credentials"), 400
 
@@ -494,8 +493,7 @@ def make_purchase():
         if token is None:
             return jsonify(error_message="Invalid token"), 401
 
-        test_token = token.replace("Bearer ","")
-        decoded = ioc.jwt_manager.decode(test_token)
+        decoded = ioc.jwt_manager.decode(token)
 
         if decoded is None:
             return jsonify(error_message="Error decoding token"), 401

@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy import Table, Column, Identity, ForeignKey, Integer, Float, String, Date, DateTime, CheckConstraint
-from datetime import date, timezone
+from datetime import date
 
 # Se encarga de crear las tablas y el engine
 
