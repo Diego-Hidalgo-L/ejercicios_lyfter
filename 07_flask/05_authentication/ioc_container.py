@@ -12,8 +12,8 @@ class IocContainer:
 
         # Repos:
         self.users_repo = UsersRepository(self.db_context.engine)
-        self.contacts_repo = ContactsRepository(self.db_context.engine)     # EXTRA
-        self.login_repo = LoginHistory(self.db_context.engine)              # EXTRA
+        self.contacts_repo = ContactsRepository(self.db_context.engine)
+        self.login_repo = LoginHistory(self.db_context.engine)
         self.products_repo = ProductsRepository(self.db_context.engine)
         self.invoices_repo = InvoicesRepository(self.db_context.engine)
         self.inv_products_repo = InvoiceProductsRepository(self.db_context.engine)

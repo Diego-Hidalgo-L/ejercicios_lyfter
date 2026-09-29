@@ -399,11 +399,53 @@ def insert_product():       # Podría generar un cache en este mismo endpoint.
         if result_name is None:
             return jsonify(error_message=f"Error inserting product into the database"), 500
 
+        # CHECK AND INVALIDATE 'ALL' CACHE:
+        all_key = ioc.cache_manager.generate_product_key("all")
+
+        if ioc.cache_manager.check_key(all_key)[0]:
+            delete_cache = ioc.cache_manager.delete_data(all_key)
+            print("Cache invalidated successfully:", delete_cache)
+        else:
+            print("No cache to invalidate")
+
         return jsonify(message=f"Product '{result_name}' inserted successfully"), 201
 
     except Exception as error:
         print(error)
         return jsonify(error_message=f"Error inserting product: {error}"), 500
+
+
+@app.route("/products/all", methods=["GET"])
+def get_all_products():
+    try:
+        token = request.headers.get("Authorization")
+        validation_result = validate_if_admin(token)
+
+        if validation_result is not True:
+            return validation_result
+
+        # CACHE:
+        all_key = ioc.cache_manager.generate_product_key("all")
+        
+        if ioc.cache_manager.check_key(all_key)[0]:
+            cached_data = json.loads(ioc.cache_manager.get_data(all_key))
+
+            return jsonify(cached_data), 200
+
+        # NO CACHE:
+        else:
+            all_products = ioc.products_repo.get_all_products()
+
+            if all_products is None:
+                return jsonify(error_message="Error getting all products from the database"), 500
+
+            ioc.cache_manager.store_data(all_key, json.dumps(all_products, default=str))
+
+            return all_products, 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error getting all products: {error}")
 
 
 @app.route("/products/<identifier>", methods=["GET"])
@@ -415,20 +457,27 @@ def get_product(identifier):
         if validation_result is not True:
             return validation_result
 
+        # CACHE:
         product_key = ioc.cache_manager.generate_product_key(identifier)
 
         if ioc.cache_manager.check_key(product_key)[0]:
             cached_data = json.loads(ioc.cache_manager.get_data(product_key))
+            ioc.cache_manager.expire(product_key, 600)
 
             return jsonify(cached_data), 200
-        
+
+        # Qué ventaja tiene definir un tiempo de expiración determinado?
+            # Esto asegura que los datos más consultados y utilizados son los que se mantienen en el caché.
+            # No tiene tanto sentido mantener datos que se consultaron una vez y nunca más, por ejemplo, y esto ayuda a ahorrar memoria en el caché.
+
+        # NO CACHE:
         else:
             product = ioc.products_repo.get_by_product_id(identifier)
 
             if product is None:
                 return jsonify(error_message=f"Product ID {identifier} not found"), 404
 
-            ioc.cache_manager.store_product_data(product_key, identifier, product[1], product[2], product[3], product[4])
+            ioc.cache_manager.store_product_data(product_key, product, 600)
 
             return jsonify(id=identifier, name=product[1], price=product[2], entry_date=product[3], stock=product[4]), 200
 
@@ -462,15 +511,25 @@ def update_product(identifier):
         if result is None:
             return jsonify(error_message=f"Error updating product ID {identifier}"), 500
 
+        # CACHE:
         product_key = ioc.cache_manager.generate_product_key(identifier)
         key_check = ioc.cache_manager.check_key(product_key)
-        print(key_check)
 
         if key_check[0]:
             delete_cache = ioc.cache_manager.delete_data(product_key)
             print("Cache invalidated successfully:", delete_cache)
         else:
-            print("No cache to delete")
+            print("No cache to invalidate")
+
+        # CHECK AND INVALIDATE 'ALL' CACHE:
+        all_key = ioc.cache_manager.generate_product_key("all")
+        all_check = ioc.cache_manager.check_key(all_key)
+
+        if all_check[0]:
+            delete_cache = ioc.cache_manager.delete_data(all_key)
+            print("Cache invalidated successfully:", delete_cache)
+        else:
+            print("No cache to invalidate")
 
         return jsonify(message=f"Product ID {identifier} updated successfully"), 200
 
@@ -498,11 +557,22 @@ def delete_product(identifier):
         if result is None:
             return jsonify(error_message=f"Error deleting product ID {identifier} from the database"), 500
 
+        # CACHE:
         product_key = ioc.cache_manager.generate_product_key(identifier)
         key_check = ioc.cache_manager.check_key(product_key)
 
         if key_check[0]:
             delete_cache = ioc.cache_manager.delete_data(product_key)
+            print("Cache invalidated successfully:", delete_cache)
+        else:
+            print("No cache to invalidate")
+
+        # CHECK AND INVALIDATE 'ALL' CACHE:
+        all_key = ioc.cache_manager.generate_product_key("all")
+        all_check = ioc.cache_manager.check_key(all_key)
+
+        if all_check[0]:
+            delete_cache = ioc.cache_manager.delete_data(all_key)
             print("Cache invalidated successfully:", delete_cache)
         else:
             print("No cache to invalidate")

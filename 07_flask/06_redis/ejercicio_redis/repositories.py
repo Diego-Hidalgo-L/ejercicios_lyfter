@@ -335,6 +335,35 @@ class ProductsRepository:
                 print(f"Error inserting product into the database: {error}")
                 return None
 
+    def get_all_products(self):
+        with self.engine.connect() as conn:
+            try:
+                stmt = select(db_context.products)
+                result = conn.execute(stmt)
+                products_raw = result.all()
+
+                if len(products_raw) == 0:
+                    return []
+                else:
+                    all_products = []
+
+                    for product in products_raw:
+                        product_dict = {
+                            "id": product[0],
+                            "name": product[1],
+                            "price": product[2],
+                            "entry_date": product[3],
+                            "stock": product[4]
+                        }
+                        all_products.append(product_dict)
+
+                return all_products
+
+            except Exception as error:
+                conn.rollback()
+                print(f"Error getting all products from the database: {error}")
+                return None
+
     def get_by_product_id(self, product_id):
         with self.engine.connect() as conn:
             try:
@@ -348,7 +377,7 @@ class ProductsRepository:
                     return product[0] # Sacamos la tupla de la lista retornada
 
             except Exception as error:
-                print(f"Error getting product ID {product_id}: {error}")
+                print(f"Error getting product ID {product_id} from the database: {error}")
                 return None
 
     def update(self, product_id, name=None, price=None, entry_date=None, stock=None):

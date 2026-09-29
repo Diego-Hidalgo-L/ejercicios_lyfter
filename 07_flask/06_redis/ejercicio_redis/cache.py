@@ -20,21 +20,21 @@ class CacheManager:
     def generate_product_key(self, identifier):
         return f"product:{identifier}"
 
-    def store_product_data(self, key, product_id, name, price, entry_date, stock, time_to_live=None):
+    def store_product_data(self, key, product, time_to_live=None):
         try:
             data = {
-                    "product_id": product_id,
-                    "name": name,
-                    "price": price,
-                    "entry_date": str(entry_date),
-                    "stock": stock
+                    "product_id": product[0],
+                    "name": product[1],
+                    "price": product[2],
+                    "entry_date": product[3],
+                    "stock": product[4]
                 }
 
-            if time_to_live is None:
-                self.redis_client.set(key, json.dumps(data))
+            if time_to_live is None:        # Esto ya no es necesario, verdad?  El 'None' se encarga?
+                self.redis_client.set(key, json.dumps(data, default=str))
 
             else:
-                self.redis_client.set(key, json.dumps(data), time_to_live)
+                self.redis_client.set(key, json.dumps(data, default=str), time_to_live)
 
             print("Data cached successfully")
 
@@ -45,7 +45,7 @@ class CacheManager:
 
     def store_data(self, key, value, time_to_live=None):
         try:
-            if time_to_live is None:
+            if time_to_live is None:        # Esto ya no es necesario, verdad? El 'None' se encarga?
                 self.redis_client.set(key, value)
             else:
                 self.redis_client.set(key, value, time_to_live)
@@ -96,3 +96,10 @@ class CacheManager:
 
         except redis.RedisError as error:
             print(f"An error occurred while deleting data from Redis: {error}")
+
+    def expire(self, key, exp):
+        try:
+            self.redis_client.expire(key, exp)
+
+        except redis.RedisError as error:
+            print(f"An error occurred while setting new expiry time: {error}")
