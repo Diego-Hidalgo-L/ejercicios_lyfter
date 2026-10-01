@@ -1,6 +1,8 @@
 from db import db_context
 from jwt_manager import JWTManager
+from cache import CacheManager
 from repositories import UsersRepository, ContactsRepository, LoginHistory, ProductsRepository, InvoicesRepository, InvoiceProductsRepository, TransactionsRepository
+from credentials.redis_creds import host, port, password
 from argon2 import PasswordHasher
 
 # Se encarga de todas las DEPENDENCIAS
@@ -9,6 +11,7 @@ class IocContainer:
         self.db_context = db_context
         self.jwt_manager = JWTManager()
         self.ph = PasswordHasher()
+        self.cache_manager = CacheManager(host=host, port=port, password=password)
 
         # Repos:
         self.users_repo = UsersRepository(self.db_context.engine)
