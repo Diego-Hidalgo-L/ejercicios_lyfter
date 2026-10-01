@@ -399,7 +399,7 @@ def insert_product():       # Podría generar un cache en este mismo endpoint.
             return jsonify(error_message=f"Error inserting product into the database"), 500
 
         # CHECK AND INVALIDATE 'ALL' CACHE:
-        all_key = ioc.cache_manager.generate_product_key("all")
+        all_key = ioc.cache_manager.generate_key("product", "all")
 
         if ioc.cache_manager.check_key(all_key)[0]:
             delete_cache = ioc.cache_manager.delete_data(all_key)

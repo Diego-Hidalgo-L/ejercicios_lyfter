@@ -321,6 +321,9 @@ class ProductsRepository:
     def insert(self, name, price, entry_date, stock):
         with self.engine.connect() as conn:
             try:
+                if entry_date is None:
+                    entry_date = date.today()
+                    
                 stmt = insert(db_context.products).returning(db_context.products.c.name).values(name=name, price=price, entry_date=entry_date, stock=stock)
                 result = conn.execute(stmt)
                 new_product_name = result.scalar_one_or_none()
