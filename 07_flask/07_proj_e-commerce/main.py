@@ -74,7 +74,7 @@ def login():
             ioc.ph.verify(stored_hash, password)
         except VerifyMismatchError:
             # ioc.login_repo.register_login(user_id, now, fake_ip, "failed")        # if Login History
-            return jsonify(error_message="Invalid credentials"), 400
+            return jsonify(error_message="Invalid credentials"), 400                                                ######
 
         access_token = ioc.jwt_manager.encode(user_id, "access")
         refresh_token = ioc.jwt_manager.encode(user_id, "refresh")
@@ -106,7 +106,7 @@ def me(identifier):
             return result
 
         user_id = result
-        user = User.get_by_user_id(identifier)
+        user = User.get_by_id(identifier)
         username = user.id
         role = user.role
 
@@ -115,6 +115,59 @@ def me(identifier):
     except Exception as error:
         print(error)
         return jsonify(error_message=f"Error accessing user profile: {error}"), 500
+
+
+@app.route("/users/<identifier>", methods=["PATCH"])
+def update_user(identifier):
+    try:
+        token = request.headers.get("Authorization")
+        user = User.get_by_id(identifier)
+
+        if not user:
+            return jsonify(error_message=f"User ID {identifier} not found"), 404
+        
+        validation, result = validate_if_same_user_or_admin(token, identifier)
+
+        if validation is not True:
+            return result
+
+        user_id = result
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        result = user.update(username=username, password=password)
+
+        if result is None:
+            return jsonify(error_message=f"Error updating user ID {user_id}"), 403
+        
+        return jsonify(message=f"User ID {user_id} updated successfully"), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error updating user ID {user_id}: {error}"), 500
+
+
+@app.route("/users/<identifier>", methods=["DELETE"])
+def delete_user(identifier):
+    try:
+        token = request.headers.get("Authorization")
+        validation, result = validate_if_same_user_or_admin(token, identifier)
+
+        if validation is not True:
+            return result
+
+        user_id = result
+        delete_result = ioc.users_repo.delete(user_id)
+
+        if delete_result is None:
+            return jsonify(error_message=f"Error deleting user ID {user_id} from the database"), 500
+
+        return jsonify(message=f"User ID {user_id} deleted successfully"), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error deleting user ID {user_id}: {error}"), 500
 
 # ------------------- USERS end -------------------
 

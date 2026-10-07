@@ -1,4 +1,5 @@
 from ioc_container import ioc
+from db import User
 from flask import Response, jsonify
 
 # Podría convertir este role validation en una función, un método o un decorator. Cuál sería mejor?
@@ -16,7 +17,7 @@ def validate_if_admin(token):
         return jsonify(error_message="Error decoding token"), 401
 
     user_id = decoded['id']
-    user = ioc.users_repo.get_by_user_id(user_id)
+    user = User.get_by_id(user_id)
 
     if user is None:
         return jsonify(error_message="User not found"), 404
@@ -41,15 +42,16 @@ def validate_if_same_user_or_admin(token, identifier):
         return False, (jsonify(error_message="Error decoding token"), 401)
 
     decoded_user_id = decoded['id']
-    decoded_user_role = ioc.users_repo.get_by_user_id(decoded_user_id)[3]
+    user = User.get_by_id(decoded_user_id)
+    decoded_user_role = user.role
 
     # with identifier
-    user = ioc.users_repo.get_by_user_id(identifier)
+    user = User.get_by_id(identifier)
 
     if user is None:
         return False, (jsonify(error_message=f"User ID {identifier} not found"), 404)
 
-    user_id = user[0]
+    user_id = user.id
 
     if user_id != decoded_user_id and decoded_user_role != "Administrator":
         return False, (jsonify(error_message="Cannot access page"), 403)

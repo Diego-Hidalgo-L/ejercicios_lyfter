@@ -1,3 +1,4 @@
+from ioc_container import ioc
 from db_engine import engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
 from sqlalchemy import MetaData, Identity, ForeignKey, CheckConstraint, Integer, Float, String, Date
@@ -79,30 +80,29 @@ class User(Base):
                 session.rollback()
                 print(f"Error getting user with username '{username}' from the database: {error}")
 
-    def update(self, username=None, password=None, full_name=None): # role solo para Administrator?
+    def update(self, username=None, password=None, full_name=None): # 'role' solo permitido para Administrator?
         with Session(engine) as session:
             try:
-                user = session.get(User, self.id) # Este get lo podría hacer en el endpoint
+                user = session.get(User, self.id) # vuelvo a obtener el objeto porque el del endpoint pertenece a otro session.
 
-                if user:
-                    if username is not None:
-                        user.username = username
+                if username is not None:
+                    user.username = username
 
-                    if password is not None:
-                        # new_password = Asegurarme de hash la contraseña antes de guardarla.
-                        user.password = password
+                if password is not None:
+                    new_password = ioc.ph.hash(password)
+                    user.password = new_password
 
-                    if full_name is not None:
-                        user.full_name = full_name
-                else:
-                    print(f"User ID {self.id} not found")
+                if full_name is not None:
+                    user.full_name = full_name
 
                 session.commit()
-                print(f"User ID {user.id} updated successfully") # return?
+                print(f"User ID {user.id} updated successfully in the database")
+                return True
 
             except Exception as error:
                 session.rollback()
                 print(f"Error updating user ID {self.id} on the database: {error}")
+                return None
 
     def delete(self):
         with Session(engine) as session:

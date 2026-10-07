@@ -1,7 +1,9 @@
 SET search_path TO e_commerce;
 
-SELECT * FROM users;
+ALTER TABLE users
+ALTER COLUMN id RESTART WITH 1;
 
+SELECT * FROM users;
 
 DROP TABLE invoice_products;
 DROP TABLE invoices;
