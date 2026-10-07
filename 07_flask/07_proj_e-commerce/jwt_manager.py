@@ -8,7 +8,7 @@ with open("keys/public.pem", "r") as file:
 with open("keys/private.pem", "r") as file:
     private_key = file.read()
 
-# Se encarga de crear los tokens
+
 class JWTManager:
     def __init__(self, public_key=public_key, private_key=private_key, algorithm="RS256"):
         self.public_key = public_key
