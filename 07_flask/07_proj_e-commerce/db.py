@@ -7,7 +7,6 @@ from datetime import date
 
 meta_obj = MetaData(schema="e_commerce")
 
-# Depende de cómo maneje el main.py tendré que agregar returns y return None's en todos los métodos.
 
 class Base(DeclarativeBase):
     metadata = meta_obj
@@ -26,34 +25,29 @@ class User(Base):
     invoices: Mapped[list["Invoice"]] = relationship(back_populates="user")
 
     # Methods:
-    def add_initial_admin(self):    # es necesario este método? No podría nada más usar el add(self) de abajo, aún para crear el Admin inicial?
+    def format_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "password": self.password,
+            "email": self.email,
+            "full_name": self.full_name,
+            "role": self.role
+        }
+
+    @staticmethod
+    def get_all():
         with Session(engine) as session:
             try:
-                session.add(self)
-                session.commit()
-                print("Initial Administrator added successfully")
+                stmt = select(User)
+                raw_users = session.scalars(stmt).all()
+                users = [user.format_dict() for user in raw_users]
 
-                session.refresh(self)
-                return self
+                return users
 
             except Exception as error:
                 session.rollback()
-                print("Error inserting initial Administrator into the database:", error)
-                return None
-
-    def add(self):
-        with Session(engine) as session:
-            try:
-                session.add(self)
-                session.commit()
-                print("User added successfully")
-
-                session.refresh(self)
-                return self
-
-            except Exception as error:
-                session.rollback()
-                print("Error adding user to the database:", error)
+                print(f"Error getting all users from the database: {error}")
                 return None
 
     @staticmethod
@@ -79,6 +73,36 @@ class User(Base):
             except Exception as error:
                 session.rollback()
                 print(f"Error getting user with username '{username}' from the database: {error}")
+
+    def add_initial_admin(self):    # es necesario este método? No podría nada más usar el add(self) de abajo, aún para crear el Admin inicial?
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("Initial Administrator added successfully")
+
+                session.refresh(self)
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print("Error inserting initial Administrator into the database:", error)
+                return None
+
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("User added successfully to the database")
+
+                session.refresh(self)
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print("Error adding user to the database:", error)
+                return None
 
     def update(self, username=None, password=None, full_name=None): # 'role' solo permitido para Administrator?
         with Session(engine) as session:
@@ -109,16 +133,15 @@ class User(Base):
             try:
                 user = session.get(User, self.id)
 
-                if user:
-                    session.delete(user)
-                    session.commit()
-                    print(f"User ID {user.id} deleted successfully")
-                else:
-                    print(f"User ID {self.id} not found")
+                session.delete(user)
+                session.commit()
+                print(f"User ID {user.id} deleted successfully from the database")
+                return True
 
             except Exception as error:
                 session.rollback()
                 print(f"Error deleting user ID {self.id} from the database:", error)
+                return None
 
 
 class Product(Base):
@@ -133,12 +156,48 @@ class Product(Base):
     in_invoices: Mapped[list["InvoiceProduct"]] = relationship(back_populates="product")
 
     # Methods:
+    def format_dict(self):
+        return {
+                "id": self.id,
+                "name": self.name,
+                "price": self.price,
+                "entry_date": str(self.entry_date),
+                "stock": self.stock
+            }
+
+    @staticmethod
+    def get_all():
+        with Session(engine) as session:
+            try:
+                stmt = select(Product)
+                raw_products = session.scalars(stmt).all()
+                products = [product.format_dict() for product in raw_products]
+
+                return products
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error getting all products from the database: {error}")
+                return None
+
+    @staticmethod
+    def get_by_id(product_id):
+        with Session(engine) as session:
+            try:
+                product = session.get(Product, product_id)
+                return product
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error getting product ID {product_id} from the database: {error}")
+                return None
+
     def add(self):
         with Session(engine) as session:
             try:
                 session.add(self)
                 session.commit()
-                print("Product added successfully")
+                print("Product added successfully to the database")
 
                 session.refresh(self)
                 return self
@@ -147,59 +206,46 @@ class Product(Base):
                 session.rollback()
                 print(f"Error adding product to the database: {error}")
 
-    def get(self):
-        with Session(engine) as session:
-            try:
-                product = session.get(Product, self.id)       # Tal vez hay que más bien usar session.scalars(stmt).first()
-                return product
-
-            except Exception as error:
-                session.rollback()
-                print(f"Error getting product ID {self.id} from the database: {error}")
-
     def update(self, name=None, price=None, entry_date=None, stock=None):
         with Session(engine) as session:
             try:
                 product = session.get(Product, self.id)
 
-                if product:
-                    if name is not None:
-                        product.name = name
+                if name is not None:
+                    product.name = name
 
-                    if price is not None:
-                        product.price = price
+                if price is not None:
+                    product.price = price
 
-                    if entry_date is not None:
-                        product.entry_date = entry_date
+                if entry_date is not None:
+                    product.entry_date = entry_date
 
-                    if stock is not None:
-                        product.stock = stock
-                else:
-                    print(f"Product ID {self.id} not found")
+                if stock is not None:
+                    product.stock = stock
 
                 session.commit()
-                print(f"Product ID {product.id} updated successfully")
+                print(f"Product ID {product.id} updated successfully in the database")
+                return True
 
             except Exception as error:
                 session.rollback()
                 print(f"Error updating product ID {self.id} on the database: {error}")
+                return None
 
     def delete(self):
         with Session(engine) as session:
             try:
                 product = session.get(Product, self.id)
 
-                if product:
-                    session.delete(product)
-                    session.commit()
-                    print(f"Product ID {product.id} deleted successfully")
-                else:
-                    print(f"Product ID {self.id} not found")
+                session.delete(product)
+                session.commit()
+                print(f"Product ID {product.id} deleted successfully from the database")
+                return True
 
             except Exception as error:
                 session.rollback()
                 print(f"Error deleting product ID {self.id} from the database: {error}")
-
+                return None
 
 
 class Invoice(Base):
@@ -213,6 +259,42 @@ class Invoice(Base):
     products: Mapped[list["InvoiceProduct"]] = relationship(back_populates="invoice")
 
     # Methods:
+    def format_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "purchase_date": self.purchase_date
+        }
+
+    @staticmethod
+    def get_all():
+        with Session(engine) as session:
+            try:
+                stmt = select(Invoice)
+                raw_invoices = session.scalars(stmt).all()
+                invoices = [invoice.format_dict() for invoice in raw_invoices]
+
+                return invoices
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error getting user's invoices: {error}")
+                return None
+
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("Invoice added successfully to the database")
+
+                session.refresh(self)
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error adding invoice to the database: {error}")
+                return None
 
 
 class InvoiceProduct(Base):
@@ -228,6 +310,43 @@ class InvoiceProduct(Base):
     product: Mapped["Product"] = relationship(back_populates="in_invoices")
 
     # Methods:
+    def format_dict(self):
+        return {
+            "product_id": self.product_id,
+            "quantity": self.quantity,
+            "total_price": self.total_price
+        }
+
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)               
+                session.commit()
+                print("Invoice products added successfully to the database")
+
+                session.refresh(self)
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error insert invoice products into the database: {error}")
+                return None
+
+    @staticmethod
+    def get_by_id(invoice_id):
+        with Session(engine) as session:
+            try:
+                stmt = select(InvoiceProduct).where(InvoiceProduct.invoice_id == invoice_id)
+                raw_invoice_products = session.scalar(stmt)
+                invoice_products = [inv_product.format_dict() for inv_product in raw_invoice_products]
+
+                return invoice_products
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error getting invoice products from the database: {error}")
+                return None
+
 
 # IMPLEMENTAR + MODIFICAR:
 # los métodos del repositorio anterior de authentication en estas clases.

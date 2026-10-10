@@ -22,7 +22,7 @@ def validate_if_admin(token):
     if user is None:
         return jsonify(error_message="User not found"), 404
 
-    user_role = user[3]
+    user_role = user.role
 
     if user_role != "Administrator":
         return jsonify(error_message="Cannot access page"), 403
@@ -57,3 +57,15 @@ def validate_if_same_user_or_admin(token, identifier):
         return False, (jsonify(error_message="Cannot access page"), 403)
 
     return True, user_id
+
+
+def validate_user(token):
+    if token is None:
+        return jsonify(error_message="Invalid token"), 401
+
+    decoded = ioc.jwt_manager.decode(token)
+
+    if decoded is None:
+        return jsonify(error_message="Error decoding token"), 401
+
+    return True, decoded
