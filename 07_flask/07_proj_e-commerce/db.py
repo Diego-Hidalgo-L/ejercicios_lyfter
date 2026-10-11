@@ -1,7 +1,7 @@
 from ioc_container import ioc
 from db_engine import engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
-from sqlalchemy import MetaData, Identity, ForeignKey, CheckConstraint, Integer, Float, String, Date
+from sqlalchemy import MetaData, Identity, ForeignKey, CheckConstraint, Integer, Float, String, Date, Boolean
 from sqlalchemy import select, func
 from datetime import date
 
@@ -18,11 +18,13 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     username: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(200), nullable=False)
-    email: Mapped[str] = mapped_column(String(30), unique=True, nullable=False) # Hay que volver a crear las tablas para incluir 'email'
+    email: Mapped[str] = mapped_column(String(30), unique=True, nullable=False) # Hay que volver a crear las tablas para incluir 'email'ƒ
     full_name: Mapped[str] = mapped_column(String(30), nullable=False)
-    role: Mapped[str] = mapped_column(String(30), CheckConstraint("role in ('Administrator', 'User')"), nullable=False)
+    role: Mapped[str] = mapped_column(String(30), CheckConstraint("role IN ('Administrator', 'User')"), nullable=False)
 
     invoices: Mapped[list["Invoice"]] = relationship(back_populates="user")
+    billing_addresses: Mapped[list["BillingAddress"]] = relationship(back_populates="user")
+    payment_methods: Mapped[list["UserPaymentMethod"]] = relationship(back_populates="user")
 
     # Methods:
     def format_dict(self):
@@ -46,9 +48,8 @@ class User(Base):
                 return users
 
             except Exception as error:
-                session.rollback()
                 print(f"Error getting all users from the database: {error}")
-                return None
+                return False
 
     @staticmethod
     def get_by_id(user_id):
@@ -58,9 +59,8 @@ class User(Base):
                 return user
 
             except Exception as error:
-                session.rollback()
                 print(f"Error getting user ID {user_id} from the database: {error}")
-                return None
+                return False
 
     @staticmethod
     def get_by_username(username):
@@ -71,8 +71,8 @@ class User(Base):
                 return user
 
             except Exception as error:
-                session.rollback()
                 print(f"Error getting user with username '{username}' from the database: {error}")
+                return False
 
     def add_initial_admin(self):    # es necesario este método? No podría nada más usar el add(self) de abajo, aún para crear el Admin inicial?
         with Session(engine) as session:
@@ -87,7 +87,7 @@ class User(Base):
             except Exception as error:
                 session.rollback()
                 print("Error inserting initial Administrator into the database:", error)
-                return None
+                return False
 
     def add(self):
         with Session(engine) as session:
@@ -102,7 +102,7 @@ class User(Base):
             except Exception as error:
                 session.rollback()
                 print("Error adding user to the database:", error)
-                return None
+                return False
 
     def update(self, username=None, password=None, full_name=None): # 'role' solo permitido para Administrator?
         with Session(engine) as session:
@@ -126,7 +126,7 @@ class User(Base):
             except Exception as error:
                 session.rollback()
                 print(f"Error updating user ID {self.id} on the database: {error}")
-                return None
+                return False
 
     def delete(self):
         with Session(engine) as session:
@@ -141,7 +141,7 @@ class User(Base):
             except Exception as error:
                 session.rollback()
                 print(f"Error deleting user ID {self.id} from the database:", error)
-                return None
+                return False
 
 
 class Product(Base):
@@ -176,9 +176,8 @@ class Product(Base):
                 return products
 
             except Exception as error:
-                session.rollback()
                 print(f"Error getting all products from the database: {error}")
-                return None
+                return False
 
     @staticmethod
     def get_by_id(product_id):
@@ -188,9 +187,8 @@ class Product(Base):
                 return product
 
             except Exception as error:
-                session.rollback()
                 print(f"Error getting product ID {product_id} from the database: {error}")
-                return None
+                return False
 
     def add(self):
         with Session(engine) as session:
@@ -205,6 +203,7 @@ class Product(Base):
             except Exception as error:
                 session.rollback()
                 print(f"Error adding product to the database: {error}")
+                return True
 
     def update(self, name=None, price=None, entry_date=None, stock=None):
         with Session(engine) as session:
@@ -230,7 +229,7 @@ class Product(Base):
             except Exception as error:
                 session.rollback()
                 print(f"Error updating product ID {self.id} on the database: {error}")
-                return None
+                return False
 
     def delete(self):
         with Session(engine) as session:
@@ -245,7 +244,128 @@ class Product(Base):
             except Exception as error:
                 session.rollback()
                 print(f"Error deleting product ID {self.id} from the database: {error}")
-                return None
+                return False
+
+
+class BillingAddress(Base):
+    __tablename__ = "billing_addresses"
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    address: Mapped[str] = mapped_column(String(200), nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="billing_addresses")
+
+    # Methods:
+    def format_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "address": self.address
+        }
+
+    @staticmethod
+    def get_all_by_user_id(user_id):
+        with Session(engine) as session:
+            try:
+                stmt = select(BillingAddress).where(BillingAddress.user_id == user_id)
+                raw_billing_addresses = session.scalars(stmt).all()
+                billing_addresses = [billing_address.format_dict() for billing_address in raw_billing_addresses]
+
+                return billing_addresses
+
+            except Exception as error:
+                print(f"Error getting user's billing addresses (ID: {user_id}): {error}")
+                return False
+
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("Billing address added successfully to the database")
+
+                session.refresh(self)
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error adding product to the database: {error}")
+                return False
+
+
+class PaymentMethod(Base):
+    __tablename__ = "payment_methods"
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    method: Mapped[str] = mapped_column(String(20), CheckConstraint("method IN ('Credit/Debit Card', 'Transfer', 'PayPal')"), nullable=False)
+
+    user_payment_methods: Mapped[list["UserPaymentMethod"]] = relationship(back_populates="payment_method")
+
+    # Methods
+    def format_dict(self):
+        return {
+            "id": self.id,
+            "method": self.method
+        }
+
+    @staticmethod
+    def get_all_by_user_id(user_id):
+        with Session(engine) as session:
+            try:
+                stmt = select(PaymentMethod).where(PaymentMethod.user_id == user_id)
+                raw_payment_methods = session.scalars(stmt).all()
+                payment_methods = [payment_method.format_dict() for payment_method in raw_payment_methods]
+
+                return payment_methods
+
+            except Exception as error:
+                print(f"Error getting user's payment methods (user ID: {user_id}): {error}")
+                return False
+
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("Payment method added successfully to the database")
+
+                session.refresh(self)
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error adding payment method to the database: {error}")
+                return False
+
+
+class UserPaymentMethod(Base):      # LINK TABLE N:N | Users:PaymentMethods
+    __tablename__ = "user_payment_methods"
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    payment_method_id: Mapped[int] = mapped_column(Integer, ForeignKey("payment_methods.id"), nullable=False)
+    alias: Mapped[str] = mapped_column(String(20), nullable=True)
+    is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    user: Mapped["User"] = relationship(back_populates="payment_methods")
+    payment_method: Mapped["PaymentMethod"] = relationship(back_populates="user_payment_methods")
+
+    # Methods:
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                session.refresh(self)
+                print(f"Payment method added for user ID {self.id} successfully to the database")
+                
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error adding payment method to the database: {error}")
+                return False
 
 
 class Invoice(Base):
@@ -255,7 +375,7 @@ class Invoice(Base):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     purchase_date: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
 
-    user: Mapped["User"] = relationship(back_populates=("invoices"))
+    user: Mapped["User"] = relationship(back_populates="invoices")
     products: Mapped[list["InvoiceProduct"]] = relationship(back_populates="invoice")
 
     # Methods:
@@ -267,19 +387,29 @@ class Invoice(Base):
         }
 
     @staticmethod
-    def get_all():
+    def get_all_by_user_id(user_id):        # AGREGAR -> info de InvoiceProducts
         with Session(engine) as session:
             try:
-                stmt = select(Invoice)
+                stmt = select(Invoice).where(Invoice.user_id == user_id)
                 raw_invoices = session.scalars(stmt).all()
                 invoices = [invoice.format_dict() for invoice in raw_invoices]
 
                 return invoices
 
             except Exception as error:
-                session.rollback()
-                print(f"Error getting user's invoices: {error}")
-                return None
+                print(f"Error getting user's invoices from the database (ID: {user_id}): {error}")
+                return False
+
+    @staticmethod
+    def get_by_id(invoice_id):
+        with Session(engine) as session:
+            try:
+                invoice = session.get(Invoice, invoice_id)
+                return invoice
+
+            except Exception as error:
+                print(f"Error getting invoice ID {invoice_id} from the database: {error}")
+                return False
 
     def add(self):
         with Session(engine) as session:
@@ -294,7 +424,7 @@ class Invoice(Base):
             except Exception as error:
                 session.rollback()
                 print(f"Error adding invoice to the database: {error}")
-                return None
+                return False
 
 
 class InvoiceProduct(Base):
@@ -330,7 +460,7 @@ class InvoiceProduct(Base):
             except Exception as error:
                 session.rollback()
                 print(f"Error insert invoice products into the database: {error}")
-                return None
+                return False
 
     @staticmethod
     def get_by_id(invoice_id):
@@ -343,13 +473,8 @@ class InvoiceProduct(Base):
                 return invoice_products
 
             except Exception as error:
-                session.rollback()
                 print(f"Error getting invoice products from the database: {error}")
-                return None
-
-
-# IMPLEMENTAR + MODIFICAR:
-# los métodos del repositorio anterior de authentication en estas clases.
+                return False
 
 
 # CREAR:

@@ -6,7 +6,7 @@ from flask import Response, jsonify
     # No lo hice decorator, porque los decorators reciben los mismos parámetros de la función que están decorando.
     # Este validation solo recibe un token que se obtiene desde ADENTRO de la función, no como parámetro de esa función.
 
-def validate_if_admin(token):
+def validate_admin(token):
     if token is None:
         return jsonify(error_message="Invalid token"), 401
 
@@ -30,7 +30,7 @@ def validate_if_admin(token):
     return True
 
 
-def validate_if_same_user_or_admin(token, identifier):
+def validate_same_user_or_admin(token, identifier):
     if token is None:
         return False, (jsonify(error_message="Invalid token"), 401)
 

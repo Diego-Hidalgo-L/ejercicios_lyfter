@@ -1,4 +1,4 @@
-from db import Base, User, Product, Invoice, InvoiceProduct
+from db import Base, User, Product, Invoice, InvoiceProduct, BillingAddress, PaymentMethod, UserPaymentMethod
 from db_engine import engine
 
 if __name__ == "__main__":
