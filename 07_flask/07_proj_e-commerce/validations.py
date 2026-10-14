@@ -6,6 +6,18 @@ from flask import Response, jsonify
     # No lo hice decorator, porque los decorators reciben los mismos parámetros de la función que están decorando.
     # Este validation solo recibe un token que se obtiene desde ADENTRO de la función, no como parámetro de esa función.
 
+def validate_user(token):
+    if token is None:
+        return jsonify(error_message="Invalid token"), 401
+
+    decoded = ioc.jwt_manager.decode(token)
+
+    if decoded is None:
+        return jsonify(error_message="Error decoding token"), 401
+
+    return True, decoded
+
+
 def validate_admin(token):
     if token is None:
         return jsonify(error_message="Invalid token"), 401
@@ -57,15 +69,3 @@ def validate_same_user_or_admin(token, identifier):
         return False, (jsonify(error_message="Cannot access page"), 403)
 
     return True, user_id
-
-
-def validate_user(token):
-    if token is None:
-        return jsonify(error_message="Invalid token"), 401
-
-    decoded = ioc.jwt_manager.decode(token)
-
-    if decoded is None:
-        return jsonify(error_message="Error decoding token"), 401
-
-    return True, decoded

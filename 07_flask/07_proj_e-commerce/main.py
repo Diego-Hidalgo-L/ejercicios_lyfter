@@ -201,8 +201,8 @@ def update_user(identifier):
         
         result = user.update(username=username, password=password)
 
-        if result is False:
-            return jsonify(error_message=f"Error updating user ID {user_id}"), 403
+        if result is not True:
+            raise Exception
         
         return jsonify(message=f"User ID {user_id} updated successfully"), 200
 
@@ -267,14 +267,14 @@ def register_billing_address(identifier):
         return jsonify(error_message=f"Error registering billing address for user ID {identifier}: {error}"), 500
 
 
-@app.route("/me/<identifier>/billing", methods=["GET"])
-def get_my_billing_addresses(identifier):
+@app.route("/me/<identifier>/billing/all", methods=["GET"])
+def get_all_my_billing_addresses(identifier):
     try:
         token = request.headers.get("Authorization")
         validation_result, result = validate_same_user_or_admin(token, identifier)
 
         if validation_result is not True:
-            return validation_result
+            return result
 
         billing_addresses = BillingAddress.get_all_by_user_id(result)
 
@@ -288,6 +288,89 @@ def get_my_billing_addresses(identifier):
     except Exception as error:
         print(error)
         return jsonify(error_message=f"Error getting user's billing addresses (user ID: {identifier}): {error}"), 500
+
+
+@app.route("/me/<identifier>/billing/<billing_id>", methods=["GET"])
+def get_billing_address(identifier, billing_id):
+    try:
+        token = request.headers.get("Authorization")
+        validation_result, result = validate_same_user_or_admin(token, identifier)
+
+        if validation_result is not True:
+            return result
+
+        billing_address = BillingAddress.get_by_id(billing_id)
+
+        if billing_address is None:
+            return jsonify(error_message="No billing addresses found"), 404
+        elif billing_address is False:
+            raise Exception
+
+        return billing_address.format_dict(), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error getting user's billing addresses (user ID: {identifier}): {error}"), 500
+
+
+@app.route("/me/<identifier>/billing/<billing_id>", methods=["PATCH"])
+def update_billing_address(identifier, billing_id):
+    try:
+        token = request.headers.get("Authorization")
+        validation_result, result = validate_same_user_or_admin(token, identifier)
+
+        if validation_result is not True:
+            return result
+
+        billing_address = BillingAddress.get_by_id(billing_id)
+
+        if billing_address is None:
+            return jsonify(error_message="No billing addresses found"), 404
+        elif billing_address is False:
+            raise Exception
+
+        data = request.get_json()
+        new_address = data.get('address')
+
+        result = billing_address.update(new_address)
+
+        if result is False:
+            raise Exception
+
+        return jsonify(message=f"Billing address for user ID {identifier} updated successfully"), 200
+        
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error updating user's (ID: {identifier}) billing address: {error}"), 500
+
+
+@app.route("/me/<identifier>/billing/<billing_id>", methods=["DELETE"])
+def delete_billing_address(identifier, billing_id):
+    try:
+        token = request.headers.get("Authorization")
+        validation, result = validate_same_user_or_admin(token, identifier)
+
+        if validation is not True:
+            return result
+
+        billing_address = BillingAddress.get_by_id(billing_id)
+
+        if billing_address is None:
+            return jsonify(error_message=f"Billing address ID {identifier} not found"), 404
+        elif billing_address is False:
+            raise Exception
+
+        delete_result = billing_address.delete()
+
+        if delete_result is False:
+            return jsonify(error_message=f"Error deleting billing address ID {billing_id} from the database"), 500
+
+        return jsonify(message=f"Billing address for user ID {identifier} deleted successfully"), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error deleting user's (ID: {identifier}) billing address: {error}"), 500
+
 
 # ------------------- BILLING ADDRESS end -------------------
 
@@ -506,7 +589,7 @@ def update_product(identifier):
         result = product.update(name=name, price=price, entry_date=entry_date, stock=stock)
 
         if result is False:
-            return jsonify(error_message=f"Error updating product ID {identifier}"), 500
+            raise Exception
 
         # # SINGLE PRODUCT CACHE:
         # product_key = ioc.cache_manager.generate_key("product", identifier)
@@ -593,7 +676,7 @@ def get_my_invoices(identifier):
         validation_result, result = validate_same_user_or_admin(token, identifier)
 
         if validation_result is not True:
-            return validation_result
+            return result
 
         invoices = Invoice.get_all_by_user_id(result)
 

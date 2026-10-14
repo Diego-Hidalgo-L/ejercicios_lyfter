@@ -18,7 +18,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     username: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(200), nullable=False)
-    email: Mapped[str] = mapped_column(String(30), unique=True, nullable=False) # Hay que volver a crear las tablas para incluir 'email'ƒ
+    email: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     full_name: Mapped[str] = mapped_column(String(30), nullable=False)
     role: Mapped[str] = mapped_column(String(30), CheckConstraint("role IN ('Administrator', 'User')"), nullable=False)
 
@@ -144,6 +144,168 @@ class User(Base):
                 return False
 
 
+class BillingAddress(Base):
+    __tablename__ = "billing_addresses"
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    address: Mapped[str] = mapped_column(String(200), nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="billing_addresses")
+
+    # Methods:
+    def format_dict(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "address": self.address
+        }
+
+    @staticmethod
+    def get_all_by_user_id(user_id):
+        with Session(engine) as session:
+            try:
+                stmt = select(BillingAddress).where(BillingAddress.user_id == user_id)
+                raw_billing_addresses = session.scalars(stmt).all()
+                billing_addresses = [billing_address.format_dict() for billing_address in raw_billing_addresses]
+
+                return billing_addresses
+
+            except Exception as error:
+                print(f"Error getting user's billing addresses (ID: {user_id}): {error}")
+                return False
+
+    @staticmethod
+    def get_by_id(billing_id):
+        with Session(engine) as session:
+            try:
+                billing_address = session.get(BillingAddress, billing_id)
+                return billing_address
+
+            except Exception as error:
+                print(f"Error getting user's billing addresses (ID: {billing_id}): {error}")
+                return False
+
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("Billing address added successfully to the database")
+
+                session.refresh(self)
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error adding product to the database: {error}")
+                return False
+
+    def update(self, new_address):
+        with Session(engine) as session:
+            try:
+                my_address = session.get(BillingAddress, self.id)
+                my_address.address = new_address
+
+                session.commit()
+                print(f"Billing address ID {my_address.id} updated successfully in the database")
+                return True
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error updating billing address ID {self.id} on the database: {error}")
+                return False
+
+    def delete(self):
+        with Session(engine) as session:
+            try:
+                my_address = session.get(BillingAddress, self.id)
+
+                session.delete(my_address)
+                session.commit()
+                print(f"Billing address ID {my_address.id} deleted successfully from the database")
+                return True
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error updating billing address ID {self.id} on the database: {error}")
+                return False
+
+
+class PaymentMethod(Base):
+    __tablename__ = "payment_methods"
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    method: Mapped[str] = mapped_column(String(20), CheckConstraint("method IN ('Credit/Debit Card', 'Transfer', 'PayPal')"), nullable=False)
+
+    user_payment_methods: Mapped[list["UserPaymentMethod"]] = relationship(back_populates="payment_method")
+
+    # Methods
+    def format_dict(self):
+        return {
+            "id": self.id,
+            "method": self.method
+        }
+
+    @staticmethod
+    def get_all_by_user_id(user_id):
+        with Session(engine) as session:
+            try:
+                stmt = select(PaymentMethod).where(PaymentMethod.user_id == user_id)
+                raw_payment_methods = session.scalars(stmt).all()
+                payment_methods = [payment_method.format_dict() for payment_method in raw_payment_methods]
+
+                return payment_methods
+
+            except Exception as error:
+                print(f"Error getting user's payment methods (user ID: {user_id}): {error}")
+                return False
+
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("Payment method added successfully to the database")
+
+                session.refresh(self)
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error adding payment method to the database: {error}")
+                return False
+
+
+class UserPaymentMethod(Base):      # LINK TABLE N:N | Users:PaymentMethods
+    __tablename__ = "user_payment_methods"
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    payment_method_id: Mapped[int] = mapped_column(Integer, ForeignKey("payment_methods.id"), nullable=False)
+    alias: Mapped[str] = mapped_column(String(20), nullable=True)
+    is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    user: Mapped["User"] = relationship(back_populates="payment_methods")
+    payment_method: Mapped["PaymentMethod"] = relationship(back_populates="user_payment_methods")
+
+    # Methods:
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                session.refresh(self)
+                print(f"Payment method added for user ID {self.id} successfully to the database")
+                
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error adding payment method to the database: {error}")
+                return False
+
+
 class Product(Base):
     __tablename__ = "products"
 
@@ -247,127 +409,6 @@ class Product(Base):
                 return False
 
 
-class BillingAddress(Base):
-    __tablename__ = "billing_addresses"
-
-    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
-    address: Mapped[str] = mapped_column(String(200), nullable=False)
-
-    user: Mapped["User"] = relationship(back_populates="billing_addresses")
-
-    # Methods:
-    def format_dict(self):
-        return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "address": self.address
-        }
-
-    @staticmethod
-    def get_all_by_user_id(user_id):
-        with Session(engine) as session:
-            try:
-                stmt = select(BillingAddress).where(BillingAddress.user_id == user_id)
-                raw_billing_addresses = session.scalars(stmt).all()
-                billing_addresses = [billing_address.format_dict() for billing_address in raw_billing_addresses]
-
-                return billing_addresses
-
-            except Exception as error:
-                print(f"Error getting user's billing addresses (ID: {user_id}): {error}")
-                return False
-
-    def add(self):
-        with Session(engine) as session:
-            try:
-                session.add(self)
-                session.commit()
-                print("Billing address added successfully to the database")
-
-                session.refresh(self)
-                return self
-
-            except Exception as error:
-                session.rollback()
-                print(f"Error adding product to the database: {error}")
-                return False
-
-
-class PaymentMethod(Base):
-    __tablename__ = "payment_methods"
-
-    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
-    method: Mapped[str] = mapped_column(String(20), CheckConstraint("method IN ('Credit/Debit Card', 'Transfer', 'PayPal')"), nullable=False)
-
-    user_payment_methods: Mapped[list["UserPaymentMethod"]] = relationship(back_populates="payment_method")
-
-    # Methods
-    def format_dict(self):
-        return {
-            "id": self.id,
-            "method": self.method
-        }
-
-    @staticmethod
-    def get_all_by_user_id(user_id):
-        with Session(engine) as session:
-            try:
-                stmt = select(PaymentMethod).where(PaymentMethod.user_id == user_id)
-                raw_payment_methods = session.scalars(stmt).all()
-                payment_methods = [payment_method.format_dict() for payment_method in raw_payment_methods]
-
-                return payment_methods
-
-            except Exception as error:
-                print(f"Error getting user's payment methods (user ID: {user_id}): {error}")
-                return False
-
-    def add(self):
-        with Session(engine) as session:
-            try:
-                session.add(self)
-                session.commit()
-                print("Payment method added successfully to the database")
-
-                session.refresh(self)
-                return self
-
-            except Exception as error:
-                session.rollback()
-                print(f"Error adding payment method to the database: {error}")
-                return False
-
-
-class UserPaymentMethod(Base):      # LINK TABLE N:N | Users:PaymentMethods
-    __tablename__ = "user_payment_methods"
-
-    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
-    payment_method_id: Mapped[int] = mapped_column(Integer, ForeignKey("payment_methods.id"), nullable=False)
-    alias: Mapped[str] = mapped_column(String(20), nullable=True)
-    is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-
-    user: Mapped["User"] = relationship(back_populates="payment_methods")
-    payment_method: Mapped["PaymentMethod"] = relationship(back_populates="user_payment_methods")
-
-    # Methods:
-    def add(self):
-        with Session(engine) as session:
-            try:
-                session.add(self)
-                session.commit()
-                session.refresh(self)
-                print(f"Payment method added for user ID {self.id} successfully to the database")
-                
-                return self
-
-            except Exception as error:
-                session.rollback()
-                print(f"Error adding payment method to the database: {error}")
-                return False
-
-
 class Invoice(Base):
     __tablename__ = "invoices"
 
@@ -379,11 +420,12 @@ class Invoice(Base):
     products: Mapped[list["InvoiceProduct"]] = relationship(back_populates="invoice")
 
     # Methods:
-    def format_dict(self):
+    def format_dict(self, products):
         return {
             "id": self.id,
             "user_id": self.user_id,
-            "purchase_date": self.purchase_date
+            "purchase_date": self.purchase_date,
+            "products": products
         }
 
     @staticmethod
@@ -392,9 +434,14 @@ class Invoice(Base):
             try:
                 stmt = select(Invoice).where(Invoice.user_id == user_id)
                 raw_invoices = session.scalars(stmt).all()
-                invoices = [invoice.format_dict() for invoice in raw_invoices]
 
-                return invoices
+                invoices_list = []
+                
+                for raw_invoice in raw_invoices:
+                    products = InvoiceProduct.get_by_invoice_id(raw_invoice.id)
+                    invoices_list.append(raw_invoice.format_dict(products))
+
+                return invoices_list
 
             except Exception as error:
                 print(f"Error getting user's invoices from the database (ID: {user_id}): {error}")
@@ -463,11 +510,11 @@ class InvoiceProduct(Base):
                 return False
 
     @staticmethod
-    def get_by_id(invoice_id):
+    def get_by_invoice_id(invoice_id):
         with Session(engine) as session:
             try:
                 stmt = select(InvoiceProduct).where(InvoiceProduct.invoice_id == invoice_id)
-                raw_invoice_products = session.scalar(stmt)
+                raw_invoice_products = session.scalars(stmt).all()
                 invoice_products = [inv_product.format_dict() for inv_product in raw_invoice_products]
 
                 return invoice_products
