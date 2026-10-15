@@ -229,7 +229,7 @@ def delete_user(identifier):
         delete_result = user.delete()
 
         if delete_result is False:
-            return jsonify(error_message=f"Error deleting user ID {user_id} from the database"), 500
+            raise Exception
 
         return jsonify(message=f"User ID {user_id} deleted successfully"), 200
 
@@ -363,7 +363,7 @@ def delete_billing_address(identifier, billing_id):
         delete_result = billing_address.delete()
 
         if delete_result is False:
-            return jsonify(error_message=f"Error deleting billing address ID {billing_id} from the database"), 500
+            raise Exception
 
         return jsonify(message=f"Billing address for user ID {identifier} deleted successfully"), 200
 
@@ -386,10 +386,9 @@ def add_payment_method():
             return validation_result
 
         data = request.get_json()
-        user_id = data.get('user_id')
         method = data.get('method')
 
-        payment_method = PaymentMethod(user_id=user_id, method=method)
+        payment_method = PaymentMethod(method=method)
         result = payment_method.add()
 
         if result is False:
@@ -409,7 +408,7 @@ def add_my_payment_method(identifier):
         validation_result, result = validate_same_user_or_admin(token, identifier)
 
         if validation_result is not True:
-            return validation_result
+            return result
 
         data = request.get_json()
         user_id = result
@@ -423,7 +422,7 @@ def add_my_payment_method(identifier):
         if result is False:
             raise Exception
 
-        return jsonify(f"Payment method added successfully for user ID {user_id}"), 201
+        return jsonify(message=f"Payment method added successfully for user ID {user_id}"), 201
 
     except Exception as error:
         print(error)
@@ -437,9 +436,9 @@ def get_my_payment_methods(identifier):
         validation_result, result = validate_same_user_or_admin(token, identifier)
 
         if validation_result is not True:
-            return validation_result
+            return result
 
-        payment_methods = PaymentMethod.get_all_by_user_id(result)
+        payment_methods = UserPaymentMethod.get_all_by_user_id(result)
 
         if payment_methods is None:
             return jsonify("No payment methods found"), 404
@@ -451,6 +450,67 @@ def get_my_payment_methods(identifier):
     except Exception as error:
         print(error)
         return jsonify(error_message=f"Error getting user's payment methods (user ID: {identifier}): {error}"), 500
+
+
+@app.route("/me/<identifier>/payment_methods/<payment_method_id>", methods=["PATCH"])
+def update_user_payment_method(identifier, payment_method_id):
+    try:
+        token = request.headers.get("Authorization")
+        validation_result, result = validate_same_user_or_admin(token, identifier)
+
+        if validation_result is not True:
+            return result
+
+        payment_method = UserPaymentMethod.get_by_id(payment_method_id)
+
+        if payment_method is None:
+            return jsonify(error_message="No payment methods found"), 404
+        elif payment_method is False:
+            raise Exception
+
+        data = request.get_json()
+        new_alias = data.get('alias')
+        is_default = data.get('is_default')
+
+        result = payment_method.update(new_alias, is_default)
+
+        if result is False:
+            raise Exception
+
+        return jsonify(message=f"Payment method for user ID {identifier} updated successfully"), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error updating user's (ID: {identifier}) payment method: {error}"), 500
+
+
+@app.route("/me/<identifier>/payment-methods/<payment_method_id>", methods=["DELETE"])
+def delete_user_payment_method(identifier, payment_method_id):
+    try:
+        token = request.headers.get("Authorization")
+        validation, result = validate_same_user_or_admin(token, identifier)
+
+        if validation is not True:
+            return result
+
+        payment_method = UserPaymentMethod.get_by_id(payment_method_id)
+
+        if payment_method is None:
+            return jsonify(error_message=f"Payment method ID {payment_method_id} not found"), 404
+        elif payment_method is False:
+            raise Exception
+
+        delete_result = payment_method.delete()
+
+        if delete_result is False:
+            raise Exception
+
+        return jsonify(message=f"Payment method for user ID {identifier} deleted successfully"), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error deleting user's (ID: {identifier}) payment method: {error}"), 500
+
 
 # ------------------- PAYMENT METHODS end -------------------
 
@@ -637,7 +697,7 @@ def delete_product(identifier):
         result = product.delete()
 
         if result is False:
-            return jsonify(error_message=f"Error deleting product ID {identifier} from the database"), 500
+            raise Exception
 
         # # SINGLE PRODUCT CACHE:
         # product_key = ioc.cache_manager.generate_key("product", identifier)

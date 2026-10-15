@@ -248,18 +248,8 @@ class PaymentMethod(Base):
         }
 
     @staticmethod
-    def get_all_by_user_id(user_id):
-        with Session(engine) as session:
-            try:
-                stmt = select(PaymentMethod).where(PaymentMethod.user_id == user_id)
-                raw_payment_methods = session.scalars(stmt).all()
-                payment_methods = [payment_method.format_dict() for payment_method in raw_payment_methods]
-
-                return payment_methods
-
-            except Exception as error:
-                print(f"Error getting user's payment methods (user ID: {user_id}): {error}")
-                return False
+    def get_all():
+        pass
 
     def add(self):
         with Session(engine) as session:
@@ -290,6 +280,13 @@ class UserPaymentMethod(Base):      # LINK TABLE N:N | Users:PaymentMethods
     payment_method: Mapped["PaymentMethod"] = relationship(back_populates="user_payment_methods")
 
     # Methods:
+    def format_dict(self, payment_method):
+        return {
+            "payment_method": payment_method,
+            "alias": self.alias,
+            "is_default": self.is_default
+        }
+
     def add(self):
         with Session(engine) as session:
             try:
@@ -303,6 +300,72 @@ class UserPaymentMethod(Base):      # LINK TABLE N:N | Users:PaymentMethods
             except Exception as error:
                 session.rollback()
                 print(f"Error adding payment method to the database: {error}")
+                return False
+
+    @staticmethod
+    def get_all_by_user_id(user_id):
+        with Session(engine) as session:
+            try:
+                stmt = select(UserPaymentMethod).where(UserPaymentMethod.user_id == user_id)
+                raw_payment_methods = session.scalars(stmt).all()
+
+                payment_methods = []
+
+                for payment_method in raw_payment_methods:
+                    method = session.get(PaymentMethod, payment_method.id)
+                    payment_methods.append(payment_method.format_dict(method.method))
+
+                print(payment_methods)
+                return payment_methods
+
+            except Exception as error:
+                print(f"Error getting user's payment methods (user ID: {user_id}): {error}")
+                return False
+
+    @staticmethod
+    def get_by_id(payment_id):
+        with Session(engine) as session:
+            try:
+                my_payment_method = session.get(UserPaymentMethod, payment_id)
+                return my_payment_method
+
+            except Exception as error:
+                print(f"Error getting user's payment method ID: {payment_id}: {error}")
+                return False
+
+    def update(self, new_alias, is_default):
+        with Session(engine) as session:
+            try:
+                my_payment_method = session.get(UserPaymentMethod, self.id)
+
+                if new_alias is not None:
+                    my_payment_method.alias = new_alias
+
+                if is_default is not None:
+                    my_payment_method.is_default = is_default
+
+                session.commit()
+                print(f"Payment method ID {my_payment_method.id} updated successfully in the database")
+                return True
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error updating payment method ID {self.id} on the database: {error}")
+                return False
+
+    def delete(self):
+        with Session(engine) as session:
+            try:
+                my_payment_method = session.get(UserPaymentMethod, self.id)
+
+                session.delete(my_payment_method)
+                session.commit()
+                print(f"Payment method ID {my_payment_method.id} deleted successfully from the database")
+                return True
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error deleting payment method ID {self.id} from the database: {error}")
                 return False
 
 
