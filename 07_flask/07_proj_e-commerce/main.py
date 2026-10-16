@@ -1,5 +1,5 @@
 from ioc_container import ioc
-from db import User, Product, Invoice, BillingAddress, PaymentMethod, UserPaymentMethod
+from db import User, BillingAddress, PaymentMethod, UserPaymentMethod, Product, Invoice, InvoiceProduct
 from validations import validate_admin, validate_same_user_or_admin, validate_user
 from services import Transaction
 from functions import generate_fake_ip
@@ -130,8 +130,8 @@ def login():
         return jsonify(error_message=f"Error logging in: {error}"), 500
 
 
-@app.route("/users/all", methods=["GET"])
-def get_all_users():         # Después implementar filters
+@app.route("/users/all", methods=["GET"])         # Después implementar filters
+def get_all_users():
     try:
         token = request.headers.get("Authorization")
         validation_result = validate_admin(token)
@@ -242,16 +242,16 @@ def delete_user(identifier):
 
 # ------------------- BILLING ADDRESS start -------------------
 @app.route("/me/<identifier>/billing", methods=["POST"])
-def register_billing_address(identifier):
+def add_billing_address(identifier):
     try:
         token = request.headers.get("Authorization")
-        validation_result = validate_same_user_or_admin(token, identifier)[0]
+        validation_result, result = validate_same_user_or_admin(token, identifier)
 
         if validation_result is not True:
-            return validation_result
+            return result
 
         data = request.get_json()
-        user_id = data.get("user_id")
+        user_id = result
         address = data.get("address")
 
         billing_address = BillingAddress(user_id=user_id, address=address)
@@ -300,6 +300,9 @@ def get_billing_address(identifier, billing_id):
             return result
 
         billing_address = BillingAddress.get_by_id(billing_id)
+
+        if billing_address.user_id != result:
+            return jsonify(error_message="Cannot access page"), 403
 
         if billing_address is None:
             return jsonify(error_message="No billing addresses found"), 404
@@ -386,9 +389,9 @@ def add_payment_method():
             return validation_result
 
         data = request.get_json()
-        method = data.get('method')
+        method_name = data.get('method_name')
 
-        payment_method = PaymentMethod(method=method)
+        payment_method = PaymentMethod(method_name=method_name)
         result = payment_method.add()
 
         if result is False:
@@ -729,7 +732,7 @@ def delete_product(identifier):
 
 
 # ------------------- INVOICES start -------------------
-@app.route("/me/<identifier>/invoices", methods=["GET"])
+@app.route("/me/<identifier>/invoices/all", methods=["GET"])
 def get_my_invoices(identifier):
     try:
         token = request.headers.get("Authorization")
@@ -752,23 +755,27 @@ def get_my_invoices(identifier):
         return jsonify(error_message=f"Error getting user's invoices (user ID: {identifier}): {error}"), 500
 
 
-@app.route("/invoices/<identifier>", methods=["GET"])
-def get_invoice_by_id(identifier):
+@app.route("/me/<identifier>/invoices/<invoice_id>", methods=["GET"])
+def get_invoice_by_id(identifier, invoice_id):
     try:
         token = request.headers.get("Authorization")
-        invoice = Invoice.get_by_id(identifier)
+        invoice = Invoice.get_by_id(invoice_id)
 
         if invoice is None:
             return jsonify(error_message=f"Invoice ID {identifier} not found"), 404
         if invoice is False:
             raise Exception
 
-        validation_result = validate_same_user_or_admin(token, invoice.user_id)[0]
+        validation_result, result = validate_same_user_or_admin(token, invoice.user_id)
 
         if validation_result is not True:
-            return validation_result
+            return result
 
-        return invoice.format_dict(), 200
+        products = InvoiceProduct.get_by_invoice_id(invoice.id)
+        my_billing_address = BillingAddress.get_by_id()      # falta poder extraer un billing_id con el invoice --> guardar en 'purchase'
+        my_payment_method = UserPaymentMethod.get_by_id()    #falta poder extraer un user_payment_method con el invoice --> guardar en 'purchase'
+
+        return jsonify(id=invoice.id, user_id=invoice.user_id, products=products, purchase_date=invoice.purchase_date, billing_address=my_billing_address.address, payment_method=my_payment_method.alias), 200
 
     except Exception as error:
         print(error)
@@ -788,14 +795,26 @@ def make_purchase():
             return validation_result, decoded
 
         # Data retrieval:
-        data = request.get_json()
         user_id = decoded['id']
+        data = request.get_json()
+        billing_address_id = data.get('billing_address_id')
+        payment_method_id = data.get('payment_method_id')
         purchase_date = data.get('purchase_date')
         invoice_products = data.get('invoice_products') # lista de diccionarios
+
+        # Data validation:
+        my_billing_address = BillingAddress.get_by_id(billing_address_id)
+        if my_billing_address.user_id != user_id:
+            return jsonify(error_message=f"Invalid billing address"), 401
+
+        my_payment_method = UserPaymentMethod.get_by_id(payment_method_id)
+        if my_payment_method.user_id != user_id:
+            return jsonify(error_message="Invalid payment method"), 401
 
         if purchase_date is None:
             purchase_date = date.today()
 
+        # Execute purchase:
         result, status = Transaction().purchase(user_id, purchase_date, invoice_products)
 
         if result is not True:

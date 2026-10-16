@@ -6,10 +6,10 @@ DELETE FROM invoices;
 ALTER TABLE invoices
 ALTER COLUMN id RESTART WITH 1;
 
-ALTER TABLE invoice_products
-ALTER COLUMN id RESTART WITH 1;
+ALTER TABLE e_commerce.user_payment_methods
+ALTER COLUMN id RESTART WITH 3;
 
-SELECT * FROM e_commerce.payment_methods;
+SELECT * FROM e_commerce.user_payment_methods;
 
 DROP TABLE invoice_products;
 DROP TABLE invoices;

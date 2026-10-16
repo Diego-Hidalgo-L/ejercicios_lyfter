@@ -236,7 +236,7 @@ class PaymentMethod(Base):
     __tablename__ = "payment_methods"
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
-    method: Mapped[str] = mapped_column(String(20), CheckConstraint("method IN ('Credit/Debit Card', 'Transfer', 'PayPal')"), nullable=False)
+    method: Mapped[str] = mapped_column(String(20), CheckConstraint("method_name IN ('Credit/Debit Card', 'Transfer', 'PayPal')"), nullable=False)
 
     user_payment_methods: Mapped[list["UserPaymentMethod"]] = relationship(back_populates="payment_method")
 
@@ -280,9 +280,11 @@ class UserPaymentMethod(Base):      # LINK TABLE N:N | Users:PaymentMethods
     payment_method: Mapped["PaymentMethod"] = relationship(back_populates="user_payment_methods")
 
     # Methods:
-    def format_dict(self, payment_method):
+    def format_dict(self, method_name):
         return {
-            "payment_method": payment_method,
+            "id": self.id,
+            "method_name": method_name,
+            "method_id": self.payment_method_id,
             "alias": self.alias,
             "is_default": self.is_default
         }
@@ -478,6 +480,7 @@ class Invoice(Base):
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     purchase_date: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
+    # Podría agregarle los IDs de billing_address + payment_method, especialmente para los gets? Creo que afectaría la normalización
 
     user: Mapped["User"] = relationship(back_populates="invoices")
     products: Mapped[list["InvoiceProduct"]] = relationship(back_populates="invoice")
@@ -492,7 +495,7 @@ class Invoice(Base):
         }
 
     @staticmethod
-    def get_all_by_user_id(user_id):        # AGREGAR -> info de InvoiceProducts
+    def get_all_by_user_id(user_id):
         with Session(engine) as session:
             try:
                 stmt = select(Invoice).where(Invoice.user_id == user_id)
@@ -501,7 +504,7 @@ class Invoice(Base):
                 invoices_list = []
                 
                 for raw_invoice in raw_invoices:
-                    products = InvoiceProduct.get_by_invoice_id(raw_invoice.id)
+                    products = InvoiceProduct.get_by_invoice_id(raw_invoice.id) # lista de products
                     invoices_list.append(raw_invoice.format_dict(products))
 
                 return invoices_list
@@ -552,6 +555,7 @@ class InvoiceProduct(Base):
     # Methods:
     def format_dict(self):
         return {
+            "id": self.id,
             "product_id": self.product_id,
             "quantity": self.quantity,
             "total_price": self.total_price
