@@ -152,6 +152,7 @@ class BillingAddress(Base):
     address: Mapped[str] = mapped_column(String(200), nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="billing_addresses")
+    invoices: Mapped[list["Invoice"]] = relationship(back_populates="billing_address")
 
     # Methods:
     def format_dict(self):
@@ -236,7 +237,7 @@ class PaymentMethod(Base):
     __tablename__ = "payment_methods"
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
-    method: Mapped[str] = mapped_column(String(20), CheckConstraint("method_name IN ('Credit/Debit Card', 'Transfer', 'PayPal')"), nullable=False)
+    method: Mapped[str] = mapped_column(String(20), CheckConstraint("method IN ('Credit/Debit Card', 'Transfer', 'PayPal')"), nullable=False)
 
     user_payment_methods: Mapped[list["UserPaymentMethod"]] = relationship(back_populates="payment_method")
 
@@ -277,13 +278,14 @@ class UserPaymentMethod(Base):      # LINK TABLE N:N | Users:PaymentMethods
     is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     user: Mapped["User"] = relationship(back_populates="payment_methods")
+    invoices: Mapped[list["Invoice"]] = relationship(back_populates="user_payment_method")
     payment_method: Mapped["PaymentMethod"] = relationship(back_populates="user_payment_methods")
 
     # Methods:
-    def format_dict(self, method_name):
+    def format_dict(self, method):
         return {
             "id": self.id,
-            "method_name": method_name,
+            "method": method,
             "method_id": self.payment_method_id,
             "alias": self.alias,
             "is_default": self.is_default
@@ -314,7 +316,7 @@ class UserPaymentMethod(Base):      # LINK TABLE N:N | Users:PaymentMethods
                 payment_methods = []
 
                 for payment_method in raw_payment_methods:
-                    method = session.get(PaymentMethod, payment_method.id)
+                    method = session.get(PaymentMethod, payment_method.payment_method_id)
                     payment_methods.append(payment_method.format_dict(method.method))
 
                 print(payment_methods)
@@ -480,18 +482,25 @@ class Invoice(Base):
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     purchase_date: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
-    # Podría agregarle los IDs de billing_address + payment_method, especialmente para los gets? Creo que afectaría la normalización
+    billing_address_id: Mapped[int] = mapped_column(Integer, ForeignKey("billing_addresses.id"), nullable=False)
+    user_payment_method_id: Mapped[int] = mapped_column(Integer, ForeignKey("user_payment_methods.id"), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), CheckConstraint("status IN ('Completed', 'Returned')"), nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="invoices")
+    billing_address: Mapped["BillingAddress"] = relationship(back_populates="invoices")
+    user_payment_method: Mapped["UserPaymentMethod"] = relationship(back_populates="invoices")
     products: Mapped[list["InvoiceProduct"]] = relationship(back_populates="invoice")
 
     # Methods:
-    def format_dict(self, products):
+    def format_dict(self, billing_address, user_payment_method, products):
         return {
             "id": self.id,
             "user_id": self.user_id,
             "purchase_date": self.purchase_date,
-            "products": products
+            "billing_address": billing_address,
+            "user_payment_method": user_payment_method,
+            "products": products,
+            "status": self.status
         }
 
     @staticmethod
@@ -504,8 +513,11 @@ class Invoice(Base):
                 invoices_list = []
                 
                 for raw_invoice in raw_invoices:
+                    print(raw_invoice)
+                    billing_address = BillingAddress.get_by_id(raw_invoice.billing_address_id).address
+                    user_payment_method = UserPaymentMethod.get_by_id(raw_invoice.user_payment_method_id).alias
                     products = InvoiceProduct.get_by_invoice_id(raw_invoice.id) # lista de products
-                    invoices_list.append(raw_invoice.format_dict(products))
+                    invoices_list.append(raw_invoice.format_dict(billing_address, user_payment_method, products))
 
                 return invoices_list
 

@@ -772,10 +772,10 @@ def get_invoice_by_id(identifier, invoice_id):
             return result
 
         products = InvoiceProduct.get_by_invoice_id(invoice.id)
-        my_billing_address = BillingAddress.get_by_id()      # falta poder extraer un billing_id con el invoice --> guardar en 'purchase'
-        my_payment_method = UserPaymentMethod.get_by_id()    #falta poder extraer un user_payment_method con el invoice --> guardar en 'purchase'
+        billing_address = BillingAddress.get_by_id(invoice.billing_address_id).address      # falta poder extraer un billing_id con el invoice --> guardar en 'purchase'
+        user_payment_method = UserPaymentMethod.get_by_id(invoice.user_payment_method_id).alias    #falta poder extraer un user_payment_method con el invoice --> guardar en 'purchase'
 
-        return jsonify(id=invoice.id, user_id=invoice.user_id, products=products, purchase_date=invoice.purchase_date, billing_address=my_billing_address.address, payment_method=my_payment_method.alias), 200
+        return jsonify(id=invoice.id, user_id=invoice.user_id, products=products, purchase_date=invoice.purchase_date, billing_address=billing_address, user_payment_method=user_payment_method), 200
 
     except Exception as error:
         print(error)
@@ -798,24 +798,12 @@ def make_purchase():
         user_id = decoded['id']
         data = request.get_json()
         billing_address_id = data.get('billing_address_id')
-        payment_method_id = data.get('payment_method_id')
+        user_payment_method_id = data.get('user_payment_method_id')
         purchase_date = data.get('purchase_date')
         invoice_products = data.get('invoice_products') # lista de diccionarios
 
-        # Data validation:
-        my_billing_address = BillingAddress.get_by_id(billing_address_id)
-        if my_billing_address.user_id != user_id:
-            return jsonify(error_message=f"Invalid billing address"), 401
-
-        my_payment_method = UserPaymentMethod.get_by_id(payment_method_id)
-        if my_payment_method.user_id != user_id:
-            return jsonify(error_message="Invalid payment method"), 401
-
-        if purchase_date is None:
-            purchase_date = date.today()
-
         # Execute purchase:
-        result, status = Transaction().purchase(user_id, purchase_date, invoice_products)
+        result, status = Transaction().purchase(user_id, billing_address_id, user_payment_method_id, purchase_date, invoice_products)
 
         if result is not True:
             return jsonify(error_message=result), status
@@ -842,6 +830,27 @@ def make_purchase():
         #     print("No cache to invalidate")
 
         return jsonify(message="Purchase successful"), status
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error making purchase: {error}"), 500
+
+
+@app.route("/shop/return/<invoice_id>", methods=["POST"])
+def return_purchase(invoice_id):
+    try:
+        token = request.headers.get("Authorization")
+        validation_result, decoded = validate_user(token)
+
+        if validation_result is None:
+            return validation_result, decoded
+
+        result, status = Transaction().return_purchase(invoice_id, decoded['id'])
+
+        if result is not True:
+            return jsonify(error_message=result), status
+
+        return jsonify(message="Purchase returned successfully"), status
 
     except Exception as error:
         print(error)
