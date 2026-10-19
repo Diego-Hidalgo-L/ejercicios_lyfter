@@ -1,4 +1,4 @@
-from db import User, Product, BillingAddress, UserPaymentMethod, Invoice, InvoiceProduct
+from db import User, Product, BillingAddress, UserPaymentMethod, Cart, Invoice, InvoiceProduct
 from db_engine import engine
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -7,10 +7,20 @@ from datetime import date
 
 
 class Transaction:
-    def purchase(self, user_id, billing_address_id, user_payment_method_id, purchase_date, invoice_products):
+    def purchase(self, user_id, cart_id, billing_address_id, user_payment_method_id, purchase_date):
         with Session(engine) as session:
             try:
                 # Data validation:
+                my_cart = Cart.get_by_id(cart_id)
+                if my_cart is None:
+                    return f"Cart not found", 404
+                elif my_cart is False:
+                    raise Exception(f"Error getting cart ID {cart_id}")
+                elif my_cart.user_id != user_id:
+                    return f"Invalid cart", 401
+                elif my_cart.status != 'Active':
+                    return f"Inactive cart", 400
+
                 my_billing_address = BillingAddress.get_by_id(billing_address_id)
                 if my_billing_address is None:
                     return f"Billing address not found", 404
@@ -31,9 +41,10 @@ class Transaction:
                     purchase_date = date.today()
 
                 # Verifico stock:
+                cart_products = my_cart.cart_products
                 available_stock_list = []
 
-                for product in invoice_products:
+                for product in cart_products: # lista de diccionarios
                     product_id = product.get('product_id')
                     purchase_quantity = product.get('quantity')
                     got_product = session.get(Product, product_id)
@@ -54,7 +65,7 @@ class Transaction:
                 session.flush()
 
                 # Insert en loop en tabla invoice_products:
-                for i, product in enumerate(invoice_products):
+                for i, product in enumerate(cart_products):
                     product_id = product.get('product_id')
                     product_quantity = product.get('quantity')
                     total_product_price = product.get('total_price')

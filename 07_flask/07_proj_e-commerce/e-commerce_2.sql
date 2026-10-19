@@ -1,5 +1,27 @@
 SET search_path TO e_commerce;
 
+-- Crea el índice en PostgreSQL:
+CREATE UNIQUE INDEX uq_one_default_method_per_user
+ON e_commerce.user_payment_methods (user_id)
+WHERE is_default = TRUE;
+
+-- Verifica que se haya creado:
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE schemaname = 'e_commerce'
+  AND tablename = 'user_payment_methods';
+
+-- Comprueba que no haya carritos activos duplicados:
+SELECT user_id, COUNT(*)
+FROM e_commerce.carts
+WHERE status = 'Active'
+GROUP BY user_id
+HAVING COUNT(*) > 1;
+
+
+ALTER TABLE cart_products
+ADD COLUMN total_price FLOAT NOT NULL;
+
 DELETE FROM invoice_products
 WHERE invoice_id = 6;
 
@@ -8,6 +30,12 @@ WHERE id = 6;
 
 ALTER TABLE invoices
 ALTER COLUMN id RESTART WITH 4;
+
+DELETE FROM e_commerce.carts
+WHERE id = 4;
+
+ALTER TABLE user_payment_methods
+ALTER COLUMN id RESTART WITH 5;
 
 SELECT * FROM e_commerce.invoices;
 

@@ -18,6 +18,21 @@ def validate_user(token):
     return True, decoded
 
 
+def validate_if_owner(token, identifier):
+    if token is None:
+        return jsonify(error_message="Invalid token"), 401
+
+    decoded = ioc.jwt_manager.decode(token)
+
+    if decoded is None:
+        return jsonify(error_message="Error decoding token"), 401
+
+    if decoded['id'] != int(identifier):
+        return jsonify(error_message="Cannot access page"), 401
+
+    return True, decoded
+
+
 def validate_admin(token):
     if token is None:
         return jsonify(error_message="Invalid token"), 401

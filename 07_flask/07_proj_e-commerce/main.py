@@ -1,6 +1,6 @@
 from ioc_container import ioc
-from db import User, BillingAddress, PaymentMethod, UserPaymentMethod, Product, Invoice, InvoiceProduct
-from validations import validate_admin, validate_same_user_or_admin, validate_user
+from db import User, BillingAddress, PaymentMethod, UserPaymentMethod, Product, Cart, CartProduct, Invoice, InvoiceProduct
+from validations import validate_admin, validate_user, validate_if_owner, validate_same_user_or_admin
 from services import Transaction
 from functions import generate_fake_ip
 
@@ -157,12 +157,12 @@ def get_all_users():
 def me(identifier):
     try:
         token = request.headers.get('Authorization')
-        validation, result = validate_same_user_or_admin(token, identifier)
+        validation_result, decoded = validate_if_owner(token, identifier)
 
-        if validation is not True:
-            return result
+        if validation_result is not True:
+            return validation_result, decoded
 
-        user_id = result
+        user_id = decoded['id']
         user = User.get_by_id(identifier)
 
         if user is None:
@@ -271,12 +271,12 @@ def add_billing_address(identifier):
 def get_all_my_billing_addresses(identifier):
     try:
         token = request.headers.get("Authorization")
-        validation_result, result = validate_same_user_or_admin(token, identifier)
+        validation_result, decoded = validate_if_owner(token, identifier)
 
         if validation_result is not True:
-            return result
+            return validation_result, decoded
 
-        billing_addresses = BillingAddress.get_all_by_user_id(result)
+        billing_addresses = BillingAddress.get_all_by_user_id(decoded['id'])
 
         if billing_addresses is None:
             return jsonify(error_message="No billing addresses found"), 404
@@ -436,12 +436,12 @@ def add_my_payment_method(identifier):
 def get_my_payment_methods(identifier):
     try:
         token = request.headers.get("Authorization")
-        validation_result, result = validate_same_user_or_admin(token, identifier)
+        validation_result, decoded = validate_if_owner(token, identifier)
 
         if validation_result is not True:
-            return result
+            return validation_result, decoded
 
-        payment_methods = UserPaymentMethod.get_all_by_user_id(result)
+        payment_methods = UserPaymentMethod.get_all_by_user_id(decoded['id'])
 
         if payment_methods is None:
             return jsonify("No payment methods found"), 404
@@ -459,17 +459,20 @@ def get_my_payment_methods(identifier):
 def update_user_payment_method(identifier, payment_method_id):
     try:
         token = request.headers.get("Authorization")
-        validation_result, result = validate_same_user_or_admin(token, identifier)
+        validation_result, decoded = validate_if_owner(token, identifier)
 
         if validation_result is not True:
-            return result
+            return validation_result, decoded
 
+        user_id = decoded['id']
         payment_method = UserPaymentMethod.get_by_id(payment_method_id)
 
         if payment_method is None:
             return jsonify(error_message="No payment methods found"), 404
         elif payment_method is False:
             raise Exception
+        elif payment_method.user_id != user_id:
+            return jsonify(error_message=f"Cannot access page"), 401
 
         data = request.get_json()
         new_alias = data.get('alias')
@@ -491,17 +494,20 @@ def update_user_payment_method(identifier, payment_method_id):
 def delete_user_payment_method(identifier, payment_method_id):
     try:
         token = request.headers.get("Authorization")
-        validation, result = validate_same_user_or_admin(token, identifier)
+        validation_result, decoded = validate_if_owner(token, identifier)
 
-        if validation is not True:
-            return result
+        if validation_result is not True:
+            return validation_result, decoded
 
+        user_id = decoded['id']
         payment_method = UserPaymentMethod.get_by_id(payment_method_id)
 
         if payment_method is None:
             return jsonify(error_message=f"Payment method ID {payment_method_id} not found"), 404
         elif payment_method is False:
             raise Exception
+        elif payment_method.user_id != user_id:
+            return jsonify(error_message="Cannot access page"), 401
 
         delete_result = payment_method.delete()
 
@@ -784,9 +790,158 @@ def get_invoice_by_id(identifier, invoice_id):
 # ------------------- INVOICES end -------------------
 
 
-# ------------------- SHOP start -------------------
-@app.route("/shop", methods=["POST"])
-def make_purchase():
+# ------------------- CARTS start -------------------
+@app.route("/me/<identifier>/carts/all", methods=["GET"])
+def get_all_my_carts(identifier):
+    try:
+        token = request.headers.get("Authorization")
+        validation_result, decoded = validate_if_owner(token, identifier)
+
+        if validation_result is not True:
+            return validation_result, decoded
+
+        user_id = decoded['id']
+        my_carts = Cart.get_all_by_user_id(user_id)
+
+        if my_carts is None:
+            return jsonify(error_message="No carts found"), 404
+        elif my_carts is False:
+            raise Exception("Error getting carts from the database")
+
+        return my_carts, 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error getting all carts: {error}"), 500
+
+
+@app.route("/me/<identifier>/carts/<cart_id>", methods=["GET"])
+def get_my_cart(identifier, cart_id):
+    try:
+        token = request.headers.get("Authorization")
+        validation_result, decoded = validate_if_owner(token, identifier)
+
+        if validation_result is not True:
+            return validation_result, decoded
+
+        user_id = decoded['id']
+        my_cart = Cart.get_by_id(cart_id)
+        cart_products = CartProduct.get_by_cart_id(cart_id)
+
+        if my_cart is None:
+            return jsonify(error_message=f"Cart ID {cart_id} not found"), 404
+        elif my_cart is False:
+            raise Exception(f"Error getting cart ID {cart_id} from the database")
+        elif my_cart.user_id != user_id:
+            return jsonify(error_message=f"Cannot access page"), 401
+
+        return jsonify(my_cart.format_dict(cart_products)), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error getting cart ID {cart_id}: {error}"), 500
+
+
+@app.route("/me/<identifier>/carts", methods=["POST"])
+def add_active_cart(identifier):
+    try:
+        token = request.headers.get("Authorization")
+        validation_result, decoded = validate_if_owner(token, identifier)
+
+        if validation_result is not True:
+            return validation_result, decoded
+
+        user_id = decoded['id']
+        my_cart = Cart.get_or_create_active_cart(user_id)
+        cart_products = CartProduct.get_by_cart_id(my_cart.id)
+
+        if my_cart is False:
+            raise Exception("Error creating active cart")
+
+        return jsonify(my_cart.format_dict(cart_products)), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error adding cart: {error}")
+
+
+@app.route("/me/<identifier>/carts/<cart_id>", methods=["PUT"])
+def update_my_cart(identifier, cart_id):
+    try:
+        token = request.headers.get("Authorization")
+        validation_result, decoded = validate_if_owner(token, identifier)
+
+        if validation_result is not True:
+            return validation_result, decoded
+
+        user_id = decoded['id']
+        my_cart = Cart.get_by_id(cart_id)
+
+        if my_cart is None:
+            return jsonify(error_message=f"Cart ID {cart_id} not found"), 404
+        elif my_cart is False:
+            raise Exception(f"Error getting cart ID {cart_id}")
+        elif my_cart.user_id != user_id:
+            return jsonify(error_message=f"Invalid cart"), 401
+        elif my_cart.status != 'Active':
+            return jsonify(error_message="Inactive cart"), 400
+
+        data = request.get_json()
+        update_products = data.get('products')
+
+        result = my_cart.update(update_products=update_products)
+
+        if result is False:
+            raise Exception
+
+        return jsonify(message=f"Cart ID {cart_id} updated successfully")
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error updating cart ID {cart_id}: {error}")
+
+
+@app.route("/me/<identifier>/carts/<cart_id>", methods=["DELETE"])
+def delete_my_cart(identifier, cart_id):
+    try:
+        token = request.headers.get("Authorization")
+        validation_result, decoded = validate_if_owner(token, identifier)
+
+        if validation_result is not True:
+            return validation_result, decoded
+
+        user_id = decoded['id']
+        my_cart = Cart.get_by_id(cart_id)
+
+        if my_cart is None:
+            return jsonify(error_message=f"Cart ID {cart_id} not found"), 404
+        elif my_cart is False:
+            raise Exception(f"Error getting cart ID {cart_id}")
+        elif my_cart.user_id != user_id:
+            return jsonify(error_message=f"Invalid cart"), 401
+        elif my_cart.status != 'Active':
+            return jsonify(error_message="Inactive cart"), 400
+
+        cart_delete = my_cart.delete()
+        products_delete = CartProduct.delete(cart_id)
+
+        if cart_delete is False:
+            raise Exception("Error deleting cart from the database")
+        if products_delete is False:
+            raise Exception("Error deleting cart products from the database")
+
+        return jsonify(message=f"Cart ID {cart_id} deleted successfully")
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error deleting cart ID {cart_id}: {error}")
+
+# ------------------- CARTS end -------------------
+
+
+# ------------------- TRANSACTIONS start -------------------
+@app.route("/shop/<cart_id>", methods=["POST"])
+def make_purchase(cart_id):
     try:
         token = request.headers.get("Authorization")
         validation_result, decoded = validate_user(token)
@@ -800,10 +955,9 @@ def make_purchase():
         billing_address_id = data.get('billing_address_id')
         user_payment_method_id = data.get('user_payment_method_id')
         purchase_date = data.get('purchase_date')
-        invoice_products = data.get('invoice_products') # lista de diccionarios
 
         # Execute purchase:
-        result, status = Transaction().purchase(user_id, billing_address_id, user_payment_method_id, purchase_date, invoice_products)
+        result, status = Transaction().purchase(user_id, cart_id, billing_address_id, user_payment_method_id, purchase_date)
 
         if result is not True:
             return jsonify(error_message=result), status
@@ -836,7 +990,7 @@ def make_purchase():
         return jsonify(error_message=f"Error making purchase: {error}"), 500
 
 
-@app.route("/shop/return/<invoice_id>", methods=["POST"])
+@app.route("/return/<invoice_id>", methods=["POST"])
 def return_purchase(invoice_id):
     try:
         token = request.headers.get("Authorization")
@@ -857,16 +1011,7 @@ def return_purchase(invoice_id):
         return jsonify(error_message=f"Error making purchase: {error}"), 500
 
 
-@app.route("/shop/my-cart/<identifier>", methods=["GET"])
-def get_my_cart(identifier):
-    pass
-
-
-@app.route("/shop/carts/<identifier>", methods=["GET"])
-def get_all_carts(identifier):
-    pass
-
-# ------------------- SHOP end -------------------
+# ------------------- TRANSACTIONS end -------------------
 
 
 if __name__ == "__main__":

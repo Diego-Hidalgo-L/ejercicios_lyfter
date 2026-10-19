@@ -1,8 +1,8 @@
 from ioc_container import ioc
 from db_engine import engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
-from sqlalchemy import MetaData, Identity, ForeignKey, CheckConstraint, Integer, Float, String, Date, Boolean
-from sqlalchemy import select, func
+from sqlalchemy import MetaData, Identity, ForeignKey, CheckConstraint, Integer, Float, String, Date, Boolean, Index
+from sqlalchemy import select, delete, func, text
 from datetime import date
 
 meta_obj = MetaData(schema="e_commerce")
@@ -15,16 +15,22 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
+    __table_args__ = (
+        CheckConstraint("role IN ('Administrator', 'User')"),
+    )
+
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     username: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(200), nullable=False)
     email: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     full_name: Mapped[str] = mapped_column(String(30), nullable=False)
-    role: Mapped[str] = mapped_column(String(30), CheckConstraint("role IN ('Administrator', 'User')"), nullable=False)
+    role: Mapped[str] = mapped_column(String(30), nullable=False)
 
+    # Relationships:
     invoices: Mapped[list["Invoice"]] = relationship(back_populates="user")
     billing_addresses: Mapped[list["BillingAddress"]] = relationship(back_populates="user")
     payment_methods: Mapped[list["UserPaymentMethod"]] = relationship(back_populates="user")
+    carts: Mapped[list["Cart"]] = relationship(back_populates="user")
 
     # Methods:
     def format_dict(self):
@@ -151,6 +157,7 @@ class BillingAddress(Base):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     address: Mapped[str] = mapped_column(String(200), nullable=False)
 
+    # Relationships:
     user: Mapped["User"] = relationship(back_populates="billing_addresses")
     invoices: Mapped[list["Invoice"]] = relationship(back_populates="billing_address")
 
@@ -236,9 +243,14 @@ class BillingAddress(Base):
 class PaymentMethod(Base):
     __tablename__ = "payment_methods"
 
-    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
-    method: Mapped[str] = mapped_column(String(20), CheckConstraint("method IN ('Credit/Debit Card', 'Transfer', 'PayPal')"), nullable=False)
+    __table_args__ = (
+        CheckConstraint("method IN ('Credit/Debit Card', 'Transfer', 'PayPal')"),
+    )
 
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    method: Mapped[str] = mapped_column(String(20), nullable=False)
+
+    # Relationships:
     user_payment_methods: Mapped[list["UserPaymentMethod"]] = relationship(back_populates="payment_method")
 
     # Methods
@@ -271,12 +283,17 @@ class PaymentMethod(Base):
 class UserPaymentMethod(Base):      # LINK TABLE N:N | Users:PaymentMethods
     __tablename__ = "user_payment_methods"
 
+    __table_args__ = (
+        Index("uq_one_default_method_per_user", "user_id", unique=True, postgresql_where=text("is_default = 'True'")),
+    )
+
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     payment_method_id: Mapped[int] = mapped_column(Integer, ForeignKey("payment_methods.id"), nullable=False)
-    alias: Mapped[str] = mapped_column(String(20), nullable=True)
-    is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    alias: Mapped[str] = mapped_column(String(50), nullable=True)
+    is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
+    # Relationships:
     user: Mapped["User"] = relationship(back_populates="payment_methods")
     invoices: Mapped[list["Invoice"]] = relationship(back_populates="user_payment_method")
     payment_method: Mapped["PaymentMethod"] = relationship(back_populates="user_payment_methods")
@@ -382,7 +399,9 @@ class Product(Base):
     entry_date: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
     stock: Mapped[int] = mapped_column(Integer)
 
+    # Relationships:
     in_invoices: Mapped[list["InvoiceProduct"]] = relationship(back_populates="product")
+    in_carts: Mapped[list["CartProduct"]] = relationship(back_populates="product")
 
     # Methods:
     def format_dict(self):
@@ -476,16 +495,224 @@ class Product(Base):
                 return False
 
 
+class Cart(Base):
+    __tablename__ = "carts"
+
+    __table_args__ = (
+        CheckConstraint("status IN ('Active', 'Completed', 'Abandoned')"),
+        Index("uq_one_active_cart_per_user", "user_id", unique=True, postgresql_where=text("status = 'Active'"))
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    creation_date: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="Active")
+
+    # Relationships:
+    user: Mapped["User"] = relationship(back_populates="carts")
+    cart_products: Mapped[list["CartProduct"]] = relationship(back_populates="cart")
+
+    # Methods:
+    def format_dict(self, cart_products):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "creation_date": self.creation_date,
+            "cart_products": cart_products,
+            "status": self.status
+        }
+
+    @staticmethod
+    def get_all_by_user_id(user_id):
+        with Session(engine) as session:
+            try:
+                stmt = select(Cart)
+                raw_carts = session.scalars(stmt).all()
+
+                carts_list = []
+
+                for raw_cart in raw_carts:
+                    cart_products = CartProduct.get_by_cart_id(raw_cart.id)
+                    cart = raw_cart.format_dict(cart_products)
+                    carts_list.append(cart)
+
+                return carts_list
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error getting user's carts (user ID: {user_id}): {error}")
+                return False
+
+    @staticmethod
+    def get_or_create_active_cart(user_id):
+        with Session(engine) as session:
+            try:
+                stmt = select(Cart).where(Cart.user_id == user_id, Cart.status == "Active")
+                cart = session.scalar(stmt)
+
+                if cart is None:
+                    cart = Cart(user_id=user_id, creation_date=date.today(), status="Active")
+                    session.add(cart)
+                    session.commit()
+                    session.refresh(cart)
+
+                return cart
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error getting active cart from the database: {error}"), 500
+                return False
+
+    @staticmethod
+    def get_by_id(cart_id):
+        with Session(engine) as session:
+            try:
+                cart = session.get(Cart, cart_id)
+                return cart
+                
+            except Exception as error:
+                session.rollback()
+                print(f"Error getting cart ID {cart_id}: {error}")
+                return False 
+
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("Cart added successfully to the database")
+
+                session.refresh(self)
+                return self
+            
+            except Exception as error:
+                session.rollback()
+                print(f"Error adding cart to the database: {error}")
+                return False
+
+    def update(self, update_products):
+        with Session(engine) as session:
+            try:
+                cart = session.get(Cart, self.id)
+
+                # Delete cart_products belonging to target cart:
+                stmt = delete(CartProduct).where(CartProduct.cart_id == cart.id)
+                session.execute(stmt)
+
+                # Ingreso nuevos cart_products:
+                for product in update_products:
+                    cart_product = CartProduct(cart_id=cart.id, product_id=product.get('product_id'), quantity=product.get('quantity'), total_price=product.get('total_price'))
+                    session.add(cart_product)
+
+                # Commit:
+                session.commit()
+                print("Cart products updated successfully")
+                return True
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error updating cart products in the database: {error}")
+                return False
+
+    def delete(self):
+        with Session(engine) as session:
+            try:
+                cart = session.get(Cart, self.id)
+
+                session.delete(cart)
+                session.commit()
+                print(f"Cart ID {cart.id} successfully deleted from the database")
+                return True
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error deleting cart ID {self.id} from the database: {error}")
+                return False
+
+
+class CartProduct(Base):
+    __tablename__ = "cart_products"
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    cart_id: Mapped[int] = mapped_column(Integer, ForeignKey("carts.id"), nullable=False)
+    product_id: Mapped[int] = mapped_column(Integer, ForeignKey("products.id"), nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    total_price: Mapped[float] = mapped_column(Float, nullable=False)
+
+    # Relationships:
+    cart: Mapped["Cart"] = relationship(back_populates="cart_products")
+    product: Mapped[list["Product"]] = relationship(back_populates="in_carts")
+
+    # Methods:
+    def format_dict(self):
+        return {
+            "product_id": self.product_id,
+            "quantity": self.quantity,
+            "total_price": self.total_price
+        }
+
+    @staticmethod
+    def get_by_cart_id(cart_id):
+        with Session(engine) as session:
+            try:
+                stmt = select(CartProduct).where(CartProduct.cart_id == cart_id)
+                raw_cart_products = session.scalars(stmt).all()
+                cart_products = [cart_product.format_dict() for cart_product in raw_cart_products]
+
+                return cart_products
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error getting products for cart ID {cart_id} from the database: {error}")
+                return False
+
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+
+                session.flush()
+                print(f"Cart product ID {self.id} added successfully to the database")
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error adding cart products to the database: {error}")
+                return False
+
+    @staticmethod
+    def delete(cart_id):
+        with Session(engine) as session:
+            try:
+                stmt = delete(CartProduct).where(CartProduct.cart_id == cart_id)
+                session.execute(stmt)
+
+                session.commit()
+                print("Cart products deleted successfully")
+                return True
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error deleting products for cart ID {cart_id} from the database: {error}")
+                return False
+
+
 class Invoice(Base):
     __tablename__ = "invoices"
+
+    __table_args__ = (
+            CheckConstraint("status IN ('Completed', 'Returned')"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     purchase_date: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
     billing_address_id: Mapped[int] = mapped_column(Integer, ForeignKey("billing_addresses.id"), nullable=False)
     user_payment_method_id: Mapped[int] = mapped_column(Integer, ForeignKey("user_payment_methods.id"), nullable=False)
-    status: Mapped[str] = mapped_column(String(50), CheckConstraint("status IN ('Completed', 'Returned')"), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=False)
 
+    # Relationships:
     user: Mapped["User"] = relationship(back_populates="invoices")
     billing_address: Mapped["BillingAddress"] = relationship(back_populates="invoices")
     user_payment_method: Mapped["UserPaymentMethod"] = relationship(back_populates="invoices")
@@ -513,7 +740,6 @@ class Invoice(Base):
                 invoices_list = []
                 
                 for raw_invoice in raw_invoices:
-                    print(raw_invoice)
                     billing_address = BillingAddress.get_by_id(raw_invoice.billing_address_id).address
                     user_payment_method = UserPaymentMethod.get_by_id(raw_invoice.user_payment_method_id).alias
                     products = InvoiceProduct.get_by_invoice_id(raw_invoice.id) # lista de products
@@ -561,6 +787,7 @@ class InvoiceProduct(Base):
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     total_price: Mapped[float] = mapped_column(Float, nullable=False)
 
+    # Relationships:
     invoice: Mapped["Invoice"] = relationship(back_populates="products")
     product: Mapped["Product"] = relationship(back_populates="in_invoices")
 
