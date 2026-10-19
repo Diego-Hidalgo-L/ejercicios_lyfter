@@ -940,7 +940,7 @@ def delete_my_cart(identifier, cart_id):
 
 
 # ------------------- TRANSACTIONS start -------------------
-@app.route("/shop/<cart_id>", methods=["POST"])
+@app.route("/checkout/<cart_id>", methods=["POST"])
 def make_purchase(cart_id):
     try:
         token = request.headers.get("Authorization")
