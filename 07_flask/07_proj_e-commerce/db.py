@@ -564,11 +564,28 @@ class Cart(Base):
                 return False
 
     @staticmethod
-    def get_by_id(cart_id):
+    def get_by_id_obj(cart_id):
         with Session(engine) as session:
             try:
                 cart = session.get(Cart, cart_id)
                 return cart
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error getting cart ID {cart_id}: {error}")
+                return False 
+
+    @staticmethod
+    def get_by_id_dict(cart_id):
+        with Session(engine) as session:
+            try:
+                cart = session.get(Cart, cart_id)
+
+                if cart is None:
+                    return None
+                else:
+                    cart_products = [product.format_dict() for product in cart.cart_products]
+                    return cart.format_dict(cart_products)
                 
             except Exception as error:
                 session.rollback()
@@ -590,19 +607,24 @@ class Cart(Base):
                 print(f"Error adding cart to the database: {error}")
                 return False
 
-    def update(self, update_products):
+    def update(self, cart_products, status):
         with Session(engine) as session:
             try:
                 cart = session.get(Cart, self.id)
 
                 # Delete cart_products belonging to target cart:
-                stmt = delete(CartProduct).where(CartProduct.cart_id == cart.id)
-                session.execute(stmt)
+                if cart_products is not None:
+                    stmt = delete(CartProduct).where(CartProduct.cart_id == cart.id)
+                    session.execute(stmt)
 
-                # Ingreso nuevos cart_products:
-                for product in update_products:
-                    cart_product = CartProduct(cart_id=cart.id, product_id=product.get('product_id'), quantity=product.get('quantity'), total_price=product.get('total_price'))
-                    session.add(cart_product)
+                    # Ingreso nuevos cart_products:
+                    for product in cart_products:
+                        new_product = CartProduct(cart_id=cart.id, product_id=product.get('product_id'), quantity=product.get('quantity'), total_price=product.get('total_price'))
+                        session.add(new_product)
+
+                # Modifico 'status':
+                if status is not None:
+                    cart.status = status
 
                 # Commit:
                 session.commit()

@@ -9,7 +9,7 @@ WHERE is_default = TRUE;
 SELECT indexname, indexdef
 FROM pg_indexes
 WHERE schemaname = 'e_commerce'
-  AND tablename = 'user_payment_methods';
+  AND tablename = 'carts';
 
 -- Comprueba que no haya carritos activos duplicados:
 SELECT user_id, COUNT(*)
@@ -34,10 +34,19 @@ ALTER COLUMN id RESTART WITH 4;
 DELETE FROM e_commerce.carts
 WHERE id = 4;
 
-ALTER TABLE user_payment_methods
-ALTER COLUMN id RESTART WITH 5;
+ALTER TABLE e_commerce.carts
+ALTER COLUMN id RESTART WITH 1;
 
-SELECT * FROM e_commerce.invoices;
+ALTER TABLE e_commerce.cart_products
+ALTER COLUMN id RESTART WITH 1;
+
+INSERT INTO e_commerce.invoice_products
+VALUES (6, 3, 2, 3800);
+
+INSERT INTO e_commerce.invoice_products
+VALUES (6, 5, 2, 2340);
+
+SELECT * FROM e_commerce.cart_products;
 
 ALTER TABLE billing_addresses
 ALTER COLUMN id RESTART WITH 2;

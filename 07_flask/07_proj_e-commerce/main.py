@@ -825,17 +825,16 @@ def get_my_cart(identifier, cart_id):
             return validation_result, decoded
 
         user_id = decoded['id']
-        my_cart = Cart.get_by_id(cart_id)
-        cart_products = CartProduct.get_by_cart_id(cart_id)
+        my_cart = Cart.get_by_id_dict(cart_id)
 
         if my_cart is None:
             return jsonify(error_message=f"Cart ID {cart_id} not found"), 404
         elif my_cart is False:
             raise Exception(f"Error getting cart ID {cart_id} from the database")
-        elif my_cart.user_id != user_id:
+        elif my_cart.get('user_id') != user_id:
             return jsonify(error_message=f"Cannot access page"), 401
 
-        return jsonify(my_cart.format_dict(cart_products)), 200
+        return jsonify(my_cart), 200
 
     except Exception as error:
         print(error)
@@ -865,7 +864,7 @@ def add_active_cart(identifier):
         return jsonify(error_message=f"Error adding cart: {error}")
 
 
-@app.route("/me/<identifier>/carts/<cart_id>", methods=["PUT"])
+@app.route("/me/<identifier>/carts/<cart_id>", methods=["PUT"]) # ATENCIÓN: Al no estar atado a un session, se pueden generar cambios desligados entre tablas.
 def update_my_cart(identifier, cart_id):
     try:
         token = request.headers.get("Authorization")
@@ -875,21 +874,22 @@ def update_my_cart(identifier, cart_id):
             return validation_result, decoded
 
         user_id = decoded['id']
-        my_cart = Cart.get_by_id(cart_id)
+        my_cart = Cart.get_by_id_obj(cart_id)
 
         if my_cart is None:
             return jsonify(error_message=f"Cart ID {cart_id} not found"), 404
         elif my_cart is False:
             raise Exception(f"Error getting cart ID {cart_id}")
-        elif my_cart.user_id != user_id:
-            return jsonify(error_message=f"Invalid cart"), 401
-        elif my_cart.status != 'Active':
-            return jsonify(error_message="Inactive cart"), 400
+        elif my_cart.get('user_id') != user_id:
+            return jsonify(error_message="Invalid cart"), 401
+        elif my_cart.get('status') == 'Completed':
+            return jsonify(error_message="Cart already completed"), 400
 
         data = request.get_json()
-        update_products = data.get('products')
+        cart_products = data.get('cart_products')
+        status = data.get('status')
 
-        result = my_cart.update(update_products=update_products)
+        result = my_cart.update(cart_products=cart_products, status=status)
 
         if result is False:
             raise Exception
@@ -911,7 +911,7 @@ def delete_my_cart(identifier, cart_id):
             return validation_result, decoded
 
         user_id = decoded['id']
-        my_cart = Cart.get_by_id(cart_id)
+        my_cart = Cart.get_by_id_obj(cart_id)
 
         if my_cart is None:
             return jsonify(error_message=f"Cart ID {cart_id} not found"), 404
@@ -922,13 +922,13 @@ def delete_my_cart(identifier, cart_id):
         elif my_cart.status != 'Active':
             return jsonify(error_message="Inactive cart"), 400
 
-        cart_delete = my_cart.delete()
         products_delete = CartProduct.delete(cart_id)
-
-        if cart_delete is False:
-            raise Exception("Error deleting cart from the database")
         if products_delete is False:
             raise Exception("Error deleting cart products from the database")
+
+        cart_delete = my_cart.delete()
+        if cart_delete is False:
+            raise Exception("Error deleting cart from the database")
 
         return jsonify(message=f"Cart ID {cart_id} deleted successfully")
 

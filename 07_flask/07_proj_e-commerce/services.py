@@ -11,7 +11,7 @@ class Transaction:
         with Session(engine) as session:
             try:
                 # Data validation:
-                my_cart = Cart.get_by_id(cart_id)
+                my_cart = session.get(Cart, cart_id)
                 if my_cart is None:
                     return f"Cart not found", 404
                 elif my_cart is False:
@@ -41,7 +41,8 @@ class Transaction:
                     purchase_date = date.today()
 
                 # Verifico stock:
-                cart_products = my_cart.cart_products
+                cart_products = Cart.get_by_id_dict(cart_id)
+                print(cart_products)
                 available_stock_list = []
 
                 for product in cart_products: # lista de diccionarios
@@ -80,6 +81,9 @@ class Transaction:
 
                     stock_product.stock = available_stock - product_quantity
                     session.add(new_invoice_product)
+
+                # Update cart status: (Sería mejor usar el método Cart.update o así está bien?)
+                my_cart.status = 'Completed' # Esto no funcionó
 
                 # Commit:
                 session.commit()
