@@ -66,7 +66,7 @@ SET status = 'Completed';
 ALTER TABLE invoice_products
 ALTER COLUMN id RESTART WITH 4;
 
-SELECT * FROM e_commerce.invoices;
+SELECT * FROM e_commerce.carts;
 
 UPDATE e_commerce.invoices
 SET user_payment_method_id = 2

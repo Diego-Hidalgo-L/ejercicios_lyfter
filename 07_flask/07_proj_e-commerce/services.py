@@ -45,8 +45,8 @@ class Transaction:
                 available_stock_list = []
 
                 for product in cart_products: # lista de diccionarios
-                    product_id = product.get('product_id')
-                    purchase_quantity = product.get('quantity')
+                    product_id = product.product_id
+                    purchase_quantity = product.quantity
                     got_product = session.get(Product, product_id)
 
                     if got_product is None:
@@ -66,9 +66,9 @@ class Transaction:
 
                 # Insert en loop en tabla invoice_products:
                 for i, product in enumerate(cart_products):
-                    product_id = product.get('product_id')
-                    product_quantity = product.get('quantity')
-                    total_product_price = product.get('total_price')
+                    product_id = product.product_id
+                    product_quantity = product.quantity
+                    total_product_price = product.total_price
                     
                     new_invoice_product = InvoiceProduct(invoice_id=new_invoice.id, product_id=product_id, quantity=product_quantity, total_price=total_product_price)
                     available_stock = available_stock_list[i]
@@ -81,8 +81,8 @@ class Transaction:
                     stock_product.stock = available_stock - product_quantity
                     session.add(new_invoice_product)
 
-                # Update cart status: (Sería mejor usar el método Cart.update o así está bien?)
-                my_cart.status = 'Completed' # Esto no funcionó
+                # Modificar cart status:
+                my_cart.status = 'Completed'
 
                 # Commit:
                 session.commit()
@@ -114,11 +114,7 @@ class Transaction:
                     product = session.get(Product, invoice_product.product_id)
                     product.stock += invoice_product.quantity
 
-                    # Eliminar productos en invoice_products:
-                    inv_prod = session.scalar(select(InvoiceProduct).where(InvoiceProduct.invoice_id == invoice_id))
-                    session.delete(inv_prod)
-
-                # Modifico la factura original para marcarla con el estado de "Retornada":
+                # Modifico la factura original para marcarla con el estado de 'Returned':
                 invoice.status = 'Returned'
 
                 # Commit:
