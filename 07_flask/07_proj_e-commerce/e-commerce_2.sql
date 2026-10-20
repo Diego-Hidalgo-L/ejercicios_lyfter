@@ -41,12 +41,12 @@ ALTER TABLE e_commerce.cart_products
 ALTER COLUMN id RESTART WITH 1;
 
 INSERT INTO e_commerce.invoice_products
-VALUES (6, 3, 2, 3800);
+VALUES (7, 6, 3, 2, 3800);
 
 INSERT INTO e_commerce.invoice_products
-VALUES (6, 5, 2, 2340);
+VALUES (8, 6, 5, 2, 2340);
 
-SELECT * FROM e_commerce.cart_products;
+SELECT * FROM e_commerce.invoice_products;
 
 ALTER TABLE billing_addresses
 ALTER COLUMN id RESTART WITH 2;

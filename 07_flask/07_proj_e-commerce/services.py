@@ -41,8 +41,7 @@ class Transaction:
                     purchase_date = date.today()
 
                 # Verifico stock:
-                cart_products = Cart.get_by_id_dict(cart_id)
-                print(cart_products)
+                cart_products = my_cart.cart_products
                 available_stock_list = []
 
                 for product in cart_products: # lista de diccionarios
