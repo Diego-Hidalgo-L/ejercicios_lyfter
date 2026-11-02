@@ -107,6 +107,8 @@ class Transaction:
                     raise Exception("Error getting invoice from the database")
                 elif invoice.user_id != user.id and user.role != 'Administrator':       # Debería dejar que un Administrator haga una devolución por un cliente?
                     return f"Invalid return", 401
+                elif invoice.status == 'Returned':
+                    return f"Invoice already returned", 400
 
                 # Aumentar el stock de los productos en la cantidad que se registró en la compra:
                 for invoice_product in invoice.products:

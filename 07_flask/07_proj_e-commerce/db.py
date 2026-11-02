@@ -1,6 +1,6 @@
 from ioc_container import ioc
 from db_engine import engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, selectinload
 from sqlalchemy import MetaData, Identity, ForeignKey, CheckConstraint, Integer, Float, String, Date, Boolean, Index
 from sqlalchemy import select, delete, func, text
 from datetime import date
@@ -756,15 +756,15 @@ class Invoice(Base):
     def get_all_by_user_id(user_id):
         with Session(engine) as session:
             try:
-                stmt = select(Invoice).where(Invoice.user_id == user_id)
+                stmt = select(Invoice).options(selectinload(Invoice.billing_address), selectinload(Invoice.user_payment_method), selectinload(Invoice.products)).where(Invoice.user_id == user_id)
                 raw_invoices = session.scalars(stmt).all()
 
                 invoices_list = []
                 
                 for raw_invoice in raw_invoices:
-                    billing_address = BillingAddress.get_by_id(raw_invoice.billing_address_id).address
-                    user_payment_method = UserPaymentMethod.get_by_id(raw_invoice.user_payment_method_id).alias
-                    products = InvoiceProduct.get_by_invoice_id(raw_invoice.id) # lista de products
+                    billing_address = raw_invoice.billing_address.address
+                    user_payment_method = raw_invoice.user_payment_method.alias
+                    products = [product.format_dict() for product in raw_invoice.products] # lista de products
                     invoices_list.append(raw_invoice.format_dict(billing_address, user_payment_method, products))
 
                 return invoices_list

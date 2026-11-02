@@ -101,27 +101,20 @@ def login():
 
         user_id = user.id
         stored_hash = user.password
-        # fake_ip = generate_fake_ip()        # if Login History
-        # now = datetime.now(tz=timezone.utc)        # if Login History
 
         try:
             ioc.ph.verify(stored_hash, password)
         except VerifyMismatchError:
-            # ioc.login_repo.register_login(user_id, now, fake_ip, "failed")        # if Login History
             return jsonify(error_message="Invalid credentials"), 400
 
         access_token = ioc.jwt_manager.encode(user_id, "access")
         refresh_token = ioc.jwt_manager.encode(user_id, "refresh")
 
         if access_token is None:
-            # ioc.login_repo.register_login(user_id, now, fake_ip, "failed")        # if Login History
             return jsonify(error_message="Error encoding access token"), 401
         
         elif refresh_token is None:
-            # ioc.login_repo.register_login(user_id, now, fake_ip, "failed")        # if Login History
             return jsonify(error_message="Error encoding refresh token"), 401
-
-        # ioc.login_repo.register_login(user_id, now, fake_ip, "successful")        # if Login History
 
         return jsonify(access_token=access_token, refresh_token=refresh_token), 200
 
@@ -130,7 +123,7 @@ def login():
         return jsonify(error_message=f"Error logging in: {error}"), 500
 
 
-@app.route("/users/all", methods=["GET"])         # Después implementar filters
+@app.route("/users", methods=["GET"])         # Después implementar filters
 def get_all_users():
     try:
         token = request.headers.get("Authorization")
@@ -267,7 +260,7 @@ def add_billing_address(identifier):
         return jsonify(error_message=f"Error registering billing address for user ID {identifier}: {error}"), 500
 
 
-@app.route("/me/<identifier>/billing/all", methods=["GET"])
+@app.route("/me/<identifier>/billing", methods=["GET"])
 def get_all_my_billing_addresses(identifier):
     try:
         token = request.headers.get("Authorization")
@@ -429,10 +422,10 @@ def add_my_payment_method(identifier):
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error adding payment method for user ID {identifier}: {error}")
+        return jsonify(error_message=f"Error adding payment method for user ID {identifier}: {error}"), 500
 
 
-@app.route("/me/<identifier>/payment_methods")
+@app.route("/me/<identifier>/payment_methods", methods=["GET"])
 def get_my_payment_methods(identifier):
     try:
         token = request.headers.get("Authorization")
@@ -525,22 +518,22 @@ def delete_user_payment_method(identifier, payment_method_id):
 
 
 # ------------------- PRODUCTS start -------------------
-@app.route("/products/all", methods=["GET"])
+@app.route("/products", methods=["GET"])
 def get_all_products():
     try:
         token = request.headers.get("Authorization")
-        validation_result = validate_user(token)[0]
+        validation_result, decoded = validate_user(token)
 
         if validation_result is not True:
-            return validation_result
+            return validation_result, decoded
 
         # CACHE:
-        # all_key = ioc.cache_manager.generate_key("product","all")
+        all_key = ioc.cache_manager.generate_key("product","all")
         
-        # if ioc.cache_manager.check_key(all_key)[0]:
-        #     cached_data = json.loads(ioc.cache_manager.get_data(all_key))
+        if ioc.cache_manager.check_key(all_key)[0]:
+            cached_data = json.loads(ioc.cache_manager.get_data(all_key))
 
-        #     return jsonify(cached_data), 200
+            return jsonify(cached_data), 200
 
         # NO CACHE:
         else:
@@ -551,23 +544,23 @@ def get_all_products():
             elif products is False:
                 raise Exception
 
-            # ioc.cache_manager.store_data(all_key, json.dumps(all_products, default=str))
+            ioc.cache_manager.store_data(all_key, json.dumps(products, default=str))
 
             return jsonify(products), 200
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error getting all products: {error}")
+        return jsonify(error_message=f"Error getting all products: {error}"), 500
 
 
 @app.route("/products/<identifier>", methods=["GET"])
 def get_product(identifier):
     try:
         token = request.headers.get("Authorization")
-        validation_result = validate_user(token)[0]
+        validation_result, decoded = validate_user(token)
 
         if validation_result is not True:
-            return validation_result
+            return validation_result, decoded
 
         # SINGLE PRODUCT CACHE:
         # product_key = ioc.cache_manager.generate_key("product", identifier)
@@ -594,7 +587,7 @@ def get_product(identifier):
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error getting product ID {identifier}: {error}")
+        return jsonify(error_message=f"Error getting product ID {identifier}: {error}"), 500
 
 @app.route("/products", methods=['POST'])
 def add_product():
@@ -738,7 +731,7 @@ def delete_product(identifier):
 
 
 # ------------------- INVOICES start -------------------
-@app.route("/me/<identifier>/invoices/all", methods=["GET"])
+@app.route("/me/<identifier>/invoices", methods=["GET"])
 def get_my_invoices(identifier):
     try:
         token = request.headers.get("Authorization")
@@ -781,17 +774,17 @@ def get_invoice_by_id(identifier, invoice_id):
         billing_address = BillingAddress.get_by_id(invoice.billing_address_id).address      # falta poder extraer un billing_id con el invoice --> guardar en 'purchase'
         user_payment_method = UserPaymentMethod.get_by_id(invoice.user_payment_method_id).alias    #falta poder extraer un user_payment_method con el invoice --> guardar en 'purchase'
 
-        return jsonify(id=invoice.id, user_id=invoice.user_id, products=products, purchase_date=invoice.purchase_date, billing_address=billing_address, user_payment_method=user_payment_method), 200
+        return jsonify(id=invoice.id, user_id=invoice.user_id, products=products, purchase_date=invoice.purchase_date, billing_address=billing_address, user_payment_method=user_payment_method, status=invoice.status), 200
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error getting invoice ID {identifier}: {error}")
+        return jsonify(error_message=f"Error getting invoice ID {identifier}: {error}"), 500
 
 # ------------------- INVOICES end -------------------
 
 
 # ------------------- CARTS start -------------------
-@app.route("/me/<identifier>/carts/all", methods=["GET"])
+@app.route("/me/<identifier>/carts", methods=["GET"])
 def get_all_my_carts(identifier):
     try:
         token = request.headers.get("Authorization")
@@ -832,7 +825,7 @@ def get_my_cart(identifier, cart_id):
         elif my_cart is False:
             raise Exception(f"Error getting cart ID {cart_id} from the database")
         elif my_cart.get('user_id') != user_id:
-            return jsonify(error_message=f"Cannot access page"), 401
+            return jsonify(error_message=f"Cannot access page"), 403
 
         return jsonify(my_cart), 200
 
@@ -861,7 +854,7 @@ def add_active_cart(identifier):
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error adding cart: {error}")
+        return jsonify(error_message=f"Error adding cart: {error}"), 500
 
 
 @app.route("/me/<identifier>/carts/<cart_id>", methods=["PUT"]) # ATENCIÓN: Al no estar atado a un session, se pueden generar cambios desligados entre tablas.
@@ -880,9 +873,9 @@ def update_my_cart(identifier, cart_id):
             return jsonify(error_message=f"Cart ID {cart_id} not found"), 404
         elif my_cart is False:
             raise Exception(f"Error getting cart ID {cart_id}")
-        elif my_cart.get('user_id') != user_id:
+        elif my_cart.user_id != user_id:
             return jsonify(error_message="Invalid cart"), 401
-        elif my_cart.get('status') == 'Completed':
+        elif my_cart.status == 'Completed':
             return jsonify(error_message="Cart already completed"), 400
 
         data = request.get_json()
@@ -898,7 +891,7 @@ def update_my_cart(identifier, cart_id):
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error updating cart ID {cart_id}: {error}")
+        return jsonify(error_message=f"Error updating cart ID {cart_id}: {error}"), 500
 
 
 @app.route("/me/<identifier>/carts/<cart_id>", methods=["DELETE"])
@@ -934,7 +927,7 @@ def delete_my_cart(identifier, cart_id):
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error deleting cart ID {cart_id}: {error}")
+        return jsonify(error_message=f"Error deleting cart ID {cart_id}: {error}"), 500
 
 # ------------------- CARTS end -------------------
 
@@ -996,7 +989,7 @@ def return_purchase(invoice_id):
         token = request.headers.get("Authorization")
         validation_result, decoded = validate_user(token)
 
-        if validation_result is None:
+        if validation_result is not True:
             return validation_result, decoded
 
         result, status = Transaction().return_purchase(invoice_id, decoded['id'])

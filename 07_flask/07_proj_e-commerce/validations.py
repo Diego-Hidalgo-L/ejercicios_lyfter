@@ -28,7 +28,7 @@ def validate_if_owner(token, identifier):
         return jsonify(error_message="Error decoding token"), 401
 
     if decoded['id'] != int(identifier):
-        return jsonify(error_message="Cannot access page"), 401
+        return jsonify(error_message="Cannot access page"), 403
 
     return True, decoded
 
