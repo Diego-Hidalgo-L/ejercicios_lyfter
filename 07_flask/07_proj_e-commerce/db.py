@@ -260,10 +260,6 @@ class PaymentMethod(Base):
             "method": self.method
         }
 
-    @staticmethod
-    def get_all():
-        pass
-
     def add(self):
         with Session(engine) as session:
             try:
@@ -277,6 +273,20 @@ class PaymentMethod(Base):
             except Exception as error:
                 session.rollback()
                 print(f"Error adding payment method to the database: {error}")
+                return False
+
+    @staticmethod
+    def get_all():
+        with Session(engine) as session:
+            try:
+                stmt = select(PaymentMethod)
+                payment_methods = session.scalars(stmt).all()
+
+                return [method.format_dict() for method in payment_methods]
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error getting all payment methods from the database: {error}")
                 return False
 
 
@@ -336,7 +346,6 @@ class UserPaymentMethod(Base):      # LINK TABLE N:N | Users:PaymentMethods
                     method = session.get(PaymentMethod, payment_method.payment_method_id)
                     payment_methods.append(payment_method.format_dict(method.method))
 
-                print(payment_methods)
                 return payment_methods
 
             except Exception as error:
@@ -419,9 +428,8 @@ class Product(Base):
             try:
                 stmt = select(Product)
                 raw_products = session.scalars(stmt).all()
-                products = [product.format_dict() for product in raw_products]
 
-                return products
+                return [product.format_dict() for product in raw_products]
 
             except Exception as error:
                 print(f"Error getting all products from the database: {error}")
@@ -765,6 +773,7 @@ class Invoice(Base):
                     billing_address = raw_invoice.billing_address.address
                     user_payment_method = raw_invoice.user_payment_method.alias
                     products = [product.format_dict() for product in raw_invoice.products] # lista de products
+
                     invoices_list.append(raw_invoice.format_dict(billing_address, user_payment_method, products))
 
                 return invoices_list

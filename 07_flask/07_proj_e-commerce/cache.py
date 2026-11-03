@@ -1,5 +1,5 @@
 import redis
-import json
+import random
 
 
 class CacheManager:
@@ -18,9 +18,14 @@ class CacheManager:
     def generate_key(self, prefix, identifier):
         return f"{prefix}:{identifier}"
 
-    def store_data(self, key, data, time_to_live=None):
+    def store_data(self, key, data, ttl=None, jitter=30):
         try:
-            self.redis_client.set(key, data, time_to_live)
+            if ttl is not None:
+                final_ttl = ttl + random.randint(0, jitter)
+            else:
+                final_ttl = None
+
+            self.redis_client.set(key, data, final_ttl)
             print("Data cached successfully")
 
         except redis.RedisError as error:

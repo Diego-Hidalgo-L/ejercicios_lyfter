@@ -2,6 +2,7 @@ from ioc_container import ioc
 from db import User, BillingAddress, PaymentMethod, UserPaymentMethod, Product, Cart, CartProduct, Invoice, InvoiceProduct
 from validations import validate_admin, validate_user, validate_if_owner, validate_same_user_or_admin
 from services import Transaction
+from cache_functions import check_if_cache, invalidate_cache
 from functions import generate_fake_ip
 
 from flask import Flask, request, jsonify
@@ -253,6 +254,9 @@ def add_billing_address(identifier):
         if new_billing_address is False:
             return jsonify(error_message=f"Error adding billing address to the database"), 500
 
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("billing_addresses", identifier)
+
         return jsonify(id=new_billing_address.id, user_id=new_billing_address.user_id, address=new_billing_address.address), 201
 
     except Exception as error:
@@ -260,31 +264,8 @@ def add_billing_address(identifier):
         return jsonify(error_message=f"Error registering billing address for user ID {identifier}: {error}"), 500
 
 
-@app.route("/me/<identifier>/billing", methods=["GET"])
-def get_all_my_billing_addresses(identifier):
-    try:
-        token = request.headers.get("Authorization")
-        validation_result, decoded = validate_if_owner(token, identifier)
-
-        if validation_result is not True:
-            return validation_result, decoded
-
-        billing_addresses = BillingAddress.get_all_by_user_id(decoded['id'])
-
-        if billing_addresses is None:
-            return jsonify(error_message="No billing addresses found"), 404
-        elif billing_addresses is False:
-            raise Exception
-
-        return billing_addresses, 200
-
-    except Exception as error:
-        print(error)
-        return jsonify(error_message=f"Error getting user's billing addresses (user ID: {identifier}): {error}"), 500
-
-
 @app.route("/me/<identifier>/billing/<billing_id>", methods=["GET"])
-def get_billing_address(identifier, billing_id):
+def get_my_billing_address(identifier, billing_id):
     try:
         token = request.headers.get("Authorization")
         validation_result, result = validate_same_user_or_admin(token, identifier)
@@ -292,17 +273,62 @@ def get_billing_address(identifier, billing_id):
         if validation_result is not True:
             return result
 
-        billing_address = BillingAddress.get_by_id(billing_id)
+        # IF CACHE:
+        data, key = check_if_cache("billing_address", billing_id)
 
-        if billing_address.user_id != result:
-            return jsonify(error_message="Cannot access page"), 403
+        if data is not None:
+            return data, key
 
-        if billing_address is None:
-            return jsonify(error_message="No billing addresses found"), 404
-        elif billing_address is False:
-            raise Exception
+        # ELIF NO CACHE:
+        else:
+            billing_address = BillingAddress.get_by_id(billing_id)
 
-        return billing_address.format_dict(), 200
+            if billing_address.user_id != result:
+                return jsonify(error_message="Cannot access page"), 403
+
+            if billing_address is None:
+                return jsonify(error_message="No billing addresses found"), 404
+            elif billing_address is False:
+                raise Exception
+
+            # STORE CACHE:
+            ioc.cache_manager.store_data(key, json.dumps(billing_address, default=str), 300)
+
+            return billing_address.format_dict(), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error getting user's billing addresses (user ID: {identifier}): {error}"), 500
+
+
+@app.route("/me/<identifier>/billing", methods=["GET"])
+def get_my_billing_addresses(identifier):
+    try:
+        token = request.headers.get("Authorization")
+        validation_result, decoded = validate_if_owner(token, identifier)
+
+        if validation_result is not True:
+            return validation_result, decoded
+
+        # IF CACHE:
+        data, key = check_if_cache("billing_addresses", identifier)
+
+        if data is not None:
+            return data, key
+
+        # ELIF NO CACHE:
+        else:
+            billing_addresses = BillingAddress.get_all_by_user_id(decoded['id'])
+
+            if billing_addresses is None:
+                return jsonify(error_message="No billing addresses found"), 404
+            elif billing_addresses is False:
+                raise Exception
+
+            # STORE CACHE:
+            ioc.cache_manager.store_data(key, json.dumps(billing_addresses, default=str), 300)
+
+            return billing_addresses, 200
 
     except Exception as error:
         print(error)
@@ -332,6 +358,9 @@ def update_billing_address(identifier, billing_id):
 
         if result is False:
             raise Exception
+
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("billing_addresses", identifier)
 
         return jsonify(message=f"Billing address for user ID {identifier} updated successfully"), 200
         
@@ -390,11 +419,43 @@ def add_payment_method():
         if result is False:
             raise Exception
 
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("payment_methods", "all")
+
         return jsonify(message="Payment method added successfully"), 201
 
     except Exception as error:
         print(error)
         return jsonify(error_message=f"Error adding payment method: {error}"), 500
+
+
+@app.route("/payment_methods", methods=["GET"])
+def get_all_payment_methods():
+    token = request.headers.get("Authorization")
+    validation_result, decoded = validate_user(token)
+
+    if validation_result is not True:
+        return validation_result, decoded
+
+    # IF CACHE:
+    data, key = check_if_cache("payment_methods", "all")
+
+    if data is not None:
+        return data, key
+
+    # ELIF NO CACHE:
+    else:
+        payment_methods = PaymentMethod.get_all()
+
+        if payment_methods is None:
+            return jsonify(error_message=f"No products found"), 404
+        elif payment_methods is False:
+            raise Exception
+
+        # STORE CACHE:
+        ioc.cache_manager.store_data(key, json.dumps(payment_methods, default=str), 600)
+
+        return jsonify(payment_methods), 200
 
 
 @app.route("/me/<identifier>/payment_methods", methods=["POST"])
@@ -418,6 +479,9 @@ def add_my_payment_method(identifier):
         if result is False:
             raise Exception
 
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("user_payment_methods", identifier)
+
         return jsonify(message=f"Payment method added successfully for user ID {user_id}"), 201
 
     except Exception as error:
@@ -434,14 +498,25 @@ def get_my_payment_methods(identifier):
         if validation_result is not True:
             return validation_result, decoded
 
-        payment_methods = UserPaymentMethod.get_all_by_user_id(decoded['id'])
+        # IF CACHE:
+        data, key = check_if_cache("user_payment_methods", identifier)
 
-        if payment_methods is None:
-            return jsonify("No payment methods found"), 404
-        elif payment_methods is False:
-            raise Exception
+        if data is not None:
+            return data, key
 
-        return payment_methods, 200
+        # ELIF NO CACHE:
+        else:
+            user_payment_methods = UserPaymentMethod.get_all_by_user_id(decoded['id'])
+
+            if user_payment_methods is None:
+                return jsonify("No payment methods found"), 404
+            elif user_payment_methods is False:
+                raise Exception
+
+            # STORE CACHE:
+            ioc.cache_manager.store_data(key, json.dumps(user_payment_methods, default=str), 300)
+
+            return user_payment_methods, 200
 
     except Exception as error:
         print(error)
@@ -476,6 +551,9 @@ def update_user_payment_method(identifier, payment_method_id):
         if result is False:
             raise Exception
 
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("user_payment_methods", identifier)
+
         return jsonify(message=f"Payment method for user ID {identifier} updated successfully"), 200
 
     except Exception as error:
@@ -507,6 +585,9 @@ def delete_user_payment_method(identifier, payment_method_id):
         if delete_result is False:
             raise Exception
 
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("user_payment_methods", identifier)
+
         return jsonify(message=f"Payment method for user ID {identifier} deleted successfully"), 200
 
     except Exception as error:
@@ -518,77 +599,6 @@ def delete_user_payment_method(identifier, payment_method_id):
 
 
 # ------------------- PRODUCTS start -------------------
-@app.route("/products", methods=["GET"])
-def get_all_products():
-    try:
-        token = request.headers.get("Authorization")
-        validation_result, decoded = validate_user(token)
-
-        if validation_result is not True:
-            return validation_result, decoded
-
-        # CACHE:
-        all_key = ioc.cache_manager.generate_key("product","all")
-        
-        if ioc.cache_manager.check_key(all_key)[0]:
-            cached_data = json.loads(ioc.cache_manager.get_data(all_key))
-
-            return jsonify(cached_data), 200
-
-        # NO CACHE:
-        else:
-            products = Product.get_all()
-
-            if products is None:
-                return jsonify(error_message=f"No products found"), 404
-            elif products is False:
-                raise Exception
-
-            ioc.cache_manager.store_data(all_key, json.dumps(products, default=str))
-
-            return jsonify(products), 200
-
-    except Exception as error:
-        print(error)
-        return jsonify(error_message=f"Error getting all products: {error}"), 500
-
-
-@app.route("/products/<identifier>", methods=["GET"])
-def get_product(identifier):
-    try:
-        token = request.headers.get("Authorization")
-        validation_result, decoded = validate_user(token)
-
-        if validation_result is not True:
-            return validation_result, decoded
-
-        # SINGLE PRODUCT CACHE:
-        # product_key = ioc.cache_manager.generate_key("product", identifier)
-
-        # if ioc.cache_manager.check_key(product_key)[0]:
-        #     cached_data = json.loads(ioc.cache_manager.get_data(product_key))
-        #     ioc.cache_manager.expire(product_key, 600)
-
-        #     return jsonify(cached_data), 200
-
-        # NO CACHE:
-        else:
-            product = Product.get_by_id(identifier)
-
-            if product is None:
-                return jsonify(error_message=f"Product ID {identifier} not found"), 404
-            elif product is False:
-                raise Exception
-
-            # formatted_product = product.format_dict()
-            # ioc.cache_manager.store_data(product_key, json.dumps(formatted_product), 600)
-
-            return product.format_dict(), 200
-
-    except Exception as error:
-        print(error)
-        return jsonify(error_message=f"Error getting product ID {identifier}: {error}"), 500
-
 @app.route("/products", methods=['POST'])
 def add_product():
     try:
@@ -610,20 +620,83 @@ def add_product():
         if result is False:
             return jsonify(error_message=f"Error inserting product into the database"), 500
 
-        # CHECK AND INVALIDATE 'ALL' CACHE:
-        # all_key = ioc.cache_manager.generate_key("product", "all")
-
-        # if ioc.cache_manager.check_key(all_key)[0]:
-        #     delete_cache = ioc.cache_manager.delete_data(all_key)
-        #     print("Cache invalidated successfully:", delete_cache)
-        # else:
-        #     print("No cache to invalidate")
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("product", "all")
 
         return jsonify(message=f"Product '{new_product.name}' added successfully"), 201
 
     except Exception as error:
         print(error)
         return jsonify(error_message=f"Error inserting product: {error}"), 500
+
+
+@app.route("/products", methods=["GET"])
+def get_all_products():
+    try:
+        token = request.headers.get("Authorization")
+        validation_result, decoded = validate_user(token)
+
+        if validation_result is not True:
+            return validation_result, decoded
+
+        # IF CACHE:
+        data, key = check_if_cache("product", "all")
+
+        if data is not None:
+            return data, key
+
+        # ELIF NO CACHE:
+        else:
+            products = Product.get_all()
+
+            if products is None:
+                return jsonify(error_message=f"No products found"), 404
+            elif products is False:
+                raise Exception
+
+            # STORE CACHE:
+            ioc.cache_manager.store_data(key, json.dumps(products, default=str), 600)
+
+            return jsonify(products), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error getting all products: {error}"), 500
+
+
+@app.route("/products/<identifier>", methods=["GET"])
+def get_product(identifier):
+    try:
+        token = request.headers.get("Authorization")
+        validation_result, decoded = validate_user(token)
+
+        if validation_result is not True:
+            return validation_result, decoded
+
+        # IF CACHE:
+        data, key = check_if_cache("product", identifier)
+        
+        if data is not None:
+            return data, key
+
+        # ELIF NO CACHE:
+        else:
+            product = Product.get_by_id(identifier)
+
+            if product is None:
+                return jsonify(error_message=f"Product ID {identifier} not found"), 404
+            elif product is False:
+                raise Exception
+
+            # STORE CACHE:
+            formatted_product = product.format_dict()
+            ioc.cache_manager.store_data(key, json.dumps(formatted_product), 600)
+
+            return product.format_dict(), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error getting product ID {identifier}: {error}"), 500
 
 
 @app.route("/products/<identifier>", methods=["PATCH"])
@@ -653,25 +726,8 @@ def update_product(identifier):
         if result is False:
             raise Exception
 
-        # # SINGLE PRODUCT CACHE:
-        # product_key = ioc.cache_manager.generate_key("product", identifier)
-        # key_check = ioc.cache_manager.check_key(product_key)
-
-        # if key_check[0]:
-        #     delete_cache = ioc.cache_manager.delete_data(product_key)
-        #     print("Cache invalidated successfully:", delete_cache)
-        # else:
-        #     print("No cache to invalidate")
-
-        # # CHECK AND INVALIDATE 'ALL' CACHE:
-        # all_key = ioc.cache_manager.generate_key("product", "all")
-        # all_check = ioc.cache_manager.check_key(all_key)
-
-        # if all_check[0]:
-        #     delete_cache = ioc.cache_manager.delete_data(all_key)
-        #     print("Cache invalidated successfully:", delete_cache)
-        # else:
-        #     print("No cache to invalidate")
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("product", identifier)
 
         return jsonify(message=f"Product ID {identifier} updated successfully"), 200
 
@@ -701,25 +757,8 @@ def delete_product(identifier):
         if result is False:
             raise Exception
 
-        # # SINGLE PRODUCT CACHE:
-        # product_key = ioc.cache_manager.generate_key("product", identifier)
-        # key_check = ioc.cache_manager.check_key(product_key)
-
-        # if key_check[0]:
-        #     delete_cache = ioc.cache_manager.delete_data(product_key)
-        #     print("Cache invalidated successfully:", delete_cache)
-        # else:
-        #     print("No cache to invalidate")
-
-        # # CHECK AND INVALIDATE 'ALL' CACHE:
-        # all_key = ioc.cache_manager.generate_key("product", "all")
-        # all_check = ioc.cache_manager.check_key(all_key)
-
-        # if all_check[0]:
-        #     delete_cache = ioc.cache_manager.delete_data(all_key)
-        #     print("Cache invalidated successfully:", delete_cache)
-        # else:
-        #     print("No cache to invalidate")
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("product", identifier)
 
         return jsonify(message=f"Product ID {identifier} deleted successfully"), 200
 
