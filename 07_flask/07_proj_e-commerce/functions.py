@@ -1,5 +1,6 @@
-import random
 from ioc_container import ioc
+
+import random
 
 # data = {'id': 12}
 # access_token = ioc.jwt_manager.encode(data, "access")

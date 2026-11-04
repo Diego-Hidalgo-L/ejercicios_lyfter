@@ -1,5 +1,7 @@
 from db import User, Product, BillingAddress, UserPaymentMethod, Cart, Invoice, InvoiceProduct
 from db_engine import engine
+from cache_functions import invalidate_cache
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from flask import jsonify
@@ -59,6 +61,9 @@ class Transaction:
 
                     available_stock_list.append(available_stock)
 
+                    # CHECK AND INVALIDATE CACHE PER PRODUCT + ALL PRODUCTS: --> Está bien repetir el check e invalidación de 'all' en cada iteración? Debería separar esas invalidaciones?
+                    invalidate_cache("products", item_id=product_id)
+
                 # Si todo el stock está bien, creo el invoice:
                 new_invoice = Invoice(user_id=user_id, purchase_date=purchase_date, billing_address_id=billing_address_id, user_payment_method_id=user_payment_method_id, status='Completed')
                 session.add(new_invoice)
@@ -115,6 +120,9 @@ class Transaction:
                     print("invoice_product_id:", invoice_product.product_id)
                     product = session.get(Product, invoice_product.product_id)
                     product.stock += invoice_product.quantity
+
+                    # CHECK AND INVALIDATE CACHE PER PRODUCT + ALL PRODUCTS: --> Está bien repetir el check e invalidación de 'all' en cada iteración? Debería separar esas invalidaciones?
+                    invalidate_cache("products", item_id=invoice_product.id)
 
                 # Modifico la factura original para marcarla con el estado de 'Returned':
                 invoice.status = 'Returned'

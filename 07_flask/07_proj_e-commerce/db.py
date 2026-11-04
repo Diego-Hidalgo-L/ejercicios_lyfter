@@ -1,5 +1,6 @@
 from ioc_container import ioc
 from db_engine import engine
+
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, selectinload
 from sqlalchemy import MetaData, Identity, ForeignKey, CheckConstraint, Integer, Float, String, Date, Boolean, Index
 from sqlalchemy import select, delete, func, text
@@ -43,6 +44,36 @@ class User(Base):
             "role": self.role
         }
 
+    def add_initial_admin(self):    # es necesario este método? No podría nada más usar el add(self) de abajo, aún para crear el Admin inicial?
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("Initial Administrator added successfully")
+
+                session.refresh(self)
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print("Error inserting initial Administrator into the database:", error)
+                return False
+
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("User added successfully to the database")
+
+                session.refresh(self)
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print("Error adding user to the database:", error)
+                return False
+
     @staticmethod
     def get_all():
         with Session(engine) as session:
@@ -78,36 +109,6 @@ class User(Base):
 
             except Exception as error:
                 print(f"Error getting user with username '{username}' from the database: {error}")
-                return False
-
-    def add_initial_admin(self):    # es necesario este método? No podría nada más usar el add(self) de abajo, aún para crear el Admin inicial?
-        with Session(engine) as session:
-            try:
-                session.add(self)
-                session.commit()
-                print("Initial Administrator added successfully")
-
-                session.refresh(self)
-                return self
-
-            except Exception as error:
-                session.rollback()
-                print("Error inserting initial Administrator into the database:", error)
-                return False
-
-    def add(self):
-        with Session(engine) as session:
-            try:
-                session.add(self)
-                session.commit()
-                print("User added successfully to the database")
-
-                session.refresh(self)
-                return self
-
-            except Exception as error:
-                session.rollback()
-                print("Error adding user to the database:", error)
                 return False
 
     def update(self, username=None, password=None, full_name=None): # 'role' solo permitido para Administrator?
@@ -169,6 +170,21 @@ class BillingAddress(Base):
             "address": self.address
         }
 
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("Billing address added successfully to the database")
+
+                session.refresh(self)
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error adding product to the database: {error}")
+                return False
+
     @staticmethod
     def get_all_by_user_id(user_id):
         with Session(engine) as session:
@@ -192,21 +208,6 @@ class BillingAddress(Base):
 
             except Exception as error:
                 print(f"Error getting user's billing addresses (ID: {billing_id}): {error}")
-                return False
-
-    def add(self):
-        with Session(engine) as session:
-            try:
-                session.add(self)
-                session.commit()
-                print("Billing address added successfully to the database")
-
-                session.refresh(self)
-                return self
-
-            except Exception as error:
-                session.rollback()
-                print(f"Error adding product to the database: {error}")
                 return False
 
     def update(self, new_address):
@@ -422,6 +423,21 @@ class Product(Base):
                 "stock": self.stock
             }
 
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("Product added successfully to the database")
+
+                session.refresh(self)
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error adding product to the database: {error}")
+                return True
+
     @staticmethod
     def get_all():
         with Session(engine) as session:
@@ -445,21 +461,6 @@ class Product(Base):
             except Exception as error:
                 print(f"Error getting product ID {product_id} from the database: {error}")
                 return False
-
-    def add(self):
-        with Session(engine) as session:
-            try:
-                session.add(self)
-                session.commit()
-                print("Product added successfully to the database")
-
-                session.refresh(self)
-                return self
-
-            except Exception as error:
-                session.rollback()
-                print(f"Error adding product to the database: {error}")
-                return True
 
     def update(self, name=None, price=None, entry_date=None, stock=None):
         with Session(engine) as session:
@@ -530,11 +531,26 @@ class Cart(Base):
             "status": self.status
         }
 
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("Cart added successfully to the database")
+
+                session.refresh(self)
+                return self
+            
+            except Exception as error:
+                session.rollback()
+                print(f"Error adding cart to the database: {error}")
+                return False
+
     @staticmethod
     def get_all_by_user_id(user_id):
         with Session(engine) as session:
             try:
-                stmt = select(Cart)
+                stmt = select(Cart).where(Cart.user_id == user_id)
                 raw_carts = session.scalars(stmt).all()
 
                 carts_list = []
@@ -598,21 +614,6 @@ class Cart(Base):
             except Exception as error:
                 session.rollback()
                 print(f"Error getting cart ID {cart_id}: {error}")
-                return False 
-
-    def add(self):
-        with Session(engine) as session:
-            try:
-                session.add(self)
-                session.commit()
-                print("Cart added successfully to the database")
-
-                session.refresh(self)
-                return self
-            
-            except Exception as error:
-                session.rollback()
-                print(f"Error adding cart to the database: {error}")
                 return False
 
     def update(self, cart_products, status):
@@ -681,21 +682,6 @@ class CartProduct(Base):
             "total_price": self.total_price
         }
 
-    @staticmethod
-    def get_by_cart_id(cart_id):
-        with Session(engine) as session:
-            try:
-                stmt = select(CartProduct).where(CartProduct.cart_id == cart_id)
-                raw_cart_products = session.scalars(stmt).all()
-                cart_products = [cart_product.format_dict() for cart_product in raw_cart_products]
-
-                return cart_products
-
-            except Exception as error:
-                session.rollback()
-                print(f"Error getting products for cart ID {cart_id} from the database: {error}")
-                return False
-
     def add(self):
         with Session(engine) as session:
             try:
@@ -709,6 +695,21 @@ class CartProduct(Base):
             except Exception as error:
                 session.rollback()
                 print(f"Error adding cart products to the database: {error}")
+                return False
+
+    @staticmethod
+    def get_by_cart_id(cart_id):
+        with Session(engine) as session:
+            try:
+                stmt = select(CartProduct).where(CartProduct.cart_id == cart_id)
+                raw_cart_products = session.scalars(stmt).all()
+                cart_products = [cart_product.format_dict() for cart_product in raw_cart_products]
+
+                return cart_products
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error getting products for cart ID {cart_id} from the database: {error}")
                 return False
 
     @staticmethod
@@ -760,6 +761,21 @@ class Invoice(Base):
             "status": self.status
         }
 
+    def add(self):
+        with Session(engine) as session:
+            try:
+                session.add(self)
+                session.commit()
+                print("Invoice added successfully to the database")
+
+                session.refresh(self)
+                return self
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error adding invoice to the database: {error}")
+                return False
+
     @staticmethod
     def get_all_by_user_id(user_id):
         with Session(engine) as session:
@@ -791,21 +807,6 @@ class Invoice(Base):
 
             except Exception as error:
                 print(f"Error getting invoice ID {invoice_id} from the database: {error}")
-                return False
-
-    def add(self):
-        with Session(engine) as session:
-            try:
-                session.add(self)
-                session.commit()
-                print("Invoice added successfully to the database")
-
-                session.refresh(self)
-                return self
-
-            except Exception as error:
-                session.rollback()
-                print(f"Error adding invoice to the database: {error}")
                 return False
 
 
@@ -859,11 +860,3 @@ class InvoiceProduct(Base):
             except Exception as error:
                 print(f"Error getting invoice products from the database: {error}")
                 return False
-
-
-# CREAR:
-# tabla de my_cart que se borre al finalizar una compra, pero que se mantenga siempre y cuando la compra no se haya completado.
-
-
-# CREAR:
-# tabla de carritos/compras anteriores.

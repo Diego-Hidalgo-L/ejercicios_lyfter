@@ -10,7 +10,7 @@ def seed_admin():
 
         hashed_password = ioc.ph.hash(password)
         new_user = User(username=username, password=hashed_password, email=email, full_name=full_name, role='Administrator')
-        result = new_user.add()
+        result = new_user.add_initial_admin()
 
         if result is not None:
             return f"Administrator created successfully. ID: {result.id}"

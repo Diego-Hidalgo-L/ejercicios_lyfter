@@ -15,8 +15,14 @@ class CacheManager:
         if connection_status:
             print("Connection created successfully")
 
-    def generate_key(self, prefix, identifier):
-        return f"{prefix}:{identifier}"
+    def generate_key(self, item, item_id):
+        return f"{item}:{item_id}"
+
+    def generate_users_key(self, identifier, item, item_id=None):
+        if item_id is None:
+            return f"users:{identifier}:{item}:all"
+        else:
+            return f"users:{identifier}:{item}:{item_id}"
 
     def store_data(self, key, data, ttl=None, jitter=30):
         try:
@@ -27,6 +33,7 @@ class CacheManager:
 
             self.redis_client.set(key, data, final_ttl)
             print("Data cached successfully")
+            print(f"TTL: {final_ttl}")
 
         except redis.RedisError as error:
             print(f"An error occurred while storing data in Redis: {error}")

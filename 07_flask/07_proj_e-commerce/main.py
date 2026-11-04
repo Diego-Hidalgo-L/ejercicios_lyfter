@@ -1,6 +1,6 @@
 from ioc_container import ioc
 from db import User, BillingAddress, PaymentMethod, UserPaymentMethod, Product, Cart, CartProduct, Invoice, InvoiceProduct
-from validations import validate_admin, validate_user, validate_if_owner, validate_same_user_or_admin
+from validations import validate_user, validate_owner, validate_admin, validate_owner_or_admin
 from services import Transaction
 from cache_functions import check_if_cache, invalidate_cache
 from functions import generate_fake_ip
@@ -19,6 +19,10 @@ app = Flask("e-commerce")
 def refresh_token():
     try:
         token = request.headers.get("Authorization")
+        validation, decoded = validate_user(token)
+
+        if validation is not True:
+            return validation, decoded
 
         if token is None:
             return jsonify(error_message="Invalid token"), 401
@@ -75,6 +79,9 @@ def register():
 
         elif refresh_token is None:
             return jsonify(error_message="Error encoding refresh token"), 401
+
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("users", "all")
         
         return jsonify(access_token=access_token, refresh_token=refresh_token), 201
 
@@ -128,19 +135,31 @@ def login():
 def get_all_users():
     try:
         token = request.headers.get("Authorization")
-        validation_result = validate_admin(token)
+        validation = validate_admin(token)
 
-        if validation_result is not True:
-            return validation_result
+        if validation is not True:
+            return validation
 
-        users = User.get_all()
+        # IF CACHE:
+        users_key = ioc.cache_manager.generate_key("users", "all")
+        cache_result = check_if_cache(users_key)
 
-        if users is None:
-            return jsonify(error_message=f"No users found"), 404
-        elif users is False:
-            raise Exception
+        if cache_result is not None:
+            return cache_result
 
-        return jsonify(users), 200
+        # ELIF NO CACHE:
+        else:
+            users = User.get_all()
+
+            if users is None:
+                return jsonify(error_message=f"No users found"), 404
+            elif users is False:
+                raise Exception
+
+            # STORE CACHE:
+            ioc.cache_manager.store_data(users_key, json.dumps(users, default=str), 300)
+
+            return jsonify(users), 200
         
     except Exception as error:
         print(error)
@@ -151,23 +170,35 @@ def get_all_users():
 def me(identifier):
     try:
         token = request.headers.get('Authorization')
-        validation_result, decoded = validate_if_owner(token, identifier)
+        validation, decoded = validate_owner(token, identifier)
 
-        if validation_result is not True:
-            return validation_result, decoded
+        if validation is not True:
+            return validation, decoded
 
-        user_id = decoded['id']
-        user = User.get_by_id(identifier)
+        # IF CACHE:
+        me_key = ioc.cache_manager.generate_users_key(identifier, "me", identifier)
+        cache_result = check_if_cache(me_key)
 
-        if user is None:
-            return jsonify(error_message=f"User ID {identifier} not found"), 404
-        elif user is False:
-            raise Exception
+        if cache_result is not None:
+            return cache_result
 
-        username = user.username
-        role = user.role
+        # ELIF NO CACHE:
+        else:
+            user_id = decoded['id']
+            user = User.get_by_id(identifier)
 
-        return jsonify(id=user_id, username=username, role=role), 200
+            if user is None:
+                return jsonify(error_message=f"User ID {identifier} not found"), 404
+            elif user is False:
+                raise Exception
+
+            username = user.username
+            role = user.role
+
+            # STORE CACHE:
+            ioc.cache_manager.store_data(me_key, json.dumps({"id":user_id, "username":username, "role":role}), ttl=300)
+
+            return jsonify(id=user_id, username=username, role=role), 200
 
     except Exception as error:
         print(error)
@@ -178,25 +209,29 @@ def me(identifier):
 def update_user(identifier):
     try:
         token = request.headers.get("Authorization")
-        validation, result = validate_same_user_or_admin(token, identifier)
+        validation, decoded = validate_owner(token, identifier)
 
         if validation is not True:
-            return result
+            return validation, decoded
 
         user = User.get_by_id(identifier)
 
         if not user:
             return jsonify(error_message=f"User ID {identifier} not found"), 404
 
-        user_id = result
+        user_id = decoded['id']
         data = request.get_json()
         username = data.get('username')
         password = data.get('password')
         
-        result = user.update(username=username, password=password)
+        update_result = user.update(username=username, password=password)
 
-        if result is not True:
+        if update_result is not True:
             raise Exception
+
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("me", item_id=identifier, identifier=identifier)
+        invalidate_cache("users", "all")
         
         return jsonify(message=f"User ID {user_id} updated successfully"), 200
 
@@ -209,21 +244,25 @@ def update_user(identifier):
 def delete_user(identifier):
     try:
         token = request.headers.get("Authorization")
-        validation, result = validate_same_user_or_admin(token, identifier)
+        validation, decoded = validate_owner_or_admin(token, identifier)
 
         if validation is not True:
-            return result
+            return validation, decoded
 
         user = User.get_by_id(identifier)
 
         if not user:
             return jsonify(error_message=f"User ID {identifier} not found"), 404
 
-        user_id = result
+        user_id = decoded['id']
         delete_result = user.delete()
 
         if delete_result is False:
             raise Exception
+
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("me", item_id=identifier, identifier=identifier)
+        invalidate_cache("users", "all")
 
         return jsonify(message=f"User ID {user_id} deleted successfully"), 200
 
@@ -239,13 +278,13 @@ def delete_user(identifier):
 def add_billing_address(identifier):
     try:
         token = request.headers.get("Authorization")
-        validation_result, result = validate_same_user_or_admin(token, identifier)
+        validation, decoded = validate_owner(token, identifier)
 
-        if validation_result is not True:
-            return result
+        if validation is not True:
+            return validation, decoded
 
         data = request.get_json()
-        user_id = result
+        user_id = decoded['id']
         address = data.get("address")
 
         billing_address = BillingAddress(user_id=user_id, address=address)
@@ -255,7 +294,7 @@ def add_billing_address(identifier):
             return jsonify(error_message=f"Error adding billing address to the database"), 500
 
         # CHECK AND INVALIDATE CACHE:
-        invalidate_cache("billing_addresses", identifier)
+        invalidate_cache("billing_addresses", identifier=identifier)
 
         return jsonify(id=new_billing_address.id, user_id=new_billing_address.user_id, address=new_billing_address.address), 201
 
@@ -265,25 +304,26 @@ def add_billing_address(identifier):
 
 
 @app.route("/me/<identifier>/billing/<billing_id>", methods=["GET"])
-def get_my_billing_address(identifier, billing_id):
+def get_one_billing_address(identifier, billing_id):
     try:
         token = request.headers.get("Authorization")
-        validation_result, result = validate_same_user_or_admin(token, identifier)
+        validation, decoded = validate_owner_or_admin(token, identifier)
 
-        if validation_result is not True:
-            return result
+        if validation is not True:
+            return validation, decoded
 
         # IF CACHE:
-        data, key = check_if_cache("billing_address", billing_id)
+        billing_key = ioc.cache_manager.generate_users_key(identifier, "billing_addresses", billing_id)
+        cache_result = check_if_cache(billing_key)
 
-        if data is not None:
-            return data, key
+        if cache_result is not None:
+            return cache_result
 
         # ELIF NO CACHE:
         else:
             billing_address = BillingAddress.get_by_id(billing_id)
 
-            if billing_address.user_id != result:
+            if billing_address.user_id != decoded['id']:
                 return jsonify(error_message="Cannot access page"), 403
 
             if billing_address is None:
@@ -292,7 +332,7 @@ def get_my_billing_address(identifier, billing_id):
                 raise Exception
 
             # STORE CACHE:
-            ioc.cache_manager.store_data(key, json.dumps(billing_address, default=str), 300)
+            ioc.cache_manager.store_data(billing_key, json.dumps(billing_address, default=str), 300)
 
             return billing_address.format_dict(), 200
 
@@ -305,16 +345,17 @@ def get_my_billing_address(identifier, billing_id):
 def get_my_billing_addresses(identifier):
     try:
         token = request.headers.get("Authorization")
-        validation_result, decoded = validate_if_owner(token, identifier)
+        validation, decoded = validate_owner_or_admin(token, identifier)
 
-        if validation_result is not True:
-            return validation_result, decoded
+        if validation is not True:
+            return validation, decoded
 
         # IF CACHE:
-        data, key = check_if_cache("billing_addresses", identifier)
+        billing_key = ioc.cache_manager.generate_users_key(identifier, "billing_addresses")
+        cache_result = check_if_cache(billing_key)
 
-        if data is not None:
-            return data, key
+        if cache_result is not None:
+            return cache_result
 
         # ELIF NO CACHE:
         else:
@@ -326,7 +367,7 @@ def get_my_billing_addresses(identifier):
                 raise Exception
 
             # STORE CACHE:
-            ioc.cache_manager.store_data(key, json.dumps(billing_addresses, default=str), 300)
+            ioc.cache_manager.store_data(billing_key, json.dumps(billing_addresses, default=str), 300)
 
             return billing_addresses, 200
 
@@ -339,10 +380,10 @@ def get_my_billing_addresses(identifier):
 def update_billing_address(identifier, billing_id):
     try:
         token = request.headers.get("Authorization")
-        validation_result, result = validate_same_user_or_admin(token, identifier)
+        validation, decoded = validate_owner(token, identifier)
 
-        if validation_result is not True:
-            return result
+        if validation is not True:
+            return validation, decoded
 
         billing_address = BillingAddress.get_by_id(billing_id)
 
@@ -354,13 +395,13 @@ def update_billing_address(identifier, billing_id):
         data = request.get_json()
         new_address = data.get('address')
 
-        result = billing_address.update(new_address)
+        update_result = billing_address.update(new_address)
 
-        if result is False:
+        if update_result is False:
             raise Exception
 
         # CHECK AND INVALIDATE CACHE:
-        invalidate_cache("billing_addresses", identifier)
+        invalidate_cache("billing_addresses", item_id=billing_id, identifier=identifier)
 
         return jsonify(message=f"Billing address for user ID {identifier} updated successfully"), 200
         
@@ -373,10 +414,10 @@ def update_billing_address(identifier, billing_id):
 def delete_billing_address(identifier, billing_id):
     try:
         token = request.headers.get("Authorization")
-        validation, result = validate_same_user_or_admin(token, identifier)
+        validation, decoded = validate_owner(token, identifier)
 
         if validation is not True:
-            return result
+            return validation, decoded
 
         billing_address = BillingAddress.get_by_id(billing_id)
 
@@ -389,6 +430,9 @@ def delete_billing_address(identifier, billing_id):
 
         if delete_result is False:
             raise Exception
+
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("billing_addresses", item_id=billing_id, identifier=identifier)
 
         return jsonify(message=f"Billing address for user ID {identifier} deleted successfully"), 200
 
@@ -405,10 +449,10 @@ def delete_billing_address(identifier, billing_id):
 def add_payment_method():
     try:
         token = request.headers.get("Authorization")
-        validation_result = validate_admin(token)
+        validation = validate_admin(token)
 
-        if validation_result is not True:
-            return validation_result
+        if validation is not True:
+            return validation
 
         data = request.get_json()
         method_name = data.get('method_name')
@@ -432,16 +476,17 @@ def add_payment_method():
 @app.route("/payment_methods", methods=["GET"])
 def get_all_payment_methods():
     token = request.headers.get("Authorization")
-    validation_result, decoded = validate_user(token)
+    validation, decoded = validate_user(token)
 
-    if validation_result is not True:
-        return validation_result, decoded
+    if validation is not True:
+        return validation, decoded
 
     # IF CACHE:
-    data, key = check_if_cache("payment_methods", "all")
+    all_methods_key = ioc.cache_manager.generate_key("payment_methods", "all")
+    cache_result = check_if_cache(all_methods_key)
 
-    if data is not None:
-        return data, key
+    if cache_result is not None:
+        return cache_result
 
     # ELIF NO CACHE:
     else:
@@ -453,7 +498,7 @@ def get_all_payment_methods():
             raise Exception
 
         # STORE CACHE:
-        ioc.cache_manager.store_data(key, json.dumps(payment_methods, default=str), 600)
+        ioc.cache_manager.store_data(all_methods_key, json.dumps(payment_methods, default=str), 3600)
 
         return jsonify(payment_methods), 200
 
@@ -462,13 +507,13 @@ def get_all_payment_methods():
 def add_my_payment_method(identifier):
     try:
         token = request.headers.get("Authorization")
-        validation_result, result = validate_same_user_or_admin(token, identifier)
+        validation, decoded = validate_owner(token, identifier)
 
-        if validation_result is not True:
-            return result
+        if validation is not True:
+            return validation, decoded
 
         data = request.get_json()
-        user_id = result
+        user_id = decoded['id']
         payment_method_id = data.get('payment_method_id')
         alias = data.get('alias')
         is_default = data.get('is_default')
@@ -480,7 +525,7 @@ def add_my_payment_method(identifier):
             raise Exception
 
         # CHECK AND INVALIDATE CACHE:
-        invalidate_cache("user_payment_methods", identifier)
+        invalidate_cache("payment_methods", identifier=identifier)
 
         return jsonify(message=f"Payment method added successfully for user ID {user_id}"), 201
 
@@ -493,16 +538,17 @@ def add_my_payment_method(identifier):
 def get_my_payment_methods(identifier):
     try:
         token = request.headers.get("Authorization")
-        validation_result, decoded = validate_if_owner(token, identifier)
+        validation, decoded = validate_owner(token, identifier)
 
-        if validation_result is not True:
-            return validation_result, decoded
+        if validation is not True:
+            return validation, decoded
 
         # IF CACHE:
-        data, key = check_if_cache("user_payment_methods", identifier)
+        my_methods_key = ioc.cache_manager.generate_users_key(identifier, "payment_methods")
+        cache_result = check_if_cache(my_methods_key)
 
-        if data is not None:
-            return data, key
+        if cache_result is not None:
+            return cache_result
 
         # ELIF NO CACHE:
         else:
@@ -514,7 +560,7 @@ def get_my_payment_methods(identifier):
                 raise Exception
 
             # STORE CACHE:
-            ioc.cache_manager.store_data(key, json.dumps(user_payment_methods, default=str), 300)
+            ioc.cache_manager.store_data(my_methods_key, json.dumps(user_payment_methods, default=str), 300)
 
             return user_payment_methods, 200
 
@@ -527,10 +573,10 @@ def get_my_payment_methods(identifier):
 def update_user_payment_method(identifier, payment_method_id):
     try:
         token = request.headers.get("Authorization")
-        validation_result, decoded = validate_if_owner(token, identifier)
+        validation, decoded = validate_owner(token, identifier)
 
-        if validation_result is not True:
-            return validation_result, decoded
+        if validation is not True:
+            return validation, decoded
 
         user_id = decoded['id']
         payment_method = UserPaymentMethod.get_by_id(payment_method_id)
@@ -552,7 +598,7 @@ def update_user_payment_method(identifier, payment_method_id):
             raise Exception
 
         # CHECK AND INVALIDATE CACHE:
-        invalidate_cache("user_payment_methods", identifier)
+        invalidate_cache("payment_methods", item_id=payment_method_id, identifier=identifier)
 
         return jsonify(message=f"Payment method for user ID {identifier} updated successfully"), 200
 
@@ -565,10 +611,10 @@ def update_user_payment_method(identifier, payment_method_id):
 def delete_user_payment_method(identifier, payment_method_id):
     try:
         token = request.headers.get("Authorization")
-        validation_result, decoded = validate_if_owner(token, identifier)
+        validation, decoded = validate_owner(token, identifier)
 
-        if validation_result is not True:
-            return validation_result, decoded
+        if validation is not True:
+            return validation, decoded
 
         user_id = decoded['id']
         payment_method = UserPaymentMethod.get_by_id(payment_method_id)
@@ -586,7 +632,7 @@ def delete_user_payment_method(identifier, payment_method_id):
             raise Exception
 
         # CHECK AND INVALIDATE CACHE:
-        invalidate_cache("user_payment_methods", identifier)
+        invalidate_cache("payment_methods", item_id=payment_method_id, identifier=identifier)
 
         return jsonify(message=f"Payment method for user ID {identifier} deleted successfully"), 200
 
@@ -603,10 +649,10 @@ def delete_user_payment_method(identifier, payment_method_id):
 def add_product():
     try:
         token = request.headers.get("Authorization")
-        validation_result = validate_admin(token)
+        validation = validate_admin(token)
 
-        if validation_result is not True:
-            return validation_result
+        if validation is not True:
+            return validation
 
         data = request.get_json()
         name = data.get('name')
@@ -621,7 +667,7 @@ def add_product():
             return jsonify(error_message=f"Error inserting product into the database"), 500
 
         # CHECK AND INVALIDATE CACHE:
-        invalidate_cache("product", "all")
+        invalidate_cache("products", "all")
 
         return jsonify(message=f"Product '{new_product.name}' added successfully"), 201
 
@@ -634,16 +680,17 @@ def add_product():
 def get_all_products():
     try:
         token = request.headers.get("Authorization")
-        validation_result, decoded = validate_user(token)
+        validation, decoded = validate_user(token)
 
-        if validation_result is not True:
-            return validation_result, decoded
+        if validation is not True:
+            return validation, decoded
 
         # IF CACHE:
-        data, key = check_if_cache("product", "all")
+        products_key = ioc.cache_manager.generate_key("products", "all")
+        cache_result = check_if_cache(products_key)
 
-        if data is not None:
-            return data, key
+        if cache_result is not None:
+            return cache_result
 
         # ELIF NO CACHE:
         else:
@@ -655,7 +702,7 @@ def get_all_products():
                 raise Exception
 
             # STORE CACHE:
-            ioc.cache_manager.store_data(key, json.dumps(products, default=str), 600)
+            ioc.cache_manager.store_data(products_key, json.dumps(products, default=str), 900)
 
             return jsonify(products), 200
 
@@ -664,54 +711,55 @@ def get_all_products():
         return jsonify(error_message=f"Error getting all products: {error}"), 500
 
 
-@app.route("/products/<identifier>", methods=["GET"])
-def get_product(identifier):
+@app.route("/products/<product_id>", methods=["GET"])
+def get_product(product_id):
     try:
         token = request.headers.get("Authorization")
-        validation_result, decoded = validate_user(token)
+        validation, decoded = validate_user(token)
 
-        if validation_result is not True:
-            return validation_result, decoded
+        if validation is not True:
+            return validation, decoded
 
         # IF CACHE:
-        data, key = check_if_cache("product", identifier)
-        
-        if data is not None:
-            return data, key
+        product_key = ioc.cache_manager.generate_key("products", product_id)
+        cache_result = check_if_cache(product_key)
+
+        if cache_result is not None:
+            return cache_result
 
         # ELIF NO CACHE:
         else:
-            product = Product.get_by_id(identifier)
+            product = Product.get_by_id(product_id)
 
             if product is None:
-                return jsonify(error_message=f"Product ID {identifier} not found"), 404
+                return jsonify(error_message=f"Product ID {product_id} not found"), 404
             elif product is False:
                 raise Exception
 
             # STORE CACHE:
             formatted_product = product.format_dict()
-            ioc.cache_manager.store_data(key, json.dumps(formatted_product), 600)
+            ioc.cache_manager.store_data(product_key, json.dumps(formatted_product), 600)
 
             return product.format_dict(), 200
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error getting product ID {identifier}: {error}"), 500
+        return jsonify(error_message=f"Error getting product ID {product_id}: {error}"), 500
 
 
-@app.route("/products/<identifier>", methods=["PATCH"])
-def update_product(identifier):
+@app.route("/products/<product_id>", methods=["PATCH"])
+def update_product(product_id):
     try:
         token = request.headers.get("Authorization")
-        validation_result = validate_admin(token)
+        validation = validate_admin(token)
 
-        if validation_result is not True:
-            return validation_result
+        if validation is not True:
+            return validation
 
-        product = Product.get_by_id(identifier)
+        product = Product.get_by_id(product_id)
 
         if product is None:
-            return jsonify(error_message=f"Product ID {identifier} not found"), 404
+            return jsonify(error_message=f"Product ID {product_id} not found"), 404
         elif product is False:
             raise Exception
 
@@ -727,28 +775,28 @@ def update_product(identifier):
             raise Exception
 
         # CHECK AND INVALIDATE CACHE:
-        invalidate_cache("product", identifier)
+        invalidate_cache("products", item_id=product_id)
 
-        return jsonify(message=f"Product ID {identifier} updated successfully"), 200
+        return jsonify(message=f"Product ID {product_id} updated successfully"), 200
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error updating product ID {identifier}: {error}"), 500
+        return jsonify(error_message=f"Error updating product ID {product_id}: {error}"), 500
 
 
-@app.route("/products/<identifier>", methods=["DELETE"])
-def delete_product(identifier):
+@app.route("/products/<product_id>", methods=["DELETE"])
+def delete_product(product_id):
     try:
         token = request.headers.get("Authorization")
-        validation_result = validate_admin(token)
+        validation = validate_admin(token)
 
-        if validation_result is not True:
-            return validation_result
+        if validation is not True:
+            return validation
 
-        product = Product.get_by_id(identifier)
+        product = Product.get_by_id(product_id)
 
         if product is None:
-            return jsonify(error_message=f"Product ID {identifier} not found"), 404
+            return jsonify(error_message=f"Product ID {product_id} not found"), 404
         elif product is False:
             raise Exception
 
@@ -758,13 +806,13 @@ def delete_product(identifier):
             raise Exception
 
         # CHECK AND INVALIDATE CACHE:
-        invalidate_cache("product", identifier)
+        invalidate_cache("products", item_id=product_id)
 
-        return jsonify(message=f"Product ID {identifier} deleted successfully"), 200
+        return jsonify(message=f"Product ID {product_id} deleted successfully"), 200
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error deleting product ID {identifier}: {error}"), 500
+        return jsonify(error_message=f"Error deleting product ID {product_id}: {error}"), 500
 
 # ------------------- PRODUCTS end -------------------
 
@@ -774,19 +822,31 @@ def delete_product(identifier):
 def get_my_invoices(identifier):
     try:
         token = request.headers.get("Authorization")
-        validation_result, result = validate_same_user_or_admin(token, identifier)
+        validation, decoded = validate_owner_or_admin(token, identifier)
 
-        if validation_result is not True:
-            return result
+        if validation is not True:
+            return validation, decoded
 
-        invoices = Invoice.get_all_by_user_id(result)
+        # IF CACHE:
+        invoices_key = ioc.cache_manager.generate_users_key(identifier, "invoices")
+        cache_result = check_if_cache(invoices_key)
 
-        if invoices is None:
-            return jsonify(error_message="No invoices found"), 404
-        elif invoices is False:
-            raise Exception
+        if cache_result is not None:
+            return cache_result
 
-        return invoices, 200
+        # ELIF NO CACHE:
+        else:
+            invoices = Invoice.get_all_by_user_id(decoded['id'])
+
+            if invoices is None:
+                return jsonify(error_message="No invoices found"), 404
+            elif invoices is False:
+                raise Exception
+
+            # STORE CACHE:
+            ioc.cache_manager.store_data(invoices_key, json.dumps(invoices, default=str), 1200)
+
+            return invoices, 200
 
     except Exception as error:
         print(error)
@@ -797,23 +857,36 @@ def get_my_invoices(identifier):
 def get_invoice_by_id(identifier, invoice_id):
     try:
         token = request.headers.get("Authorization")
-        invoice = Invoice.get_by_id(invoice_id)
 
-        if invoice is None:
-            return jsonify(error_message=f"Invoice ID {identifier} not found"), 404
-        if invoice is False:
-            raise Exception
+        # IF CACHE:
+        invoice_key = ioc.cache_manager.generate_users_key(identifier, "invoices", item_id=invoice_id)
+        cache_result = check_if_cache(invoice_key)
 
-        validation_result, result = validate_same_user_or_admin(token, invoice.user_id)
+        if cache_result is not None:
+            return cache_result
 
-        if validation_result is not True:
-            return result
+        # ELIF NO CACHE:
+        else:
+            invoice = Invoice.get_by_id(invoice_id)
 
-        products = InvoiceProduct.get_by_invoice_id(invoice.id)
-        billing_address = BillingAddress.get_by_id(invoice.billing_address_id).address      # falta poder extraer un billing_id con el invoice --> guardar en 'purchase'
-        user_payment_method = UserPaymentMethod.get_by_id(invoice.user_payment_method_id).alias    #falta poder extraer un user_payment_method con el invoice --> guardar en 'purchase'
+            if invoice is None:
+                return jsonify(error_message=f"Invoice ID {identifier} not found"), 404
+            if invoice is False:
+                raise Exception
 
-        return jsonify(id=invoice.id, user_id=invoice.user_id, products=products, purchase_date=invoice.purchase_date, billing_address=billing_address, user_payment_method=user_payment_method, status=invoice.status), 200
+            validation, decoded = validate_owner_or_admin(token, invoice.user_id)
+
+            if validation is not True:
+                return validation, decoded
+
+            products = InvoiceProduct.get_by_invoice_id(invoice.id)
+            billing_address = BillingAddress.get_by_id(invoice.billing_address_id).address      # falta poder extraer un billing_id con el invoice --> guardar en nueva tabla 'purchase'
+            user_payment_method = UserPaymentMethod.get_by_id(invoice.user_payment_method_id).alias    #falta poder extraer un user_payment_method con el invoice --> guardar en nueva tabla 'purchase'
+
+            # STORE CACHE:
+            ioc.cache_manager.store_data(invoice_key, json.dumps({"id":invoice.id, "user_id":invoice.user_id, "products":products, "purchase_date":invoice.purchase_date, "billing_address":billing_address, "user_payment_method":user_payment_method, "status":invoice.status}, default=str), 1200)
+
+            return jsonify(id=invoice.id, user_id=invoice.user_id, products=products, purchase_date=invoice.purchase_date, billing_address=billing_address, user_payment_method=user_payment_method, status=invoice.status), 200
 
     except Exception as error:
         print(error)
@@ -823,24 +896,62 @@ def get_invoice_by_id(identifier, invoice_id):
 
 
 # ------------------- CARTS start -------------------
+@app.route("/me/<identifier>/carts", methods=["POST"])
+def add_active_cart(identifier):
+    try:
+        token = request.headers.get("Authorization")
+        validation, decoded = validate_owner(token, identifier)
+
+        if validation is not True:
+            return validation, decoded
+
+        user_id = decoded['id']
+        my_cart = Cart.get_or_create_active_cart(user_id)
+        cart_products = CartProduct.get_by_cart_id(my_cart.id)
+
+        if my_cart is False:
+            raise Exception("Error creating active cart")
+
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("carts", identifier=identifier)
+
+        return jsonify(my_cart.format_dict(cart_products)), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error adding cart: {error}"), 500
+
+
 @app.route("/me/<identifier>/carts", methods=["GET"])
 def get_all_my_carts(identifier):
     try:
         token = request.headers.get("Authorization")
-        validation_result, decoded = validate_if_owner(token, identifier)
+        validation, decoded = validate_owner(token, identifier)
 
-        if validation_result is not True:
-            return validation_result, decoded
+        if validation is not True:
+            return validation, decoded
 
-        user_id = decoded['id']
-        my_carts = Cart.get_all_by_user_id(user_id)
+        # IF CACHE:
+        carts_key = ioc.cache_manager.generate_users_key(identifier, "carts")
+        cache_result = check_if_cache(carts_key)
 
-        if my_carts is None:
-            return jsonify(error_message="No carts found"), 404
-        elif my_carts is False:
-            raise Exception("Error getting carts from the database")
+        if cache_result is not None:
+            return cache_result
 
-        return my_carts, 200
+        # ELIF NO CACHE:
+        else:
+            user_id = decoded['id']
+            my_carts = Cart.get_all_by_user_id(user_id)
+
+            if my_carts is None:
+                return jsonify(error_message="No carts found"), 404
+            elif my_carts is False:
+                raise Exception("Error getting carts from the database")
+
+            # STORE CACHE:
+            ioc.cache_manager.store_data(carts_key, json.dumps(my_carts, default=str), 180)
+
+            return my_carts, 200
 
     except Exception as error:
         print(error)
@@ -851,11 +962,19 @@ def get_all_my_carts(identifier):
 def get_my_cart(identifier, cart_id):
     try:
         token = request.headers.get("Authorization")
-        validation_result, decoded = validate_if_owner(token, identifier)
+        validation, decoded = validate_owner(token, identifier)
 
-        if validation_result is not True:
-            return validation_result, decoded
+        if validation is not True:
+            return validation, decoded
 
+        # IF CACHE:
+        cart_key = ioc.cache_manager.generate_users_key(identifier, "carts", cart_id)
+        cache_result = check_if_cache(cart_key)
+
+        if cache_result is not None:
+            return cache_result
+
+        # ELIF NO CACHE:
         user_id = decoded['id']
         my_cart = Cart.get_by_id_dict(cart_id)
 
@@ -866,6 +985,9 @@ def get_my_cart(identifier, cart_id):
         elif my_cart.get('user_id') != user_id:
             return jsonify(error_message=f"Cannot access page"), 403
 
+        # STORE CACHE:
+        ioc.cache_manager.store_data(cart_key, json.dumps(my_cart, default=str), 180)
+
         return jsonify(my_cart), 200
 
     except Exception as error:
@@ -873,40 +995,19 @@ def get_my_cart(identifier, cart_id):
         return jsonify(error_message=f"Error getting cart ID {cart_id}: {error}"), 500
 
 
-@app.route("/me/<identifier>/carts", methods=["POST"])
-def add_active_cart(identifier):
-    try:
-        token = request.headers.get("Authorization")
-        validation_result, decoded = validate_if_owner(token, identifier)
-
-        if validation_result is not True:
-            return validation_result, decoded
-
-        user_id = decoded['id']
-        my_cart = Cart.get_or_create_active_cart(user_id)
-        cart_products = CartProduct.get_by_cart_id(my_cart.id)
-
-        if my_cart is False:
-            raise Exception("Error creating active cart")
-
-        return jsonify(my_cart.format_dict(cart_products)), 200
-
-    except Exception as error:
-        print(error)
-        return jsonify(error_message=f"Error adding cart: {error}"), 500
-
-
 @app.route("/me/<identifier>/carts/<cart_id>", methods=["PUT"]) # ATENCIÓN: Al no estar atado a un session, se pueden generar cambios desligados entre tablas.
 def update_my_cart(identifier, cart_id):
     try:
         token = request.headers.get("Authorization")
-        validation_result, decoded = validate_if_owner(token, identifier)
+        validation, decoded = validate_owner(token, identifier)
 
-        if validation_result is not True:
-            return validation_result, decoded
+        if validation is not True:
+            return validation, decoded
 
         user_id = decoded['id']
         my_cart = Cart.get_by_id_obj(cart_id)
+        print(user_id)
+        print(cart_id)
 
         if my_cart is None:
             return jsonify(error_message=f"Cart ID {cart_id} not found"), 404
@@ -926,6 +1027,9 @@ def update_my_cart(identifier, cart_id):
         if result is False:
             raise Exception
 
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("carts", item_id=cart_id, identifier=identifier)
+
         return jsonify(message=f"Cart ID {cart_id} updated successfully")
 
     except Exception as error:
@@ -937,10 +1041,10 @@ def update_my_cart(identifier, cart_id):
 def delete_my_cart(identifier, cart_id):
     try:
         token = request.headers.get("Authorization")
-        validation_result, decoded = validate_if_owner(token, identifier)
+        validation, decoded = validate_owner(token, identifier)
 
-        if validation_result is not True:
-            return validation_result, decoded
+        if validation is not True:
+            return validation, decoded
 
         user_id = decoded['id']
         my_cart = Cart.get_by_id_obj(cart_id)
@@ -962,6 +1066,9 @@ def delete_my_cart(identifier, cart_id):
         if cart_delete is False:
             raise Exception("Error deleting cart from the database")
 
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("carts", item_id=cart_id, identifier=identifier)
+
         return jsonify(message=f"Cart ID {cart_id} deleted successfully")
 
     except Exception as error:
@@ -976,10 +1083,10 @@ def delete_my_cart(identifier, cart_id):
 def make_purchase(cart_id):
     try:
         token = request.headers.get("Authorization")
-        validation_result, decoded = validate_user(token)
+        validation, decoded = validate_user(token)
 
-        if validation_result is not True:
-            return validation_result, decoded
+        if validation is not True:
+            return validation, decoded
 
         # Data retrieval:
         user_id = decoded['id']
@@ -994,27 +1101,6 @@ def make_purchase(cart_id):
         if result is not True:
             return jsonify(error_message=result), status
 
-        # # SINGLE PRODUCT CACHE:
-        # for product in invoice_products:
-        #     product_key = ioc.cache_manager.generate_key("product", product["product_id"])
-        #     key_check = ioc.cache_manager.check_key(product_key)
-
-        #     if key_check[0]:
-        #         delete_cache = ioc.cache_manager.delete_data(product_key)
-        #         print("Cache invalidated successfully:", delete_cache)
-        #     else:
-        #         print("No cache to invalidate")
-
-        # # CHECK AND INVALIDATE 'ALL' CACHE:
-        # all_key = ioc.cache_manager.generate_key("product", "all")
-        # all_check = ioc.cache_manager.check_key(all_key)
-
-        # if all_check[0]:
-        #     delete_cache = ioc.cache_manager.delete_data(all_key)
-        #     print("Cache invalidated successfully:", delete_cache)
-        # else:
-        #     print("No cache to invalidate")
-
         return jsonify(message="Purchase successful"), status
 
     except Exception as error:
@@ -1026,10 +1112,12 @@ def make_purchase(cart_id):
 def return_purchase(invoice_id):
     try:
         token = request.headers.get("Authorization")
-        validation_result, decoded = validate_user(token)
+        invoice = Invoice.get_by_id(invoice_id)
 
-        if validation_result is not True:
-            return validation_result, decoded
+        validation, decoded = validate_owner_or_admin(token, invoice.user_id)
+
+        if validation is not True:
+            return validation, decoded
 
         result, status = Transaction().return_purchase(invoice_id, decoded['id'])
 

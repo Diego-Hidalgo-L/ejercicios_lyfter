@@ -1,10 +1,11 @@
 from ioc_container import ioc
 from db import User
-from flask import Response, jsonify
+from flask import jsonify
 
 # Podría convertir este role validation en una función, un método o un decorator. Cuál sería mejor?
     # No lo hice decorator, porque los decorators reciben los mismos parámetros de la función que están decorando.
     # Este validation solo recibe un token que se obtiene desde ADENTRO de la función, no como parámetro de esa función.
+
 
 def validate_user(token):
     if token is None:
@@ -18,7 +19,7 @@ def validate_user(token):
     return True, decoded
 
 
-def validate_if_owner(token, identifier):
+def validate_owner(token, identifier):
     if token is None:
         return jsonify(error_message="Invalid token"), 401
 
@@ -57,7 +58,7 @@ def validate_admin(token):
     return True
 
 
-def validate_same_user_or_admin(token, identifier):
+def validate_owner_or_admin(token, identifier):
     if token is None:
         return False, (jsonify(error_message="Invalid token"), 401)
 
@@ -66,21 +67,19 @@ def validate_same_user_or_admin(token, identifier):
     decoded = ioc.jwt_manager.decode(test_token)
 
     if decoded is None:
-        return False, (jsonify(error_message="Error decoding token"), 401)
+        return jsonify(error_message="Error decoding token"), 401
 
     decoded_user_id = decoded['id']
-    user = User.get_by_id(decoded_user_id)
-    decoded_user_role = user.role
+    decoded_user = User.get_by_id(decoded_user_id)
+    decoded_user_role = decoded_user.role
 
     # with identifier
     user = User.get_by_id(identifier)
 
     if user is None:
-        return False, (jsonify(error_message=f"User ID {identifier} not found"), 404)
+        return jsonify(error_message=f"User ID {identifier} not found"), 404
 
-    user_id = user.id
+    if user.id != decoded_user_id and decoded_user_role != "Administrator":
+        return jsonify(error_message="Cannot access page"), 403
 
-    if user_id != decoded_user_id and decoded_user_role != "Administrator":
-        return False, (jsonify(error_message="Cannot access page"), 403)
-
-    return True, user_id
+    return True, decoded
