@@ -9,38 +9,33 @@ from datetime import date
 
 
 class Transaction:
-    def purchase(self, user_id, cart_id, billing_address_id, user_payment_method_id, purchase_date):
+    def purchase(self, user_id, cart_id, billing_address_id, user_payment_method_id):
         with Session(engine) as session:
             try:
                 # Data validation:
                 my_cart = session.get(Cart, cart_id)
                 if my_cart is None:
-                    return f"Cart not found", 404
-                elif my_cart is False:
-                    raise Exception(f"Error getting cart ID {cart_id}")
+                    return "Cart not found", 404
                 elif my_cart.user_id != user_id:
-                    return f"Invalid cart", 401
+                    return "Invalid cart", 401
                 elif my_cart.status != 'Active':
-                    return f"Inactive cart", 400
+                    return "Inactive cart", 400
 
                 my_billing_address = BillingAddress.get_by_id(billing_address_id)
                 if my_billing_address is None:
-                    return f"Billing address not found", 404
+                    return "Billing address not found", 404
                 elif my_billing_address is False:
                     raise Exception(f"Error getting billing address ID {billing_address_id}")
                 elif my_billing_address.user_id != user_id:
-                    return f"Invalid billing address", 401
+                    return "Invalid billing address", 401
 
                 my_payment_method = UserPaymentMethod.get_by_id(user_payment_method_id)
                 if my_payment_method is None:
-                    return "Payment method not found", 404
+                    return "User payment method not found", 404
                 elif my_payment_method is False:
-                    raise Exception(f"Error getting payment method ID {user_payment_method_id}")
+                    raise Exception(f"Error getting user payment method ID {user_payment_method_id}")
                 elif my_payment_method.user_id != user_id:
-                    return "Invalid payment method", 401
-
-                if purchase_date is None:
-                    purchase_date = date.today()
+                    return "Invalid user payment method", 401
 
                 # Verifico stock:
                 cart_products = my_cart.cart_products
@@ -65,7 +60,7 @@ class Transaction:
                     invalidate_cache("products", item_id=product_id)
 
                 # Si todo el stock está bien, creo el invoice:
-                new_invoice = Invoice(user_id=user_id, purchase_date=purchase_date, billing_address_id=billing_address_id, user_payment_method_id=user_payment_method_id, status='Completed')
+                new_invoice = Invoice(user_id=user_id, purchase_date=date.today(), billing_address_id=billing_address_id, user_payment_method_id=user_payment_method_id, status='Completed')
                 session.add(new_invoice)
                 session.flush()
 
@@ -106,14 +101,15 @@ class Transaction:
                 invoice = session.get(Invoice, invoice_id)
                 user = session.get(User, user_id)
 
+                if user is None:
+                    return f"User ID {user_id} not found", 404
+
                 if invoice is None:
                     return f"Invoice ID {invoice_id} not found", 404
-                elif invoice is False:
-                    raise Exception("Error getting invoice from the database")
                 elif invoice.user_id != user.id and user.role != 'Administrator':       # Debería dejar que un Administrator haga una devolución por un cliente?
-                    return f"Invalid return", 401
+                    return "Invalid return", 401
                 elif invoice.status == 'Returned':
-                    return f"Invoice already returned", 400
+                    return "Invoice already returned", 400
 
                 # Aumentar el stock de los productos en la cantidad que se registró en la compra:
                 for invoice_product in invoice.products:
@@ -122,7 +118,7 @@ class Transaction:
                     product.stock += invoice_product.quantity
 
                     # CHECK AND INVALIDATE CACHE PER PRODUCT + ALL PRODUCTS: --> Está bien repetir el check e invalidación de 'all' en cada iteración? Debería separar esas invalidaciones?
-                    invalidate_cache("products", item_id=invoice_product.id)
+                    invalidate_cache("products", item_id=invoice_product.product_id)
 
                 # Modifico la factura original para marcarla con el estado de 'Returned':
                 invoice.status = 'Returned'

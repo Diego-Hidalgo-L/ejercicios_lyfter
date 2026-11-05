@@ -1093,10 +1093,9 @@ def make_purchase(cart_id):
         data = request.get_json()
         billing_address_id = data.get('billing_address_id')
         user_payment_method_id = data.get('user_payment_method_id')
-        purchase_date = data.get('purchase_date')
 
         # Execute purchase:
-        result, status = Transaction().purchase(user_id, cart_id, billing_address_id, user_payment_method_id, purchase_date)
+        result, status = Transaction().purchase(user_id, cart_id, billing_address_id, user_payment_method_id)
 
         if result is not True:
             return jsonify(error_message=result), status
