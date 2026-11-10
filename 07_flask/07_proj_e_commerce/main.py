@@ -3,11 +3,9 @@ from db import User, BillingAddress, PaymentMethod, UserPaymentMethod, Product, 
 from validations import validate_user, validate_owner, validate_admin, validate_owner_or_admin
 from services import Transaction
 from cache_functions import check_if_cache, invalidate_cache
-from functions import generate_fake_ip
 
 from flask import Flask, request, jsonify
 from argon2.exceptions import VerifyMismatchError
-from datetime import date, datetime, timezone
 import json
 
 
@@ -907,10 +905,11 @@ def add_active_cart(identifier):
 
         user_id = decoded['id']
         my_cart = Cart.get_or_create_active_cart(user_id)
-        cart_products = CartProduct.get_by_cart_id(my_cart.id)
 
         if my_cart is False:
             raise Exception("Error creating active cart")
+
+        cart_products = CartProduct.get_by_cart_id(my_cart.id)
 
         # CHECK AND INVALIDATE CACHE:
         invalidate_cache("carts", identifier=identifier)

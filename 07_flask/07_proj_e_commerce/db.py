@@ -3,7 +3,7 @@ from db_engine import engine
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, selectinload
 from sqlalchemy import MetaData, Identity, ForeignKey, CheckConstraint, Integer, Float, String, Date, Boolean, Index
-from sqlalchemy import select, delete, func, text
+from sqlalchemy import select, delete, text
 from datetime import date
 
 meta_obj = MetaData(schema="e_commerce")
@@ -616,7 +616,7 @@ class Cart(Base):
                 print(f"Error getting cart ID {cart_id}: {error}")
                 return False
 
-    def update(self, cart_products, status):
+    def update(self, cart_products=None, status=None):
         with Session(engine) as session:
             try:
                 cart = session.get(Cart, self.id)
@@ -631,13 +631,16 @@ class Cart(Base):
                         new_product = CartProduct(cart_id=cart.id, product_id=product.get('product_id'), quantity=product.get('quantity'), total_price=product.get('total_price'))
                         session.add(new_product)
 
+                    print("Cart products updated successfully")
+
                 # Modifico 'status':
                 if status is not None:
                     cart.status = status
+                    print("Cart status updated successfully")
 
                 # Commit:
                 session.commit()
-                print("Cart products updated successfully")
+                print("Cart updated successfully")
                 return True
 
             except Exception as error:

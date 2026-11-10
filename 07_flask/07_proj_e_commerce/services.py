@@ -2,9 +2,7 @@ from db import User, Product, BillingAddress, UserPaymentMethod, Cart, Invoice, 
 from db_engine import engine
 from cache_functions import invalidate_cache
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
-from flask import jsonify
 from datetime import date
 
 
@@ -97,17 +95,18 @@ class Transaction:
     def return_purchase(self, invoice_id, user_id):
         with Session(engine) as session:
             try:
-                # Verifico si la factura existe en la DB:
-                invoice = session.get(Invoice, invoice_id)
                 user = session.get(User, user_id)
 
                 if user is None:
                     return f"User ID {user_id} not found", 404
 
+                # Verifico si la factura existe en la DB:
+                invoice = session.get(Invoice, invoice_id)
+
                 if invoice is None:
                     return f"Invoice ID {invoice_id} not found", 404
-                elif invoice.user_id != user.id and user.role != 'Administrator':       # Debería dejar que un Administrator haga una devolución por un cliente?
-                    return "Invalid return", 401
+                elif invoice.user_id != user.id and user.role != 'Administrator':
+                    return "Invalid invoice", 401
                 elif invoice.status == 'Returned':
                     return "Invoice already returned", 400
 
