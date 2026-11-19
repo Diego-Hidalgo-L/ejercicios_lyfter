@@ -82,6 +82,10 @@ class Transaction:
                 # Modificar cart status:
                 my_cart.status = 'Completed'
 
+                # CHECK AND INVALIDATE INVOICES and CARTS CACHE
+                invalidate_cache("invoices", identifier=user_id)
+                invalidate_cache("carts", item_id=cart_id, identifier=user_id)
+
                 # Commit:
                 session.commit()
                 print("Purchase successful")
@@ -121,6 +125,9 @@ class Transaction:
 
                 # Modifico la factura original para marcarla con el estado de 'Returned':
                 invoice.status = 'Returned'
+
+                # CHECK AND INVALIDATE INVOICES CACHE
+                invalidate_cache("invoices", item_id=invoice_id, identifier=user_id)
 
                 # Commit:
                 session.commit()

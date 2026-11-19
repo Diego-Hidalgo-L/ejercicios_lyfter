@@ -38,7 +38,6 @@ class User(Base):
         return {
             "id": self.id,
             "username": self.username,
-            "password": self.password,
             "email": self.email,
             "full_name": self.full_name,
             "role": self.role
@@ -244,12 +243,8 @@ class BillingAddress(Base):
 class PaymentMethod(Base):
     __tablename__ = "payment_methods"
 
-    __table_args__ = (
-        CheckConstraint("method IN ('Credit/Debit Card', 'Transfer', 'PayPal')"),
-    )
-
     id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
-    method: Mapped[str] = mapped_column(String(20), nullable=False)
+    method: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
 
     # Relationships:
     user_payment_methods: Mapped[list["UserPaymentMethod"]] = relationship(back_populates="payment_method")
@@ -288,6 +283,47 @@ class PaymentMethod(Base):
             except Exception as error:
                 session.rollback()
                 print(f"Error getting all payment methods from the database: {error}")
+                return False
+
+    @staticmethod
+    def get_by_id(payment_method_id):
+        with Session(engine) as session:
+            try:
+                payment_method = session.get(PaymentMethod, payment_method_id)
+                return payment_method
+
+            except Exception as error:
+                print(f"Error getting payment method from the database: {error}")
+                return False
+
+    def update(self, new_method_name):
+        with Session(engine) as session:
+            try:
+                payment_method = session.get(PaymentMethod, self.id)
+                payment_method.method = new_method_name
+
+                session.commit()
+                print(f"Payment method ID {payment_method.id} updated successfully in the database")
+                return True
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error updating payment method ID {self.id} on the database: {error}")
+                return False
+
+    def delete(self):
+        with Session(engine) as session:
+            try:
+                payment_method = session.get(PaymentMethod, self.id)
+
+                session.delete(payment_method)
+                session.commit()
+                print(f"Payment method ID {payment_method.id} deleted successfully from the database")
+                return True
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error deleting payment method ID {self.id} from the database: {error}")
                 return False
 
 
@@ -376,12 +412,12 @@ class UserPaymentMethod(Base):      # LINK TABLE N:N | Users:PaymentMethods
                     my_payment_method.is_default = is_default
 
                 session.commit()
-                print(f"Payment method ID {my_payment_method.id} updated successfully in the database")
+                print(f"User payment method ID {my_payment_method.id} updated successfully in the database")
                 return True
 
             except Exception as error:
                 session.rollback()
-                print(f"Error updating payment method ID {self.id} on the database: {error}")
+                print(f"Error updating user payment method ID {self.id} on the database: {error}")
                 return False
 
     def delete(self):
@@ -391,12 +427,12 @@ class UserPaymentMethod(Base):      # LINK TABLE N:N | Users:PaymentMethods
 
                 session.delete(my_payment_method)
                 session.commit()
-                print(f"Payment method ID {my_payment_method.id} deleted successfully from the database")
+                print(f"User payment method ID {my_payment_method.id} deleted successfully from the database")
                 return True
 
             except Exception as error:
                 session.rollback()
-                print(f"Error deleting payment method ID {self.id} from the database: {error}")
+                print(f"Error deleting user payment method ID {self.id} from the database: {error}")
                 return False
 
 
@@ -436,7 +472,7 @@ class Product(Base):
             except Exception as error:
                 session.rollback()
                 print(f"Error adding product to the database: {error}")
-                return True
+                return False
 
     @staticmethod
     def get_all():
@@ -628,7 +664,13 @@ class Cart(Base):
 
                     # Ingreso nuevos cart_products:
                     for product in cart_products:
-                        new_product = CartProduct(cart_id=cart.id, product_id=product.get('product_id'), quantity=product.get('quantity'), total_price=product.get('total_price'))
+                        product_id = product.get('product_id')
+                        quantity = product.get('quantity')
+
+                        product_price = session.get(Product, product_id)
+                        total_price = quantity * product_price
+
+                        new_product = CartProduct(cart_id=cart.id, product_id=product_id, quantity=quantity, total_price=total_price)
                         session.add(new_product)
 
                     print("Cart products updated successfully")
@@ -810,6 +852,24 @@ class Invoice(Base):
 
             except Exception as error:
                 print(f"Error getting invoice ID {invoice_id} from the database: {error}")
+                return False
+
+    def update(self, data):
+        pass
+
+    def delete(self):
+        with Session(engine) as session:
+            try:
+                invoice = session.get(Invoice, self.id)
+
+                session.delete(invoice)
+                session.commit()
+                print(f"Invoice ID {invoice.id} successfully deleted from the database")
+                return True
+
+            except Exception as error:
+                session.rollback()
+                print(f"Error deleting invoice ID {self.id} from the database: {error}")
                 return False
 
 

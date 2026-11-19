@@ -17,8 +17,8 @@ def invalidate_cache(item, item_id=None, identifier=None): # Debería separar es
         single_key = ioc.cache_manager.generate_key(item, item_id)
         all_key = ioc.cache_manager.generate_key(item, "all")
     else:
-        single_key = ioc.cache_manager.generate_users_key(item, item_id, identifier)
-        all_key = ioc.cache_manager.generate_users_key(item, "all", identifier)
+        single_key = ioc.cache_manager.generate_users_key(identifier, item, item_id)
+        all_key = ioc.cache_manager.generate_users_key(identifier, item, "all")
 
     # CHECK AND INVALIDATE SINGLE ITEM CACHE:
     if item_id is not None and item_id != "all":

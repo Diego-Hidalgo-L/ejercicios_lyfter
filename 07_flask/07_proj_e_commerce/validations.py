@@ -15,6 +15,9 @@ def validate_user(token):
 
     if decoded is None:
         return jsonify(error_message="Error decoding token"), 401
+    
+    if decoded['token_type'] != "access":
+        return jsonify(error_message="Invalid token type"), 400
 
     return True, decoded
 
@@ -28,6 +31,9 @@ def validate_owner(token, identifier):
     if decoded is None:
         return jsonify(error_message="Error decoding token"), 401
 
+    if decoded['token_type'] != "access":
+        return jsonify(error_message="Invalid token type"), 400
+
     if decoded['id'] != int(identifier):
         return jsonify(error_message="Cannot access page"), 403
 
@@ -38,11 +44,13 @@ def validate_admin(token):
     if token is None:
         return jsonify(error_message="Invalid token"), 401
 
-    test_token = token.replace("Bearer ","")
-    decoded = ioc.jwt_manager.decode(test_token)
+    decoded = ioc.jwt_manager.decode(token)
 
     if decoded is None:
         return jsonify(error_message="Error decoding token"), 401
+
+    if decoded['token_type'] != "access":
+        return jsonify(error_message="Invalid token type"), 400
 
     user_id = decoded['id']
     user = User.get_by_id(user_id)
@@ -63,11 +71,13 @@ def validate_owner_or_admin(token, identifier):
         return False, (jsonify(error_message="Invalid token"), 401)
 
     # with token
-    test_token = token.replace("Bearer ", "")
-    decoded = ioc.jwt_manager.decode(test_token)
+    decoded = ioc.jwt_manager.decode(token)
 
     if decoded is None:
         return jsonify(error_message="Error decoding token"), 401
+
+    if decoded['token_type'] !="access":
+        return jsonify(error_message="Invalid token type"), 400
 
     decoded_user_id = decoded['id']
     decoded_user = User.get_by_id(decoded_user_id)

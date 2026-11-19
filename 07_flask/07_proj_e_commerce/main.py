@@ -13,14 +13,10 @@ app = Flask("e-commerce")
 
 
 # ------------------- ADMIN start -------------------
-@app.route("/refresh-token", methods=["POST"])
+@app.route("/refresh-token", methods=["POST"])          # Quité que valide si es un usuario, está bien verdad?
 def refresh_token():
     try:
         token = request.headers.get("Authorization")
-        validation, decoded = validate_user(token)
-
-        if validation is not True:
-            return validation, decoded
 
         if token is None:
             return jsonify(error_message="Invalid token"), 401
@@ -31,7 +27,7 @@ def refresh_token():
             return jsonify(error_message="Error decoding token"), 401
 
         if decoded['token_type'] != "refresh":
-            return jsonify(error_message="Invalid token type provided"), 400
+            return jsonify(error_message="Invalid token type"), 400
 
         user_id = decoded['id']
         access_token = ioc.jwt_manager.encode(user_id, "access")
@@ -190,13 +186,12 @@ def me(identifier):
             elif user is False:
                 raise Exception
 
-            username = user.username
-            role = user.role
+            formatted_user = user.format_dict()
 
             # STORE CACHE:
-            ioc.cache_manager.store_data(me_key, json.dumps({"id":user_id, "username":username, "role":role}), ttl=300)
+            ioc.cache_manager.store_data(me_key, json.dumps(formatted_user), ttl=300)
 
-            return jsonify(id=user_id, username=username, role=role), 200
+            return jsonify(formatted_user), 200
 
     except Exception as error:
         print(error)
@@ -321,18 +316,19 @@ def get_one_billing_address(identifier, billing_id):
         else:
             billing_address = BillingAddress.get_by_id(billing_id)
 
-            if billing_address.user_id != decoded['id']:
-                return jsonify(error_message="Cannot access page"), 403
-
             if billing_address is None:
                 return jsonify(error_message="No billing addresses found"), 404
             elif billing_address is False:
                 raise Exception
+            elif billing_address.user_id != decoded['id']:
+                return jsonify(error_message="Cannot access page"), 403
+
+            formatted_billing_address = billing_address.format_dict()
 
             # STORE CACHE:
-            ioc.cache_manager.store_data(billing_key, json.dumps(billing_address, default=str), 300)
+            ioc.cache_manager.store_data(billing_key, json.dumps(formatted_billing_address), 300)
 
-            return billing_address.format_dict(), 200
+            return formatted_billing_address, 200
 
     except Exception as error:
         print(error)
@@ -471,6 +467,37 @@ def add_payment_method():
         return jsonify(error_message=f"Error adding payment method: {error}"), 500
 
 
+@app.route("/payment_methods/<payment_method_id>", methods=["GET"])
+def get_payment_method(payment_method_id):
+    token = request.headers.get("Authorization")
+    validation, decoded = validate_user(token)
+
+    if validation is not True:
+        return validation, decoded
+
+    # IF CACHE:
+    method_key = ioc.cache_manager.generate_key("payment_methods", payment_method_id)
+    cache_result = check_if_cache(method_key)
+
+    if cache_result is not None:
+        return cache_result
+
+    # ELIF NO CACHE:
+    else:
+        payment_method = PaymentMethod.get_by_id(payment_method_id)
+
+        if payment_method is None:
+            return jsonify(error_message=f"No products found"), 404
+        elif payment_method is False:
+            raise Exception
+
+        formatted_payment_method = payment_method.format_dict()
+
+        # STORE CACHE:
+        ioc.cache_manager.store_data(method_key, json.dumps(formatted_payment_method), 3600)
+
+        return formatted_payment_method, 200
+
 @app.route("/payment_methods", methods=["GET"])
 def get_all_payment_methods():
     token = request.headers.get("Authorization")
@@ -499,6 +526,71 @@ def get_all_payment_methods():
         ioc.cache_manager.store_data(all_methods_key, json.dumps(payment_methods, default=str), 3600)
 
         return jsonify(payment_methods), 200
+
+
+@app.route("/payment_methods/<payment_method_id>", methods=["PATCH"])
+def update_payment_method(payment_method_id):
+    try:
+        token = request.headers.get("Authorization")
+        validation = validate_admin(token)
+
+        if validation is not True:
+            return validation
+
+        payment_method = PaymentMethod.get_by_id(payment_method_id)
+
+        if payment_method is None:
+            return jsonify(error_message=f"Payment method ID {payment_method_id} not found"), 404
+        elif payment_method is False:
+            raise Exception
+
+        data = request.get_json()
+        new_method_name = data.get('method')
+        update_result = payment_method.update(new_method_name)
+
+        if update_result is False:
+            raise Exception
+
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("payment_methods", item_id=payment_method_id)
+
+        return jsonify(message=f"Payment method ID {payment_method_id} updated successfully"), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error updating payment method ID {payment_method_id}: {error}"), 500
+
+
+@app.route("/payment_methods/<payment_method_id>", methods=["DELETE"])
+def delete_payment_method(payment_method_id):
+    try:
+        token = request.headers.get("Authorization")
+        validation = validate_admin(token)
+
+        if validation is not True:
+            return validation
+        
+        payment_method = PaymentMethod.get_by_id(payment_method_id)
+
+        if payment_method is None:
+            return jsonify(error_message=f"Payment method ID {payment_method_id} not found"), 404
+        elif payment_method is False:
+            raise Exception
+
+        delete_result = payment_method.delete()
+
+        if delete_result is False:
+            raise Exception
+
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("payment_methods", item_id=payment_method_id)
+
+        return jsonify(message=f"Payment method ID {payment_method_id} deleted successfully"), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error deleting payment method ID {payment_method_id}: {error}"), 500
+
 
 
 @app.route("/me/<identifier>/payment_methods", methods=["POST"])
@@ -605,7 +697,7 @@ def update_user_payment_method(identifier, payment_method_id):
         return jsonify(error_message=f"Error updating user's (ID: {identifier}) payment method: {error}"), 500
 
 
-@app.route("/me/<identifier>/payment-methods/<payment_method_id>", methods=["DELETE"])
+@app.route("/me/<identifier>/payment_methods/<payment_method_id>", methods=["DELETE"])
 def delete_user_payment_method(identifier, payment_method_id):
     try:
         token = request.headers.get("Authorization")
@@ -734,11 +826,12 @@ def get_product(product_id):
             elif product is False:
                 raise Exception
 
-            # STORE CACHE:
             formatted_product = product.format_dict()
+
+            # STORE CACHE:
             ioc.cache_manager.store_data(product_key, json.dumps(formatted_product), 600)
 
-            return product.format_dict(), 200
+            return formatted_product, 200
 
     except Exception as error:
         print(error)
@@ -798,9 +891,9 @@ def delete_product(product_id):
         elif product is False:
             raise Exception
 
-        result = product.delete()
+        delete_result = product.delete()
 
-        if result is False:
+        if delete_result is False:
             raise Exception
 
         # CHECK AND INVALIDATE CACHE:
@@ -872,23 +965,85 @@ def get_invoice_by_id(identifier, invoice_id):
             if invoice is False:
                 raise Exception
 
-            validation, decoded = validate_owner_or_admin(token, invoice.user_id)
+            validation, decoded = validate_owner_or_admin(token, invoice.user_id) # Hago la validación hasta aquí, porque necesito sacar el invoice para poder acceder a su ID y asimismo poder compararlo con el ID del token. Si solo paso el identifier que corresponde al token, puedo acceder a cualquier invoice.
 
             if validation is not True:
                 return validation, decoded
 
-            products = InvoiceProduct.get_by_invoice_id(invoice.id)
             billing_address = BillingAddress.get_by_id(invoice.billing_address_id).address      # falta poder extraer un billing_id con el invoice --> guardar en nueva tabla 'purchase'
             user_payment_method = UserPaymentMethod.get_by_id(invoice.user_payment_method_id).alias    #falta poder extraer un user_payment_method con el invoice --> guardar en nueva tabla 'purchase'
+            products = InvoiceProduct.get_by_invoice_id(invoice.id)
+
+            formatted_invoice = invoice.format_dict(billing_address, user_payment_method, products)
 
             # STORE CACHE:
-            ioc.cache_manager.store_data(invoice_key, json.dumps({"id":invoice.id, "user_id":invoice.user_id, "products":products, "purchase_date":invoice.purchase_date, "billing_address":billing_address, "user_payment_method":user_payment_method, "status":invoice.status}, default=str), 1200)
+            ioc.cache_manager.store_data(invoice_key, json.dumps(formatted_invoice, default=str), 1200)
 
-            return jsonify(id=invoice.id, user_id=invoice.user_id, products=products, purchase_date=invoice.purchase_date, billing_address=billing_address, user_payment_method=user_payment_method, status=invoice.status), 200
+            return formatted_invoice, 200
 
     except Exception as error:
         print(error)
         return jsonify(error_message=f"Error getting invoice ID {identifier}: {error}"), 500
+
+
+@app.route("/invoices/<invoice_id>", methods=["PATCH"])
+def update_invoice(invoice_id):
+    try:
+        token = request.headers.get("Authorization")
+        validation = validate_admin(token)
+
+        if validation is not True:
+            return validation
+
+        invoice = Invoice.get_by_id(invoice_id)
+
+        if invoice is None:
+            return jsonify(error_message=f"Invoice ID {invoice_id} not found"), 404
+        elif invoice is False:
+            raise Exception
+
+        data = request.get_json()
+        new_billing_address_id = data.get('billing_address_id') # Esto es lo único que me parece seguro que se pueda modificar.
+        new_status = data.get('status')
+
+
+
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error updating invoice ID {invoice_id}: {error}"), 500
+
+
+@app.route("/invoices/<invoice_id>", methods=["DELETE"])
+def delete_invoice(invoice_id):
+    try:
+        token = request.headers.get("Authorization")
+        validation = validate_admin(token)
+
+        if validation is not True:
+            return validation
+
+        invoice = Invoice.get_by_id(invoice_id)
+
+        if invoice is None:
+            return jsonify(error_message=f"Invoice ID {invoice_id} not found"), 404
+        elif invoice is False:
+            raise Exception
+
+        delete_result = invoice.delete()
+
+        if delete_result is False:
+            raise Exception
+
+        # CHECK AND INVALIDATE CACHE:
+        invalidate_cache("invoices", item_id=invoice_id)
+
+        return jsonify(message=f"Invoice ID {invoice_id} deleted successfully"), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error deleting invoice ID {invoice_id} from the database: {error}"), 500
+
 
 # ------------------- INVOICES end -------------------
 
@@ -982,7 +1137,7 @@ def get_my_cart(identifier, cart_id):
         elif my_cart is False:
             raise Exception(f"Error getting cart ID {cart_id} from the database")
         elif my_cart.get('user_id') != user_id:
-            return jsonify(error_message=f"Cannot access page"), 403
+            return jsonify(error_message="Cannot access page"), 403
 
         # STORE CACHE:
         ioc.cache_manager.store_data(cart_key, json.dumps(my_cart, default=str), 180)
@@ -1111,6 +1266,11 @@ def return_purchase(invoice_id):
     try:
         token = request.headers.get("Authorization")
         invoice = Invoice.get_by_id(invoice_id)
+
+        if invoice is None:
+            return jsonify(error_message=f"Invoice ID {invoice_id} not found"), 404
+        elif invoice is False:
+            raise Exception(f"Error getting invoice ID {invoice_id}")
 
         validation, decoded = validate_owner_or_admin(token, invoice.user_id)
 
