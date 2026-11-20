@@ -7,7 +7,7 @@ import json
 def check_if_cache(key):
     if ioc.cache_manager.check_key(key)[0]:
         cached_data = json.loads(ioc.cache_manager.get_data(key))
-        return jsonify(cached_data), 200
+        return jsonify(cached_data)
     else:
         return None
 

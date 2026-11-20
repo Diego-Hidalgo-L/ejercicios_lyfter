@@ -139,7 +139,7 @@ def get_all_users():
         cache_result = check_if_cache(users_key)
 
         if cache_result is not None:
-            return cache_result
+            return cache_result, 200
 
         # ELIF NO CACHE:
         else:
@@ -174,7 +174,7 @@ def me(identifier):
         cache_result = check_if_cache(me_key)
 
         if cache_result is not None:
-            return cache_result
+            return cache_result, 200
 
         # ELIF NO CACHE:
         else:
@@ -310,7 +310,7 @@ def get_one_billing_address(identifier, billing_id):
         cache_result = check_if_cache(billing_key)
 
         if cache_result is not None:
-            return cache_result
+            return cache_result, 200
 
         # ELIF NO CACHE:
         else:
@@ -349,7 +349,7 @@ def get_my_billing_addresses(identifier):
         cache_result = check_if_cache(billing_key)
 
         if cache_result is not None:
-            return cache_result
+            return cache_result, 200
 
         # ELIF NO CACHE:
         else:
@@ -480,7 +480,7 @@ def get_payment_method(payment_method_id):
     cache_result = check_if_cache(method_key)
 
     if cache_result is not None:
-        return cache_result
+        return cache_result, 200
 
     # ELIF NO CACHE:
     else:
@@ -511,7 +511,7 @@ def get_all_payment_methods():
     cache_result = check_if_cache(all_methods_key)
 
     if cache_result is not None:
-        return cache_result
+        return cache_result, 200
 
     # ELIF NO CACHE:
     else:
@@ -638,7 +638,7 @@ def get_my_payment_methods(identifier):
         cache_result = check_if_cache(my_methods_key)
 
         if cache_result is not None:
-            return cache_result
+            return cache_result, 200
 
         # ELIF NO CACHE:
         else:
@@ -780,7 +780,7 @@ def get_all_products():
         cache_result = check_if_cache(products_key)
 
         if cache_result is not None:
-            return cache_result
+            return cache_result, 200
 
         # ELIF NO CACHE:
         else:
@@ -815,7 +815,7 @@ def get_product(product_id):
         cache_result = check_if_cache(product_key)
 
         if cache_result is not None:
-            return cache_result
+            return cache_result, 200
 
         # ELIF NO CACHE:
         else:
@@ -923,7 +923,7 @@ def get_my_invoices(identifier):
         cache_result = check_if_cache(invoices_key)
 
         if cache_result is not None:
-            return cache_result
+            return cache_result, 200
 
         # ELIF NO CACHE:
         else:
@@ -954,7 +954,7 @@ def get_invoice_by_id(identifier, invoice_id):
         cache_result = check_if_cache(invoice_key)
 
         if cache_result is not None:
-            return cache_result
+            return cache_result, 200
 
         # ELIF NO CACHE:
         else:
@@ -986,63 +986,61 @@ def get_invoice_by_id(identifier, invoice_id):
         return jsonify(error_message=f"Error getting invoice ID {identifier}: {error}"), 500
 
 
-@app.route("/invoices/<invoice_id>", methods=["PATCH"])
-def update_invoice(invoice_id):
-    try:
-        token = request.headers.get("Authorization")
-        validation = validate_admin(token)
+# @app.route("/invoices/<invoice_id>", methods=["PATCH"])
+# def update_invoice(invoice_id):
+#     try:
+#         token = request.headers.get("Authorization")
+#         validation = validate_admin(token)
 
-        if validation is not True:
-            return validation
+#         if validation is not True:
+#             return validation
 
-        invoice = Invoice.get_by_id(invoice_id)
+#         invoice = Invoice.get_by_id(invoice_id)
 
-        if invoice is None:
-            return jsonify(error_message=f"Invoice ID {invoice_id} not found"), 404
-        elif invoice is False:
-            raise Exception
+#         if invoice is None:
+#             return jsonify(error_message=f"Invoice ID {invoice_id} not found"), 404
+#         elif invoice is False:
+#             raise Exception
 
-        data = request.get_json()
-        new_billing_address_id = data.get('billing_address_id') # Esto es lo único que me parece seguro que se pueda modificar.
-        new_status = data.get('status')
-
-
+#         data = request.get_json()
+#         new_billing_address_id = data.get('billing_address_id') # Esto es lo único que me parece seguro que se pueda modificar.
+#         new_status = data.get('status')
 
 
-    except Exception as error:
-        print(error)
-        return jsonify(error_message=f"Error updating invoice ID {invoice_id}: {error}"), 500
+#     except Exception as error:
+#         print(error)
+#         return jsonify(error_message=f"Error updating invoice ID {invoice_id}: {error}"), 500
 
 
-@app.route("/invoices/<invoice_id>", methods=["DELETE"])
-def delete_invoice(invoice_id):
-    try:
-        token = request.headers.get("Authorization")
-        validation = validate_admin(token)
+# @app.route("/invoices/<invoice_id>", methods=["DELETE"])
+# def delete_invoice(invoice_id):
+#     try:
+#         token = request.headers.get("Authorization")
+#         validation = validate_admin(token)
 
-        if validation is not True:
-            return validation
+#         if validation is not True:
+#             return validation
 
-        invoice = Invoice.get_by_id(invoice_id)
+#         invoice = Invoice.get_by_id(invoice_id)
 
-        if invoice is None:
-            return jsonify(error_message=f"Invoice ID {invoice_id} not found"), 404
-        elif invoice is False:
-            raise Exception
+#         if invoice is None:
+#             return jsonify(error_message=f"Invoice ID {invoice_id} not found"), 404
+#         elif invoice is False:
+#             raise Exception
 
-        delete_result = invoice.delete()
+#         delete_result = invoice.delete()
 
-        if delete_result is False:
-            raise Exception
+#         if delete_result is False:
+#             raise Exception
 
-        # CHECK AND INVALIDATE CACHE:
-        invalidate_cache("invoices", item_id=invoice_id)
+#         # CHECK AND INVALIDATE CACHE:
+#         invalidate_cache("invoices", item_id=invoice_id)
 
-        return jsonify(message=f"Invoice ID {invoice_id} deleted successfully"), 200
+#         return jsonify(message=f"Invoice ID {invoice_id} deleted successfully"), 200
 
-    except Exception as error:
-        print(error)
-        return jsonify(error_message=f"Error deleting invoice ID {invoice_id} from the database: {error}"), 500
+#     except Exception as error:
+#         print(error)
+#         return jsonify(error_message=f"Error deleting invoice ID {invoice_id} from the database: {error}"), 500
 
 
 # ------------------- INVOICES end -------------------
@@ -1090,7 +1088,7 @@ def get_all_my_carts(identifier):
         cache_result = check_if_cache(carts_key)
 
         if cache_result is not None:
-            return cache_result
+            return cache_result, 200
 
         # ELIF NO CACHE:
         else:
@@ -1126,7 +1124,7 @@ def get_my_cart(identifier, cart_id):
         cache_result = check_if_cache(cart_key)
 
         if cache_result is not None:
-            return cache_result
+            return cache_result, 200
 
         # ELIF NO CACHE:
         user_id = decoded['id']
@@ -1160,8 +1158,6 @@ def update_my_cart(identifier, cart_id):
 
         user_id = decoded['id']
         my_cart = Cart.get_by_id_obj(cart_id)
-        print(user_id)
-        print(cart_id)
 
         if my_cart is None:
             return jsonify(error_message=f"Cart ID {cart_id} not found"), 404
@@ -1170,7 +1166,7 @@ def update_my_cart(identifier, cart_id):
         elif my_cart.user_id != user_id:
             return jsonify(error_message="Invalid cart"), 401
         elif my_cart.status == 'Completed':
-            return jsonify(error_message="Cart already completed"), 400
+            return jsonify(error_message=f"Cart ID {cart_id} already completed"), 400
 
         data = request.get_json()
         cart_products = data.get('cart_products')
@@ -1184,7 +1180,7 @@ def update_my_cart(identifier, cart_id):
         # CHECK AND INVALIDATE CACHE:
         invalidate_cache("carts", item_id=cart_id, identifier=identifier)
 
-        return jsonify(message=f"Cart ID {cart_id} updated successfully")
+        return jsonify(message=f"Cart ID {cart_id} updated successfully"), 200
 
     except Exception as error:
         print(error)
@@ -1208,7 +1204,7 @@ def delete_my_cart(identifier, cart_id):
         elif my_cart is False:
             raise Exception(f"Error getting cart ID {cart_id}")
         elif my_cart.user_id != user_id:
-            return jsonify(error_message=f"Invalid cart"), 401
+            return jsonify(error_message="Invalid cart"), 401
         elif my_cart.status != 'Active':
             return jsonify(error_message="Inactive cart"), 400
 
@@ -1223,7 +1219,7 @@ def delete_my_cart(identifier, cart_id):
         # CHECK AND INVALIDATE CACHE:
         invalidate_cache("carts", item_id=cart_id, identifier=identifier)
 
-        return jsonify(message=f"Cart ID {cart_id} deleted successfully")
+        return jsonify(message=f"Cart ID {cart_id} deleted successfully"), 200
 
     except Exception as error:
         print(error)
