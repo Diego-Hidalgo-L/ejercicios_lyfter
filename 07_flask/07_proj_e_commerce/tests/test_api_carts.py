@@ -1,8 +1,8 @@
+from main import app
 from db import Cart
 
-from main import app
 from flask import jsonify
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from datetime import date
 
 # ------------------- POST TESTS start -------------------

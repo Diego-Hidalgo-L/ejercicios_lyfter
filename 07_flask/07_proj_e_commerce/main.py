@@ -8,41 +8,7 @@ from flask import Flask, request, jsonify
 from argon2.exceptions import VerifyMismatchError
 import json
 
-
 app = Flask("e-commerce")
-
-
-# ------------------- ADMIN start -------------------
-@app.route("/refresh-token", methods=["POST"])          # Quité que valide si es un usuario, está bien verdad?
-def refresh_token():
-    try:
-        token = request.headers.get("Authorization")
-
-        if token is None:
-            return jsonify(error_message="Invalid token"), 401
-
-        decoded = ioc.jwt_manager.decode(token)
-
-        if decoded is None:
-            return jsonify(error_message="Error decoding token"), 401
-
-        if decoded['token_type'] != "refresh":
-            return jsonify(error_message="Invalid token type"), 400
-
-        user_id = decoded['id']
-        access_token = ioc.jwt_manager.encode(user_id, "access")
-
-        if access_token is None:
-            return jsonify(error_message="Error encoding access token"), 401
-
-        return jsonify(access_token=access_token), 200
-
-    except Exception as error:
-        print(error)
-        return jsonify(error_message=f"Error creating access token: {error}"), 500
-
-# ------------------- ADMIN end -------------------
-
 
 # ------------------- USERS start -------------------
 @app.route("/register", methods=['POST'])
@@ -125,6 +91,35 @@ def login():
         return jsonify(error_message=f"Error logging in: {error}"), 500
 
 
+@app.route("/refresh-token", methods=["POST"])          # Quité que valide si es un usuario, está bien verdad?
+def refresh_token():
+    try:
+        token = request.headers.get("Authorization")
+
+        if token is None:
+            return jsonify(error_message="Invalid token"), 401
+
+        decoded = ioc.jwt_manager.decode(token)
+
+        if decoded is None:
+            return jsonify(error_message="Error decoding token"), 401
+
+        if decoded.get('token_type') != "refresh":
+            return jsonify(error_message="Invalid token type"), 400
+
+        user_id = decoded.get('id')
+        access_token = ioc.jwt_manager.encode(user_id, "access")
+
+        if access_token is None:
+            return jsonify(error_message="Error encoding access token"), 500
+
+        return jsonify(access_token=access_token), 200
+
+    except Exception as error:
+        print(error)
+        return jsonify(error_message=f"Error creating access token: {error}"), 500
+
+
 @app.route("/users", methods=["GET"])         # Después implementar filters
 def get_all_users():
     try:
@@ -179,10 +174,10 @@ def me(identifier):
         # ELIF NO CACHE:
         else:
             user_id = decoded['id']
-            user = User.get_by_id(identifier)
+            user = User.get_by_id(user_id)
 
             if user is None:
-                return jsonify(error_message=f"User ID {identifier} not found"), 404
+                return jsonify(error_message=f"User ID {user_id} not found"), 404
             elif user is False:
                 raise Exception
 
