@@ -5,6 +5,7 @@ from flask import jsonify
 from unittest.mock import patch
 from datetime import date
 
+
 # ------------------- POST TESTS start -------------------
 
 def test_add_active_cart_without_existing_cart_returns_200():

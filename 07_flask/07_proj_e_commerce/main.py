@@ -749,7 +749,7 @@ def add_product():
         result = new_product.add()
 
         if result is False:
-            return jsonify(error_message=f"Error inserting product into the database"), 500
+            raise Exception
 
         # CHECK AND INVALIDATE CACHE:
         invalidate_cache("products", "all")
@@ -758,7 +758,7 @@ def add_product():
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error inserting product: {error}"), 500
+        return jsonify(error_message="Error inserting product into the database"), 500
 
 
 @app.route("/products", methods=["GET"])
@@ -782,7 +782,7 @@ def get_all_products():
             products = Product.get_all()
 
             if products is None:
-                return jsonify(error_message=f"No products found"), 404
+                return jsonify(error_message="No products found"), 404
             elif products is False:
                 raise Exception
 
