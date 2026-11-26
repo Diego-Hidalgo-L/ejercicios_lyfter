@@ -201,7 +201,7 @@ def test_get_my_cart_with_inexistent_cart_returns_404():
         assert response.get_json()["error_message"] == (f"Cart ID {cart_id} not found")
 
 
-def test_get_my_cart_with_not_owner_returns_403():
+def test_get_my_cart_with_unauthorized_user_returns_403():
     # Arrange
     user_id = 1
     cart_id = 99
@@ -496,3 +496,5 @@ def test_delete_my_cart_with_inactive_cart_returns_400():
         mock_delete_cart_products.assert_not_called()
         mock_delete_cart.assert_not_called()
         mock_invalidate_cache.assert_not_called()
+
+# ------------------- DELETE TESTS end -------------------

@@ -288,7 +288,7 @@ def test_get_all_users_successfully_returns_200():
         mock_store_cache.assert_called_once()
 
 
-def test_get_all_users_with_not_owner_returns_403():
+def test_get_all_users_with_unauthorized_user_returns_403():
     # Arrange
     with (
         app.app_context(),
@@ -342,7 +342,7 @@ def test_me_with_own_profile_returns_200():
         mock_store_cache.assert_called_once()
 
 
-def test_me_with_not_owner_returns_403():
+def test_me_with_unauthorized_user_returns_403():
     # Arrange
     user_id = 1
 
@@ -542,3 +542,5 @@ def test_delete_user_with_not_profile_owner_returns_403():
         mock_get_user.assert_not_called()
         mock_delete_user.assert_not_called()
         mock_invalidate_cache.assert_not_called()
+
+# ------------------- DELETE TESTS end -------------------

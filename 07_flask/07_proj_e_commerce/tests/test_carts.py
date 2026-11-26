@@ -1,4 +1,4 @@
-from db import Cart, CartProduct
+from db import Cart, Product, CartProduct
 
 from unittest.mock import MagicMock, patch, call
 from datetime import date
@@ -198,19 +198,23 @@ def test_update_cart_products_only_returns_true():
     # Arrange
     cart = Cart(id=1, user_id=2, status="Active")
 
-    mock_cart_product = [{"product_id": 1, "quantity": 5, "total_price": 10}]
+    mock_cart_products = [{"product_id": 1, "quantity": 5}]
     mock_cart = MagicMock(id=1, user_id=2, status="Active")
+    mock_product = MagicMock(id=1, price=2)
 
     with patch("db.Session") as mock_session_class:
         mock_session = mock_session_class.return_value.__enter__.return_value
-        mock_session.get.return_value = mock_cart
+        mock_session.get.side_effect = lambda model, identifier: {
+            ("Cart", cart.id): mock_cart,
+            ("Product", 1): mock_product
+        }.get((model.__name__, identifier))
 
         # Act
-        result = cart.update(cart_products=mock_cart_product)
+        result = cart.update(cart_products=mock_cart_products)
 
         # Assert
         assert result is True
-        mock_session.get.assert_called_once_with(Cart, cart.id)
+        mock_session.get.assert_has_calls([call(Cart, cart.id), call(Product, 1)])
         mock_session.execute.assert_called_once()
         mock_session.add.assert_called_once()
         mock_session.commit.assert_called_once()
@@ -249,20 +253,24 @@ def test_update_both_cart_products_and_status_returns_true():
     # Arrange
     cart = Cart(id=1, user_id=2, status="Active")
 
-    mock_cart_product = [{"product_id": 1, "quantity": 5, "total_price": 10}]
+    mock_cart_products = [{"product_id": 1, "quantity": 5}]
     mock_cart = MagicMock(id=1, user_id=2, status="Active")
+    mock_product = MagicMock(id=1, price=2)
 
     with patch("db.Session") as mock_session_class:
         mock_session = mock_session_class.return_value.__enter__.return_value
-        mock_session.get.return_value = mock_cart
+        mock_session.get.side_effect = lambda model, identifier: {
+            ("Cart", cart.id): mock_cart,
+            ("Product", 1): mock_product
+        }.get((model.__name__, identifier))
 
         # Act
-        result = cart.update(cart_products=mock_cart_product, status="Abandoned")
+        result = cart.update(cart_products=mock_cart_products, status="Abandoned")
 
         # Assert
         assert result is True
         assert mock_cart.status == "Abandoned"
-        mock_session.get.assert_called_once_with(Cart, cart.id)
+        mock_session.get.assert_has_calls([call(Cart, cart.id), call(Product, 1)])
         mock_session.execute.assert_called_once()
         mock_session.add.assert_called_once()
         mock_session.commit.assert_called_once()
@@ -351,3 +359,4 @@ def test_delete_cart_products_returns_true():
         mock_session.execute.assert_called_once()
         mock_session.commit.assert_called_once()
 
+# ------------------- DELETE TESTS end -------------------

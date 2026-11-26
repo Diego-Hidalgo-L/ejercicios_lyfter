@@ -279,7 +279,7 @@ def add_billing_address(identifier):
         new_billing_address = billing_address.add()
 
         if new_billing_address is False:
-            return jsonify(error_message=f"Error adding billing address to the database"), 500
+            return jsonify(error_message="Error adding billing address to the database"), 500
 
         # CHECK AND INVALIDATE CACHE:
         invalidate_cache("billing_addresses", identifier=identifier)
@@ -444,18 +444,18 @@ def add_payment_method():
             return validation
 
         data = request.get_json()
-        method_name = data.get('method_name')
+        method = data.get('method_name')
 
-        payment_method = PaymentMethod(method_name=method_name)
-        result = payment_method.add()
+        payment_method = PaymentMethod(method=method)
+        new_payment_method = payment_method.add()
 
-        if result is False:
+        if new_payment_method is False:
             raise Exception
 
         # CHECK AND INVALIDATE CACHE:
         invalidate_cache("payment_methods", "all")
 
-        return jsonify(message="Payment method added successfully"), 201
+        return jsonify(id=new_payment_method.id, method=new_payment_method.method), 201
 
     except Exception as error:
         print(error)
@@ -482,7 +482,7 @@ def get_payment_method(payment_method_id):
         payment_method = PaymentMethod.get_by_id(payment_method_id)
 
         if payment_method is None:
-            return jsonify(error_message=f"No products found"), 404
+            return jsonify(error_message=f"Payment method ID {payment_method_id} not found"), 404
         elif payment_method is False:
             raise Exception
 
@@ -513,7 +513,7 @@ def get_all_payment_methods():
         payment_methods = PaymentMethod.get_all()
 
         if payment_methods is None:
-            return jsonify(error_message=f"No products found"), 404
+            return jsonify(error_message="No payment methods found"), 404
         elif payment_methods is False:
             raise Exception
 
@@ -604,15 +604,15 @@ def add_my_payment_method(identifier):
         is_default = data.get('is_default')
 
         my_payment_method = UserPaymentMethod(user_id=user_id, payment_method_id=payment_method_id, alias=alias, is_default=is_default)
-        result = my_payment_method.add()
+        my_new_my_payment_method = my_payment_method.add()
 
-        if result is False:
+        if my_new_my_payment_method is False:
             raise Exception
 
         # CHECK AND INVALIDATE CACHE:
         invalidate_cache("payment_methods", identifier=identifier)
 
-        return jsonify(message=f"Payment method added successfully for user ID {user_id}"), 201
+        return jsonify(id=my_new_my_payment_method.id, user_id=my_new_my_payment_method.user_id, payment_method_id=my_new_my_payment_method.payment_method_id, alias=my_new_my_payment_method.alias, is_default=my_new_my_payment_method.is_default), 201
 
     except Exception as error:
         print(error)
@@ -640,7 +640,7 @@ def get_my_payment_methods(identifier):
             user_payment_methods = UserPaymentMethod.get_all_by_user_id(decoded['id'])
 
             if user_payment_methods is None:
-                return jsonify("No payment methods found"), 404
+                return jsonify(error_message="No payment methods found"), 404
             elif user_payment_methods is False:
                 raise Exception
 
@@ -667,17 +667,17 @@ def update_user_payment_method(identifier, payment_method_id):
         payment_method = UserPaymentMethod.get_by_id(payment_method_id)
 
         if payment_method is None:
-            return jsonify(error_message="No payment methods found"), 404
+            return jsonify(error_message=f"Payment method ID {payment_method_id} not found"), 404
         elif payment_method is False:
             raise Exception
         elif payment_method.user_id != user_id:
-            return jsonify(error_message=f"Cannot access page"), 401
+            return jsonify(error_message="Cannot access page"), 403
 
         data = request.get_json()
         new_alias = data.get('alias')
         is_default = data.get('is_default')
 
-        result = payment_method.update(new_alias, is_default)
+        result = payment_method.update(alias=new_alias, is_default=is_default)
 
         if result is False:
             raise Exception

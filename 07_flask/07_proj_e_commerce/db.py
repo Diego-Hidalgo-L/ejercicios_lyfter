@@ -667,8 +667,8 @@ class Cart(Base):
                         product_id = product.get('product_id')
                         quantity = product.get('quantity')
 
-                        product_price = session.get(Product, product_id)
-                        total_price = quantity * product_price
+                        product = session.get(Product, product_id)
+                        total_price = quantity * product.price
 
                         new_product = CartProduct(cart_id=cart.id, product_id=product_id, quantity=quantity, total_price=total_price)
                         session.add(new_product)

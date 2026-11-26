@@ -2,7 +2,7 @@ from main import app
 from db import Product
 
 from flask import jsonify
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from datetime import date
 
 
@@ -31,7 +31,7 @@ def test_add_product_successfully_returns_201():
         assert response.status_code == 201
         assert response.get_json()["message"] == "Product 'Dog food' added successfully"
         mock_add_product.assert_called_once()
-        mock_invalidate_cache.assert_called_once()
+        mock_invalidate_cache.assert_called_once_with("products", "all")
 
 
 def test_add_product_from_not_admin_returns_403():
@@ -419,3 +419,5 @@ def test_delete_product_with_not_admin_returns_403():
         mock_get_product.assert_not_called()
         mock_update_product.assert_not_called()
         mock_invalidate_cache.assert_not_called()
+
+# ------------------- DELETE TESTS end -------------------
