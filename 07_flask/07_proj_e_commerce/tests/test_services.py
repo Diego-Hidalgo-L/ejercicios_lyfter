@@ -237,7 +237,7 @@ def test_purchase_with_insufficient_stock_returns_400():
         result = Transaction().purchase(user_id, cart_id, billing_address_id, user_payment_method_id)
 
         # Assert
-        assert result == (f"Insufficient stock for product ID {mock_cart_product.product_id} (Desired purchase quantity: {mock_cart_product.quantity} - Available stock: {mock_product.stock}).", 400)
+        assert result == (f"Insufficient stock for product ID {mock_cart_product.product_id} (Desired purchase quantity: {mock_cart_product.quantity} - Available stock: {mock_product.stock})", 400)
         assert mock_session.get.call_count == 2
         mock_session.add.assert_not_called()
         mock_session.commit.assert_not_called()

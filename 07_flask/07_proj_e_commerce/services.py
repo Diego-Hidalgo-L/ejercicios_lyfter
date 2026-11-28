@@ -50,7 +50,7 @@ class Transaction:
                     available_stock = got_product.stock
 
                     if available_stock < purchase_quantity:
-                        return f"Insufficient stock for product ID {product_id} (Desired purchase quantity: {purchase_quantity} - Available stock: {available_stock}).", 400
+                        return f"Insufficient stock for product ID {product_id} (Desired purchase quantity: {purchase_quantity} - Available stock: {available_stock})", 400
 
                     available_stock_list.append(available_stock)
 

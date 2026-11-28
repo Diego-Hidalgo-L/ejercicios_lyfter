@@ -41,6 +41,7 @@ Los archivos de la aplicación están directamente dentro de `07_proj_e_commerce
 ├── ioc_container.py        # Inicialización de servicios compartidos
 ├── cache.py                # Cliente y operaciones de Redis
 ├── cache_functions.py      # Consulta e invalidación de caché
+├── run_tests.sh             # Ejecuta los tests y genera reportes
 ├── credentials/
 │   └── redis_creds.py      # Configuración local de Redis (crear si falta)
 ├── keys/
@@ -48,9 +49,11 @@ Los archivos de la aplicación están directamente dentro de `07_proj_e_commerce
 │   └── public.pem          # Llave pública (generar localmente)
 ├── docs/
 │   └── tables_diagram.jpg  # Diagrama de la base de datos
+├── test_reports/            # Reportes generados (no subir a Git)
 └── tests/
     ├── test_services.py
-    └── test_carts.py
+    ├── test_carts.py
+    └── test_api_*.py         # Tests de endpoints de Flask
 ```
 
 > Las carpetas `credentials/`, `keys/` y `docs/` deben existir según corresponda. No se deben subir contraseñas ni llaves privadas al repositorio. La imagen de `docs/` sí se debe subir en el mismo PR que el README.
@@ -241,21 +244,37 @@ Utilicé JWT para identificar al usuario en las peticiones protegidas. Elegí RS
 
 Para las contraseñas utilicé Argon2, de modo que no se guarden en texto plano en la base de datos. Las validaciones de permisos comprueban, según el endpoint, que la persona tenga acceso a su propio recurso o tenga rol de administrador.
 
-## Pruebas unitarias
+## Pruebas
 
-Las pruebas están en `tests/test_services.py` y `tests/test_carts.py`. Utilicé **pytest** y **unittest.mock** para simular operaciones de SQLAlchemy y otras dependencias, sin depender de los datos que existan en PostgreSQL.
+Los tests están en la carpeta `tests/`. Utilicé **pytest** y **unittest.mock** para simular SQLAlchemy, Redis y otras dependencias, sin modificar los datos reales durante las pruebas. Incluí tests de los métodos de carritos y transacciones, y tests de API con `app.test_client()` para comprobar los códigos HTTP y las respuestas JSON.
 
-Entre los escenarios probados se encuentran:
+Algunos escenarios que probé son:
 
 - Compras válidas y fallidas (carrito inexistente o inactivo, falta de stock, permisos, etc.).
 - Devoluciones de compras y recuperación de existencias.
 - Creación, consulta, actualización y eliminación de carritos.
+- Respuestas exitosas y de error de los endpoints de Flask.
 - Manejo de excepciones, `commit()` y `rollback()`.
 
-Para ejecutar los tests desde la raíz del proyecto:
+### Ejecutar los tests y generar un reporte
+
+Desde la carpeta `07_proj_e_commerce/`, con el entorno virtual configurado y Redis local disponible (la aplicación intenta conectarse a Redis durante la importación), ejecutar:
+
+```bash
+bash run_tests.sh
+```
+
+El script ejecuta todos los tests de `tests/` utilizando `pytest` y crea automáticamente la carpeta `test_reports/` con dos archivos:
+
+- `results.txt`: salida de pytest y resultado general (`PASSED` o `FAILED`), para leerla fácilmente.
+- `results.xml`: reporte en formato JUnit XML, que pueden leer otras herramientas.
+
+Si algún test falla, el script devuelve un código de salida distinto de cero. Si pytest no llega a generar el XML (por ejemplo, por un error al importar los módulos), el motivo aparecerá en el reporte de texto. El script utiliza `.venv/bin/python` si existe, o `python3` en caso contrario.
+
+También se pueden ejecutar los tests directamente:
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-Los tests compartidos se ejecutan con mocks y está confirmado que pasan.
+No es necesario subir los reportes generados a Git. Se puede añadir `test_reports/` a `.gitignore`.

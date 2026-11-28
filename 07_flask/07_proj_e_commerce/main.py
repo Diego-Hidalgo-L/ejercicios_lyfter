@@ -709,7 +709,7 @@ def delete_user_payment_method(identifier, payment_method_id):
         elif payment_method is False:
             raise Exception
         elif payment_method.user_id != user_id:
-            return jsonify(error_message="Cannot access page"), 401
+            return jsonify(error_message="Cannot access page"), 403
 
         delete_result = payment_method.delete()
 
@@ -944,29 +944,29 @@ def get_invoice_by_id(identifier, invoice_id):
     try:
         token = request.headers.get("Authorization")
 
+        invoice = Invoice.get_by_id(invoice_id)
+
+        if invoice is None:
+            return jsonify(error_message=f"Invoice ID {invoice_id} not found"), 404
+        if invoice is False:
+            raise Exception("Error getting invoice")
+
+        validation, decoded = validate_owner_or_admin(token, invoice.user_id)
+
+        if validation is not True:
+            return validation, decoded
+
         # IF CACHE:
         invoice_key = ioc.cache_manager.generate_users_key(identifier, "invoices", item_id=invoice_id)
         cache_result = check_if_cache(invoice_key)
 
         if cache_result is not None:
-            return cache_result, 200
+            return cache_result
 
         # ELIF NO CACHE:
         else:
-            invoice = Invoice.get_by_id(invoice_id)
-
-            if invoice is None:
-                return jsonify(error_message=f"Invoice ID {identifier} not found"), 404
-            if invoice is False:
-                raise Exception
-
-            validation, decoded = validate_owner_or_admin(token, invoice.user_id) # Hago la validación hasta aquí, porque necesito sacar el invoice para poder acceder a su ID y asimismo poder compararlo con el ID del token. Si solo paso el identifier que corresponde al token, puedo acceder a cualquier invoice.
-
-            if validation is not True:
-                return validation, decoded
-
             billing_address = BillingAddress.get_by_id(invoice.billing_address_id).address      # falta poder extraer un billing_id con el invoice --> guardar en nueva tabla 'purchase'
-            user_payment_method = UserPaymentMethod.get_by_id(invoice.user_payment_method_id).alias    #falta poder extraer un user_payment_method con el invoice --> guardar en nueva tabla 'purchase'
+            user_payment_method = UserPaymentMethod.get_by_id(invoice.user_payment_method_id).alias     #falta poder extraer un user_payment_method con el invoice --> guardar en nueva tabla 'purchase'
             products = InvoiceProduct.get_by_invoice_id(invoice.id)
 
             formatted_invoice = invoice.format_dict(billing_address, user_payment_method, products)
@@ -974,11 +974,11 @@ def get_invoice_by_id(identifier, invoice_id):
             # STORE CACHE:
             ioc.cache_manager.store_data(invoice_key, json.dumps(formatted_invoice, default=str), 1200)
 
-            return formatted_invoice, 200
+            return jsonify(formatted_invoice), 200
 
     except Exception as error:
         print(error)
-        return jsonify(error_message=f"Error getting invoice ID {identifier}: {error}"), 500
+        return jsonify(error_message=f"Error getting invoice: {error}"), 500
 
 
 # @app.route("/invoices/<invoice_id>", methods=["PATCH"])

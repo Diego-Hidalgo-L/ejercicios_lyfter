@@ -349,7 +349,34 @@ def test_delete_user_payment_method_successfully_returns_200():
     with (
         patch("main.validate_owner", return_value=(True, {"id": user_id})),
         patch("main.UserPaymentMethod.get_by_id", return_value=payment_method) as mock_get_method,
-        patch("main.UserPaymentMethod.update", return_value=True) as mock_update_method,
+        patch("main.UserPaymentMethod.delete", return_value=True) as mock_delete_method,
+        patch("main.invalidate_cache") as mock_invalidate_cache
+    ):
+        client = app.test_client()
+
+        # Act
+        response = client.delete(
+            f"/me/{user_id}/payment_methods/{payment_method_id}",
+            headers={"Authorization": "Bearer fake_token"}
+        )
+
+        # Assert
+        assert response.status_code == 200
+        assert response.get_json()["message"] == f"Payment method for user ID {user_id} deleted successfully"
+        mock_get_method.assert_called_once_with(str(payment_method_id))
+        mock_delete_method.assert_called_once()
+        mock_invalidate_cache.assert_called_once_with("payment_methods", item_id=str(payment_method_id), identifier=str(user_id))
+
+
+def test_delete_user_payment_method_with_inexistent_method_returns_404():
+    # Arrange
+    user_id = 1
+    payment_method_id = 99
+
+    with (
+        patch("main.validate_owner", return_value=(True, {"id": user_id})),
+        patch("main.UserPaymentMethod.get_by_id", return_value=None) as mock_get_method,
+        patch("main.UserPaymentMethod.delete") as mock_delete_method,
         patch("main.invalidate_cache") as mock_invalidate_cache
     ):
         client = app.test_client()
@@ -361,8 +388,36 @@ def test_delete_user_payment_method_successfully_returns_200():
         )
 
         # Assert
-        assert response.status_code == 200
-        assert response.get_json()["message"] == f"Payment method for user ID {user_id} updated successfully"
+        assert response.status_code == 404
+        assert response.get_json()["error_message"] == f"Payment method ID {payment_method_id} not found"
         mock_get_method.assert_called_once_with(str(payment_method_id))
-        mock_update_method.assert_called_once_with(alias="My dogecoin account", is_default=False)
-        mock_invalidate_cache.assert_called_once_with("payment_methods", item_id=str(payment_method_id), identifier=str(user_id))
+        mock_delete_method.assert_not_called()
+        mock_invalidate_cache.assert_not_called()
+
+
+def test_delete_user_payment_method_with_unauthorized_user_returns_403():
+    # Arrange
+    user_id = 1
+    payment_method_id = 99
+    payment_method = UserPaymentMethod(id=payment_method_id, user_id=payment_method_id, payment_method_id=99, alias="Doge", is_default=True)
+
+    with (
+        patch("main.validate_owner", return_value=(True, {"id": user_id})),
+        patch("main.UserPaymentMethod.get_by_id", return_value=payment_method) as mock_get_method,
+        patch("main.UserPaymentMethod.update") as mock_delete_method,
+        patch("main.invalidate_cache") as mock_invalidate_cache
+    ):
+        client = app.test_client()
+
+        # Act
+        response = client.patch(
+            f"/me/{user_id}/payment_methods/{payment_method_id}",
+            headers={"Authorization": "Bearer fake_token"}
+        )
+
+        # Assert
+        assert response.status_code == 403
+        assert response.get_json()["error_message"] == "Cannot access page"
+        mock_get_method.assert_called_once_with(str(payment_method_id))
+        mock_delete_method.assert_not_called()
+        mock_invalidate_cache.assert_not_called()
