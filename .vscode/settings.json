@@ -13,7 +13,8 @@
         "orms",
         "unrelate",
         "ilike",
-        "setex"
+        "setex",
+        "selectinload"
     ],
     "files.exclude": {
         "**/__pycache__": true,
